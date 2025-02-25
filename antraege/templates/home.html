@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Homepage{% endblock %}
+
+{% block content %}
+<h1>Home</h1>
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 32px, 16px; margin-top: 16px; border: 0.5px solid grey; background-color: rgb(216, 216, 216);">
+    <p>Hallo, {{user.first_name}}!</p>
+    <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
+    <a href="{% url 'user_antraege' %}" class = "btn"><input type="button" value="Alle Freistellungsanträge"></a>
+
+</div>
+{% endblock %}
