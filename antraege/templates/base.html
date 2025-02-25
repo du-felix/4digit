@@ -14,7 +14,8 @@
 <body>
     <header style="display: flex; justify-content: space-between; width: 100%; padding: 16px, 32px;">
         <div>
-            <img src="{% static 'images/logo.png' %}" alt="4digit">
+            <a href="{% url 'home' %}"><img style="max-height: 80px;" src="{% static 'images/logo.png' %}" alt="4digit"></a>
+            
         </div>
         <div style="display: flex; gap: 12px;">
             <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
