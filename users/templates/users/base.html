@@ -12,17 +12,9 @@
     {% endblock %}
 </head>
 <body>
-    <header style="display: flex; justify-content: space-between; width: 100%; padding: 16px, 32px;">
+    <header style="display: flex; justify-content: center; width: 100%; padding: 16px, 32px;">
         <div>
-            <a href="{% url 'home' %}"><img style="max-height: 80px;" src="{% static 'images/logo.png' %}" alt="4digit"></a>
-            
-        </div>
-        <div style="display: flex; gap: 12px;">
-            <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-signout">Sign Out</button>
-              </form>
+            <img src="{% static 'images/logo.png' %}" alt="4digit">
         </div>
     </header>
     <main>
@@ -31,7 +23,7 @@
         {% endblock %}
     </main>
     <footer>
-        <p>&copy; 2023 My Site</p>
+        <p>&copy; 2025 4digit</p>
     </footer>
     <!-- Optional JavaScript files -->
     {% block extra_scripts %}

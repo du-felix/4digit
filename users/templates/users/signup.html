@@ -1,0 +1,24 @@
+{% extends "users/base.html" %}
+
+{% block title %}Signup Page{% endblock %}
+
+{% block content %}
+<h1>Sign Up</h1>
+<form method="post">
+    {% csrf_token %}
+    {% if form.errors %}
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {{ form.as_p }}
+    <button type="submit">Sign Up</button>
+</form>
+{% endblock %}

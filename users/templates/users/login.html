@@ -1,0 +1,37 @@
+{% extends "users/base.html" %}
+
+{% block title %}Login Page{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <h1>Login</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <div>
+            <label for="id_username">Email:</label>
+            <input type="text" name="username" id="id_username" placeholder="max.muster@afra.lernsax.de"  required>
+        </div>
+        <div>
+            <label for="id_password">Password:</label>
+            <input type="password" name="password" id="id_password" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    <p>Du hast noch keinen Account?</p>
+    <a href="{% url 'signup' %}"><input type="button" value="Signup"></a>
+
+</div>
+
+{% endblock %}

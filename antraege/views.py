@@ -4,10 +4,10 @@ from django.contrib.auth.decorators import login_required
 # Create your views here.
 @login_required(login_url="login")
 def home(request):
-    return render(request, "home.html")
+    return render(request, "antraege/home.html")
 
 def neuer_antrag(request):
-    return render(request, "neuer_antrag.html")
+    return render(request, "antraege/neuer_antrag.html")
 
 def user_antraege(request):
-    return render(request, "user_antraege.html")
+    return render(request, "antraege/user_antraege.html")

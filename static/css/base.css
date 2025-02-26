@@ -55,12 +55,7 @@ input[type="button"]:hover, button:hover {
 }
 
 header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background-color: #f4f4f4;
-    width: 100%;
-    padding: 10px 0;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -93,6 +88,7 @@ input[type="email"], input[type="password"], input[type="text"], input[type="num
     font-size: 14px;
     border: 1px solid #cccccc;
     border-radius: 5px;
+    cursor: text;
 }
 
 textarea {
