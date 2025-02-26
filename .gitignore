@@ -22,5 +22,3 @@ build/
 *.out
 *.class
 *.o
-
-db.sqlite3
