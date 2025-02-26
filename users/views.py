@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from .forms import Sign_Up_Form
 
 def login(request):
-    return render(request, "login.html")
+    return render(request, "users/login.html")
 
 def signup(request):
     if request.method == 'POST':
@@ -14,4 +14,4 @@ def signup(request):
     else:
         form = Sign_Up_Form()
     
-    return render(request, 'signup.html', {'form': form})
+    return render(request, 'users/signup.html', {'form': form})
