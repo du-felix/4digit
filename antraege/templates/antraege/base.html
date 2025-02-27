@@ -13,20 +13,20 @@
     {% endblock %}
 </head>
 <body>
-    <header style="display: flex; justify-content: space-between; margin: 0px 40px;">
+    <header>
         <div>
-            <a href="{% url 'home' %}"><img style="max-height: 80px;" src="{% static 'images/logo.png' %}" alt="4digit"></a>
+            <a href="{% url 'home' %}"><img src="{% static 'images/logo.png' %}" alt="4digit"></a>
             
         </div>
         <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-            <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
+            <a href="{% url 'neuer_antrag' %}"><input type="button" value="Freistellungsantrag stellen"></a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-signout">Sign Out</button>
+                <button type="submit">Sign Out</button>
               </form>
         </div>
     </header>
-    <main>
+    <main style="display: flex; justify-content: center; align-items: center; flex-direction: column; height: 88vh;">
         {% block content %}
         <!-- Default content can be placed here if needed -->
         {% endblock %}
