@@ -3,5 +3,30 @@
 {% block title %}Neuer Freistellungsantrag{% endblock %}
 
 {% block content %}
+## Fächer, die ausfallen
+<h1>Neuer Freistellungsantrag</h1>
+<div>
+
+</div>
+## Antragsdaten
+<div>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {{ form.as_p }}
+        <button type="submit">Antrag stellen</button>
+    </form>
+</div>
 
 {% endblock %}

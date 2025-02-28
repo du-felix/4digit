@@ -19,7 +19,7 @@ class Antrag(models.Model):
     anfangsdatum = models.DateField()
     enddatum = models.DateField()
     status = models.CharField(
-        max_length=20,
+        max_length=100,
         choices=STATUS_CHOICES,
         default=STATUS_IN_PROGRESS,
     )
@@ -28,4 +28,25 @@ class Antrag(models.Model):
         return self.user.first_name, self.titel
     
 class Anfrage(models.Model):
+    NOT_RESPONDED = 'not_responded'
+    ACCEPTED = 'accepted'
+    DECLINED = 'declined'
+
+    RESPONSE_CHOICES = [
+        (NOT_RESPONDED, 'Noch nicht geantwortet'),
+        (ACCEPTED, 'Genehmigt'),
+        (DECLINED, 'Abgelehnt'),
+    ]
     antrag = models.ForeignKey(Antrag, on_delete=models.CASCADE)
+    # Momentan wird der Antragssteller die Emaiil eingeben. Es gibt keine klare Zuodnung von Lehrer und Mail.
+    email = models.EmailField()
+    unterricht = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    response = models.CharField(
+        max_length=100,
+        choices=RESPONSE_CHOICES,
+        default=NOT_RESPONDED,
+    )
+    reason = models.TextField(null=True, blank=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+    token = models.CharField(max_length=64, unique=True, blank=True, null=True)
