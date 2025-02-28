@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'antraege',
     "adminview",
-    "email_anfragen",
     "users",
     "debug_toolbar",
 ]
