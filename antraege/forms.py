@@ -7,7 +7,7 @@ from django.forms import formset_factory
 class AntragForm(forms.ModelForm):#
     class Meta:
         model = Antrag
-        fields = ['titel', 'grund', 'anfangsdatum', 'enddatum']
+        fields = ['titel', 'grund', "klasse", 'anfangsdatum', 'enddatum']
 
 class Unterricht(forms.Form):
     lehrer_email = forms.EmailField(widget=forms.TextInput(attrs={'placeholder': 'Email des Lehrers'}))

@@ -15,6 +15,7 @@ class Antrag(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     titel = models.CharField(max_length=100)
     grund = models.TextField()
+    klasse = models.CharField(max_length=100)
     erstellt_am = models.DateTimeField(auto_now_add=True)
     anfangsdatum = models.DateField()
     enddatum = models.DateField()
