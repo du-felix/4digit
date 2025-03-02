@@ -16,6 +16,7 @@ h1, h2, h3 {
 }
 
 p {
+    width: 100%;
     margin: 10px 0;
     color: #555555;
 }
@@ -73,12 +74,9 @@ header img {
 form {
     display: flex;
     flex-direction: column;
-    align-items: center;
     width: 100%;
-    max-width: 400px;
     margin: 20px 0;
 }
-
 label {
     display: block;
     margin-bottom: 5px;
@@ -87,7 +85,6 @@ label {
 }
 
 input[type="email"], input[type="password"], input[type="text"], input[type="number"], textarea, input[type="date"], select {
-    width: 100%;
     padding: 10px;
     margin: 10px 0;
     font-size: 14px;

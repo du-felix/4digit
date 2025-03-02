@@ -3,12 +3,10 @@
 {% block title %}Neuer Freistellungsantrag{% endblock %}
 
 {% block content %}
-## Fächer, die ausfallen
 <h1>Neuer Freistellungsantrag</h1>
 <div>
 
 </div>
-## Antragsdaten
 <div>
     <form method="post">
         {% csrf_token %}
@@ -24,9 +22,82 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        {{ form.as_p }}
+        <h3>Mentoren:</h3>
+        <label for="gm">Gymnasialer Mentor:</label>
+        <input type="text" name="gm" id="gm" required>
+        <label for="im">Internatsmentor:</label>
+        <input type="text" name="im" id="im" required>
+
+        {{ antrag.as_p }}
+        <h2>Verpasster Unterricht:</h2>
+        {{ unterricht_formset.management_form }}
+        <div id="formset-container">
+            {% for untericht in unterricht_formset %}
+            <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+                {{ untericht.as_p }}
+            </div>
+            {% endfor %}
+        </div>
+        <div id="empty-form" style="display: none;">
+            <div style="margin-bottom: 12px;">
+                {{ unterricht_formset.empty_form.as_p }}
+
+                <button type="button" class="remove-form-btn">Remove</button>
+            </div>
+        </div>
+        <button type="button" id="addButton" style="margin-bottom: 12px;">Unterricht hinzufügen</button>
         <button type="submit">Antrag stellen</button>
     </form>
 </div>
+ <script>
+   document.addEventListener('DOMContentLoaded', function() {
+      const addFormBtn = document.getElementById('addButton');
+      const formsetContainer = document.getElementById('formset-container');
+      const emptyFormDiv = document.getElementById('empty-form');
+      const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS'); // from {{ formset.management_form }}
+
+      addFormBtn.addEventListener('click', function() {
+        // Current total forms in formset
+        let formIndex = parseInt(totalFormsInput.value);
+
+        // Copy the empty form's HTML
+        let newFormHtml = emptyFormDiv.innerHTML;
+        // Replace __prefix__ with the form index
+        newFormHtml = newFormHtml.replace(/__prefix__/g, formIndex);
+
+        // Create a new div and fill it with the updated form HTML
+        const newFormElem = document.createElement('div');
+        newFormElem.innerHTML = newFormHtml;
+
+        // Add the new form to the container
+        formsetContainer.appendChild(newFormElem);
+
+        // Increment the TOTAL_FORMS count so Django recognizes the new form
+        totalFormsInput.value = formIndex + 1;
+
+        // Attach remove functionality for the newly added form
+        attachRemoveButton(newFormElem);
+      });
+
+      // Function to attach the remove event to the newly created form's button
+      function attachRemoveButton(formElem) {
+        const removeBtn = formElem.querySelector('.remove-form-btn');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function() {
+            // Remove this entire form row
+            formElem.remove();
+
+            // Decrement TOTAL_FORMS so Django doesn't expect this form
+            let totalForms = parseInt(totalFormsInput.value);
+            totalFormsInput.value = totalForms - 1;
+          });
+        }
+      }
+
+      // Optional: If you want to allow removing *existing* forms,
+      // you'd have to include a "remove" button in each initial form
+      // and call attachRemoveButton() on them too.
+    });
+  </script>
 
 {% endblock %}

@@ -13,7 +13,7 @@ class Antrag(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
+    titel = models.CharField(max_length=100)
     grund = models.TextField()
     erstellt_am = models.DateTimeField(auto_now_add=True)
     anfangsdatum = models.DateField()
@@ -26,7 +26,8 @@ class Antrag(models.Model):
 
     def __str__(self):
         return self.user.first_name, self.titel
-    
+
+
 class Anfrage(models.Model):
     NOT_RESPONDED = 'not_responded'
     ACCEPTED = 'accepted'
