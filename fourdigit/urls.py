@@ -24,4 +24,5 @@ urlpatterns = [
    path('', include('antraege.urls')),
    path('users/', include('users.urls')),
    path("__debug__/", include(debug_toolbar.urls)),
+   path('adminview/', include('adminview.urls')),
 ]

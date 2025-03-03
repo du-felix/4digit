@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Site{% endblock %}</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_head %}
+    <!-- Additional head elements can go here -->
+    {% endblock %}
+</head>
+<body>
+    <header style="display: flex; justify-content: center; width: 100%; padding: 16px, 32px;">
+        <div>
+            <img src="{% static 'images/logo.png' %}" alt="4digit">
+        </div>
+    </header>
+    <main style="min-height: 88vh; display: flex; flex-direction: column;">
+        {% block content %}
+        <!-- Default content can be placed here if needed -->
+        {% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2025 4digit</p>
+    </footer>
+    <!-- Optional JavaScript files -->
+    {% block extra_scripts %}
+    <!-- Additional scripts can be added by child templates -->
+    {% endblock %}
+</body>
+</html>
