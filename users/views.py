@@ -9,8 +9,8 @@ def signup(request):
         form = Sign_Up_Form(request.POST)
         if form.is_valid():
             form.save()
-            # Optionally, you can log the user in here after signup.
-            return redirect('login')  # Replace 'login' with your login URL name.
+
+            return redirect('login') 
     else:
         form = Sign_Up_Form()
     

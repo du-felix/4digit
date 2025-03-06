@@ -59,6 +59,9 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = '/antraege/emails/'  # Ensure this directory exists
+
 AUTH_USER_MODEL = 'users.CustomUser'
 
 AUTHENTICATION_BACKENDS = [

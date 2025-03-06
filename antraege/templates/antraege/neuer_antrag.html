@@ -48,6 +48,11 @@
         <button type="button" id="addButton" style="margin-bottom: 12px;">Unterricht hinzufügen</button>
         <button type="submit">Antrag stellen</button>
     </form>
+    {% if messages %}
+      {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
 </div>
  <script>
    document.addEventListener('DOMContentLoaded', function() {

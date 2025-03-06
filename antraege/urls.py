@@ -7,4 +7,5 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
     path('neuer_antrag/', views.neuer_antrag, name='neuer_antrag'),
     path('user_antraege/', views.user_antraege, name='user_antraege'),
+    path("antrag_bestaetigen/<str:token>/", views.antrag_bestaetigen, name="antrag_bestaetigen"),
 ]
