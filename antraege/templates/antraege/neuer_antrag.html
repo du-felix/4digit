@@ -33,13 +33,13 @@
         {{ unterricht_formset.management_form }}
         <div id="formset-container">
             {% for untericht in unterricht_formset %}
-            <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
+            <div style="display: flex; flex-direction: row; background-color: grey;flex-wrap: wrap;">
                 {{ untericht.as_p }}
             </div>
             {% endfor %}
         </div>
         <div id="empty-form" style="display: none;">
-            <div style="margin-bottom: 12px;">
+            <div style="margin-bottom: 12px; background-color: grey;">
                 {{ unterricht_formset.empty_form.as_p }}
 
                 <button type="button" class="remove-form-btn">Remove</button>

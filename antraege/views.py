@@ -55,4 +55,9 @@ def user_antraege(request):
 
 def antrag_bestaetigen(request, token):
     anfrage = Anfrage.objects.get(token=token)
+    antrag = antrag.objects.get(id=anfrage.antrag.id)
+    if request.method == "POST":
+        pass
+    else:
+        pass
     return render(request, "antraege/antrag_bestaetigen.html", {"token": token})
