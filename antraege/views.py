@@ -54,4 +54,5 @@ def user_antraege(request):
     return render(request, "antraege/user_antraege.html")
 
 def antrag_bestaetigen(request, token):
+    anfrage = Anfrage.objects.get(token=token)
     return render(request, "antraege/antrag_bestaetigen.html", {"token": token})
