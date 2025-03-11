@@ -5,6 +5,11 @@
 {% block content %}
 <div style="margin-bottom: 240px;">
     <h1>Home</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
     <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 32px; margin-top: 16px; border: 0.5px solid grey; background-color: rgb(232, 232, 232);">
         <p>Hallo, {{user.first_name}}!</p>
         <p style="max-width: 400px;">Hier hast du deine Navigation, über die du einen neuen Antrag stellen kannst, sowie alle vergangenen Anträge nochmal einsehen kannst und den Status noch laufender Anträge im Blick hast.</p>

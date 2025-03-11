@@ -27,3 +27,5 @@ build/
 *.o
 
 db.sqlite3
+
+test.html

@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
 from .models import Anfrage
-from .functions import send_email
+from .functions import send_email, send_email_schulleiter
+from django.utils import timezone
 
 # Create your views here.
 @login_required(login_url="login")
@@ -55,9 +56,48 @@ def user_antraege(request):
 
 def antrag_bestaetigen(request, token):
     anfrage = Anfrage.objects.get(token=token)
-    antrag = antrag.objects.get(id=anfrage.antrag.id)
+    antrag = anfrage.antrag
+    context = {
+        "token": token,
+        "antragsteller": antrag.user.first_name + " " + antrag.user.last_name,
+        "titel": antrag.titel,
+        "schueler_grund": antrag.grund, 
+        "unterricht": anfrage.unterricht,
+        "schulleiter": anfrage.is_principle,
+        "antrag": antrag,
+    }
     if request.method == "POST":
-        pass
+        answer = request.POST.get("answer")
+        if anfrage.is_principle:
+            pass
+        else:
+            if answer == "annehmen":
+                anfrage.response = Anfrage.ACCEPTED
+                anfrage.responded_at = timezone.now()
+                anfrage.save()
+                send_email_schulleiter(antrag)
+
+                messages.success(request, "Antrag erfolgreich bearbeitet.")
+                redirect("home")
+            elif answer == "ablehnen":
+                grund = request.POST.get("grund",'')
+                if not grund.strip():
+                    messages.error(request, "Grund fehlt")
+                    return render(request, "antraege/antrag_bestaetigen.html", context)
+                
+                anfrage.response = Anfrage.DECLINED
+                anfrage.responded_at = timezone.now()
+                anfrage.reason = grund
+                anfrage.save()
+                send_email_schulleiter(antrag)
+
+                messages.success(request, "Antrag erfolgreich bearbeitet.")
+                redirect("home")
+            else:
+                messages.error(request, "Kein Feld ausgewählt")
+                return render(request, "antraege/antrag_bestaetigen.html", context)
     else:
-        pass
-    return render(request, "antraege/antrag_bestaetigen.html", {"token": token})
+        if anfrage.response != Anfrage.NOT_RESPONDED:
+            messages.error(request, "Anfrage bereits bearbeitet")
+            return redirect("home")
+        return render(request, "antraege/antrag_bestaetigen.html", context)
