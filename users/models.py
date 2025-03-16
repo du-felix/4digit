@@ -10,3 +10,5 @@ class CustomUser(AbstractUser):
             self.username = self.email  # Automatically set username to email
         super().save(*args, **kwargs)
 
+    is_app_admin = models.BooleanField(default=False, verbose_name="Hat Zugriff auf Admin-View")
+
