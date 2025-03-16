@@ -65,6 +65,7 @@ def antrag_bestaetigen(request, token):
         "unterricht": anfrage.unterricht,
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
+        "schulleiter": False
     }
     if request.method == "POST":
         answer = request.POST.get("answer")
@@ -75,8 +76,6 @@ def antrag_bestaetigen(request, token):
                 anfrage.response = Anfrage.ACCEPTED
                 anfrage.responded_at = timezone.now()
                 anfrage.save()
-                send_email_schulleiter(antrag)
-
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
             elif answer == "ablehnen":
@@ -89,7 +88,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
-                send_email_schulleiter(antrag)
+                context["schulleiter"] = send_email_schulleiter(antrag)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
