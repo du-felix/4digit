@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -12,12 +13,20 @@
     {% endblock %}
 </head>
 <body>
-    <header style="display: flex; justify-content: center; width: 100%; padding: 16px, 32px;">
+    <header>
         <div>
-            <img src="{% static 'images/logo.png' %}" alt="4digit">
+            <a href="{% url 'adminview-home' %}"><img src="{% static 'images/logo.png' %}" alt="4digit"></a>
+            
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
+            <a href="{% url 'csv' %}"><input type="button" value="Liste hochladen (csv)"></a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit">Sign Out</button>
+              </form>
         </div>
     </header>
-    <main style="min-height: 88vh; display: flex; flex-direction: column;">
+    <main style="display: flex; flex-direction: column; min-height: 88vh;">
         {% block content %}
         <!-- Default content can be placed here if needed -->
         {% endblock %}
