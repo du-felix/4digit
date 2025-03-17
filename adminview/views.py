@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import UserEditForm
+from users.forms import Sign_Up_Form
+from users.models import CustomUser
+from users.views import signup
 
 
 User = get_user_model()
@@ -24,7 +26,14 @@ def adminview(request, user_id=None):
             form = UserEditForm(instance=edit_user)
     else:
         edit_user = None
-        form = None
+        form = Sign_Up_Form()
+
+    if request.method == 'POST' and 'delete_user' in request.POST:
+        user_id_to_delete = request.POST.get('delete_user')
+        user_to_delete = get_object_or_404(User, id=user_id_to_delete)
+        user_to_delete.delete()
+        messages.success(request, f'User {user_to_delete.email} deleted successfully')
+        return redirect('adminview-home')
     
     context = {
         'users': users,
@@ -34,6 +43,17 @@ def adminview(request, user_id=None):
     
     return render(request, 'adminview/home.html', context)
 
+def adding(request):
+    if request.method == 'POST':
+        form = Sign_Up_Form(request.POST)
+        if form.is_valid():
+            form.save()
+
+            return redirect('adminview-home') 
+    else:
+        form = Sign_Up_Form()
+    
+    return render(request, 'adminview/add_user.html', {'form': form})
 
 @login_required
 <<<<<<< HEAD

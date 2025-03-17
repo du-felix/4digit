@@ -145,6 +145,8 @@
         {% endfor %}
     </ul>
     {% endif %}
+
+    <a href="{% url 'add_user' %}" class="btn btn-primary">Neuen Nutzer hinzufügen</a>
     
     <div class="flex-layout">
         <!-- User List Panel -->
@@ -182,6 +184,12 @@
                         </td>
                         <td>
                             <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Edit</a>
+
+                            <form method="post" action="{% url 'adminview-home' %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete_user" value="{{ user.id }}">
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
