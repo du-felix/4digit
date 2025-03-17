@@ -35,10 +35,3 @@ def signup(request):
         form = Sign_Up_Form()
     
     return render(request, 'users/signup.html', {'form': form})
-def login_success(request):
-    if request.user.is_authenticated:
-        if request.user.is_app_admin:
-            return redirect ('adminview')
-        else:
-            return redirect('')
-        return redirect('login')
