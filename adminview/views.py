@@ -73,22 +73,10 @@ def adding(request):
     return render(request, 'adminview/add_user.html', {'form': form})
 
 @login_required
-<<<<<<< HEAD
-def admin_dashboard(request):
-    if not is_app_admin(request.user):
-        return redirect ('login')
-    
-    return render(request, 'adminview.html')
-
 def adminview(request):
     return render(request, 'adminview.html')
->>>>>>> 57f056b (adminview_first)
-=======
+
 def csv(request):
-<<<<<<< HEAD
-    return render(request, 'adminview/csv.html')
->>>>>>> ffdd6c1 (adminview user-list added, editing possible)
-=======
     if request.method == 'POST':
         if 'csv_file' in request.FILES:
             csv_file = request.FILES['csv_file']
@@ -192,4 +180,3 @@ def csv(request):
             return redirect('adminview-home')
     
     return render(request, 'adminview/csv.html')
->>>>>>> f26d37d (isegal)

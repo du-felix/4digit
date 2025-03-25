@@ -11,14 +11,3 @@ urlpatterns = [
     path('users/<int:user_id>/', views.adminview, name='user_edit'),
     path('add_user/', views.adding, name='add_user'),
 ]
-<<<<<<< HEAD
-=======
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    path('', views.adminview, name='adminview'),
-]
->>>>>>> 57f056b (adminview_first)
-=======
->>>>>>> ffdd6c1 (adminview user-list added, editing possible)
