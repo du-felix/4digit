@@ -19,7 +19,7 @@
             
         </div>
         <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-            <a href="{% url 'csv' %}"><input type="button" value="Liste hochladen (csv)"></a>
+            <a href="{% url 'adminview-csv' %}"><input type="button" value="Liste hochladen (csv)"></a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit">Sign Out</button>
