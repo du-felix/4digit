@@ -20,7 +20,6 @@ def send_email_gm(email, vorname, schueler, unterricht,token_url):
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
 
-<<<<<<< HEAD
 def send_email_schulleiter(antrag, schueler, token_url) -> bool:
     mail_bool = True
     anfragen = Anfrage.objects.filter(antrag=antrag)
@@ -38,13 +37,3 @@ def send_email_schulleiter(antrag, schueler, token_url) -> bool:
         return mail_bool
     else:
         return mail_bool
-=======
-def send_email_schulleiter(antrag):
-    anfragen = Anfrage.objects.filter(antrag=antrag)
-    for anfrage in anfragen:
-        if anfrage.response != anfrage.NOT_RESPONDED:
-            continue
-        else:
-            return 0
-    
->>>>>>> 922f95b (egal)
