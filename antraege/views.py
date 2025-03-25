@@ -90,7 +90,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
-                context["schulleiter"] = send_email_schulleiter(antrag)
+                send_email_schulleiter(antrag)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
