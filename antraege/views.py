@@ -65,7 +65,6 @@ def antrag_bestaetigen(request, token):
         "unterricht": anfrage.unterricht,
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
-        "schulleiter": False
     }
     if request.method == "POST":
         answer = request.POST.get("answer")

@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -14,15 +15,15 @@
 <body>
     <header>
         <div>
-            <a href="{% url 'home' %}"><img src="{% static 'images/logo.png' %}" alt="4digit"></a>
+            <a href="{% url 'adminview-home' %}"><img src="{% static 'images/logo.png' %}" alt="4digit"></a>
             
         </div>
         <div style="display: flex; gap: 12px; justify-content: center; align-items: center;">
-            <a href="{% url 'neuer_antrag' %}"><input type="button" value="Freistellungsantrag stellen"></a>
+            <a href="{% url 'adminview-csv' %}"><input type="button" value="Liste hochladen (csv)"></a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit">Sign Out</button>
-            </form>
+              </form>
         </div>
     </header>
     <main style="display: flex; flex-direction: column; min-height: 88vh;">
