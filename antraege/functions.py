@@ -20,7 +20,7 @@ def send_email_gm(email, vorname, schueler, unterricht,token_url):
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
 
-def send_email_schulleiter(antrag) -> bool:
+def send_email_schulleiter(antrag, schueler, token_url) -> bool:
     mail_bool = True
     anfragen = Anfrage.objects.filter(antrag=antrag)
     for anfrage in anfragen:
@@ -28,7 +28,12 @@ def send_email_schulleiter(antrag) -> bool:
             mail_bool = False
             break
     if mail_bool:
-        
+        subject = "Neuer Freistellungsantrag"
+        body = f"""Hallo Stefan,\n ihr Mentee {schueler} hat einen Antrag gestellt.
+            \n\n Bitte bearbeiten sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten: {token_url}\n\n Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
+        """
+        empfaenger = ["schulleiter@afra.lernsax.de"]
+        send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
         return mail_bool
     else:
         return mail_bool
