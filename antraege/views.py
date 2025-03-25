@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
-from .models import Anfrage
+from .models import Anfrage, Antrag
 from .functions import send_email, send_email_schulleiter
 from django.utils import timezone
 
@@ -101,3 +101,31 @@ def antrag_bestaetigen(request, token):
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
         return render(request, "antraege/antrag_bestaetigen.html", context)
+@login_required
+def meine_antraege(request):
+    # Hole alle Anträge des aktuellen Benutzers
+    antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
+    
+    # Erweitere die Anträge mit Informationen zu Anfragen
+    antraege_mit_details = []
+    for antrag in antraege:
+        # Hole alle Anfragen für diesen Antrag
+        anfragen = Anfrage.objects.filter(antrag=antrag)
+        
+        # Bestimme den Gesamtstatus der Anfragen
+        anfragen_status = {
+            'total': len(anfragen),
+            'accepted': anfragen.filter(response=Anfrage.ACCEPTED).count(),
+            'declined': anfragen.filter(response=Anfrage.DECLINED).count(),
+            'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
+        }
+        
+        antraege_mit_details.append({
+            'antrag': antrag,
+            'anfragen_status': anfragen_status
+        })
+    
+    context = {
+        'antraege': antraege_mit_details
+    }
+    return render(request, 'antraege/meine_antraege.html', context)

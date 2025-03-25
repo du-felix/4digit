@@ -3,18 +3,46 @@
 {% block title %}Homepage{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 240px;">
+<div class="container">
     <h1>Home</h1>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    
+    {% if antraege %}
+        {% for antrag_detail in antraege %}
+            {% with antrag=antrag_detail.antrag anfragen_status=antrag_detail.anfragen_status %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h2>{{ antrag.titel }}</h2>
+                </div>
+                <div class="card-body">
+                    <p><strong>Zeitraum:</strong> {{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</p>
+                    <p><strong>Grund:</strong> {{ antrag.grund }}</p>
+                    <p><strong>Klasse:</strong> {{ antrag.klasse }}</p>
+                    <p><strong>Erstellt am:</strong> {{ antrag.erstellt_am }}</p>
+                    
+                    <h3>Status der Anfragen</h3>
+                    <div class="anfragen-status">
+                        <p>Gesamtzahl Anfragen: {{ anfragen_status.total }}</p>
+                        <p>Genehmigt: {{ anfragen_status.accepted }}</p>
+                        <p>Abgelehnt: {{ anfragen_status.declined }}</p>
+                        <p>Ausstehend: {{ anfragen_status.not_responded }}</p>
+                    </div>
+                    
+                    <div class="antrag-status">
+                        <strong>Antragsstatus:</strong> 
+                        {% if antrag.status == 'in_progress' %}
+                            <span class="badge bg-warning">In Bearbeitung</span>
+                        {% elif antrag.status == 'accepted' %}
+                            <span class="badge bg-success">Genehmigt</span>
+                        {% else %}
+                            <span class="badge bg-danger">Abgelehnt</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
         {% endfor %}
+    {% else %}
+        <p>Sie haben keine Freistellungsanträge.</p>
     {% endif %}
-    <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 32px; margin-top: 16px; border: 0.5px solid grey; background-color: rgb(232, 232, 232);">
-        <p>Hallo, {{user.first_name}}!</p>
-        <p style="max-width: 400px;">Hier hast du deine Navigation, über die du einen neuen Antrag stellen kannst, sowie alle vergangenen Anträge nochmal einsehen kannst und den Status noch laufender Anträge im Blick hast.</p>
-        <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
-        <a href="{% url 'user_antraege' %}" class = "btn"><input type="button" value="Alle Freistellungsanträge"></a>
-    </div>
 </div>
 {% endblock %}
