@@ -75,6 +75,8 @@ def antrag_bestaetigen(request, token):
                 anfrage.response = Anfrage.ACCEPTED
                 anfrage.responded_at = timezone.now()
                 anfrage.save()
+                send_email_schulleiter(antrag)
+
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
             elif answer == "ablehnen":
