@@ -65,10 +65,7 @@ def antrag_bestaetigen(request, token):
         "unterricht": anfrage.unterricht,
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
-<<<<<<< HEAD
         "schulleiter": False
-=======
->>>>>>> 0495227 (Enhance Antrag handling: update .gitignore, add email notification for school principal, and improve Antrag confirmation view with response handling)
     }
     if request.method == "POST":
         answer = request.POST.get("answer")
@@ -79,11 +76,8 @@ def antrag_bestaetigen(request, token):
                 anfrage.response = Anfrage.ACCEPTED
                 anfrage.responded_at = timezone.now()
                 anfrage.save()
-<<<<<<< HEAD
-=======
                 send_email_schulleiter(antrag)
 
->>>>>>> 0495227 (Enhance Antrag handling: update .gitignore, add email notification for school principal, and improve Antrag confirmation view with response handling)
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
             elif answer == "ablehnen":
@@ -96,11 +90,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
-<<<<<<< HEAD
                 context["schulleiter"] = send_email_schulleiter(antrag)
-=======
-                send_email_schulleiter(antrag)
->>>>>>> 0495227 (Enhance Antrag handling: update .gitignore, add email notification for school principal, and improve Antrag confirmation view with response handling)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
