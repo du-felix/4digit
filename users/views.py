@@ -42,4 +42,15 @@ def signup(request):
     else:
         form = Sign_Up_Form()
     
+<<<<<<< HEAD
     return render(request, 'users/signup.html', {'form': form})
+=======
+    return render(request, 'users/signup.html', {'form': form})
+def login_success(request):
+    if request.user.is_authenticated:
+        if request.user.is_app_admin:
+            return redirect ('adminview')
+        else:
+            return redirect('')
+        return redirect('login')
+>>>>>>> 57f056b (adminview_first)

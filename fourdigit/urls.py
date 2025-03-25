@@ -22,8 +22,15 @@ import debug_toolbar
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+<<<<<<< HEAD
     path('', include('antraege.urls')),
     path('users/', include('users.urls')),
     path("adminview/", include("adminview.urls")),
     path("__debug__/", include(debug_toolbar.urls)),
+=======
+   path('', include('antraege.urls')),
+   path('users/', include('users.urls')),
+   path("__debug__/", include(debug_toolbar.urls)),
+   path('adminview/', include('adminview.urls')),
+>>>>>>> 57f056b (adminview_first)
 ]
