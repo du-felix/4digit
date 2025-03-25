@@ -15,7 +15,11 @@ def login(request):
             if user.is_staff:
                 lg(request, user)
                 messages.success(request, "Login successful!")
+<<<<<<< HEAD
                 return redirect("adminview-home")  # Redirect to staff dashboard
+=======
+                return redirect("adminview/home.html")  # Redirect to staff dashboard
+>>>>>>> a4e75d4 (added path to adminview)
             else:
                 return render(request, "antraege/home.html")  
         else:
