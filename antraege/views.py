@@ -11,7 +11,12 @@ from django.utils import timezone
 # Create your views here.
 @login_required(login_url="login")
 def home(request):
-    return render(request, "antraege/home.html")
+    antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
+
+    context = {
+        'antraege': antraege
+    }
+    return render(request, "antraege/home.html", context)
 
 @login_required(login_url="login")
 def neuer_antrag(request):
@@ -139,15 +144,6 @@ def antrag_bestaetigen(request, token):
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
         return render(request, "antraege/antrag_bearbeiten.html", context)
-@login_required
-def antraege_liste(request):
-    # Hole alle Anträge des aktuellen Benutzers
-    antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
-
-    context = {
-        'antraege': antraege
-    }
-    return render(request, 'antraege/home.html', context)
 
 @login_required
 def antrag_detail(request, antrag_id):
@@ -170,4 +166,4 @@ def antrag_detail(request, antrag_id):
         'anfragen': anfragen,
         'anfragen_status': anfragen_status
     }
-    return render(request, 'antraege/antrag_detail.html', context)
+    return render(request, 'antraege/antrag.html', context)

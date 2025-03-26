@@ -1,4 +1,4 @@
-{% extends antraege/base.html %}
+{% extends "antraege/base.html" %}
 
 {% block title %}Antrag{% endblock %}
 
@@ -71,6 +71,6 @@
         <p>Keine Anfragen für diesen Antrag.</p>
     {% endif %}
     
-    <a href="{% url 'antraege_liste' %}" class="btn btn-secondary">Zurück zur Liste</a>
+    <a href="{% url 'home' %}" class="btn btn-secondary">Zurück zur Liste</a>
 </div>
 {% endblock %}
