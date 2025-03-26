@@ -18,7 +18,8 @@ def login(request):
 
                 return redirect("adminview-home")  # Redirect to staff dashboard
             else:
-                return render(request, "antraege/home.html")  
+                lg(request, user)
+                return redirect("home")  
         else:
             messages.error(request, "Invalid email or password.")
 

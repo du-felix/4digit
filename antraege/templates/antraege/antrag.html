@@ -1,0 +1,76 @@
+{% extends antraege/base.html %}
+
+{% block title %}Antrag{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ antrag.titel }}</h1>
+    
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2>Antragdetails</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Grund:</strong> {{ antrag.grund }}</p>
+            <p><strong>Klasse:</strong> {{ antrag.klasse }}</p>
+            <p><strong>Zeitraum:</strong> {{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</p>
+            <p><strong>Erstellt am:</strong> {{ antrag.erstellt_am }}</p>
+            
+            <div class="antrag-status">
+                <strong>Antragsstatus:</strong> 
+                {% if antrag.status == 'in_progress' %}
+                    <span class="badge bg-warning">In Bearbeitung</span>
+                {% elif antrag.status == 'accepted' %}
+                    <span class="badge bg-success">Genehmigt</span>
+                {% else %}
+                    <span class="badge bg-danger">Abgelehnt</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <h2>Status der Anfragen</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p>Gesamtzahl Anfragen: {{ anfragen_status.total }}</p>
+            <p>Genehmigt: {{ anfragen_status.accepted }}</p>
+            <p>Abgelehnt: {{ anfragen_status.declined }}</p>
+            <p>Ausstehend: {{ anfragen_status.not_responded }}</p>
+        </div>
+    </div>
+    
+    <h2>Detaillierte Anfragen</h2>
+    {% if anfragen %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Unterricht</th>
+                    <th>Status</th>
+                    <th>Begründung</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for anfrage in anfragen %}
+                <tr>
+                    <td>{{ anfrage.unterricht }}</td>
+                    <td>
+                        {% if anfrage.response == 'not_responded' %}
+                            <span class="badge bg-secondary">Noch nicht geantwortet</span>
+                        {% elif anfrage.response == 'accepted' %}
+                            <span class="badge bg-success">Genehmigt</span>
+                        {% else %}
+                            <span class="badge bg-danger">Abgelehnt</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ anfrage.reason|default:"Keine Begründung" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Keine Anfragen für diesen Antrag.</p>
+    {% endif %}
+    
+    <a href="{% url 'antraege_liste' %}" class="btn btn-secondary">Zurück zur Liste</a>
+</div>
+{% endblock %}

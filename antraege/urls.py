@@ -8,5 +8,6 @@ urlpatterns = [
     path('neuer_antrag/', views.neuer_antrag, name='neuer_antrag'),
     path('user_antraege/', views.user_antraege, name='user_antraege'),
     path("antrag_bestaetigen/<str:token>/", views.antrag_bestaetigen, name="antrag_bestaetigen"),
-    path('meine-antraege/', views.meine_antraege, name='meine_antraege'),
+    path('', views.antraege_liste, name='antraege_liste'),
+    path('<int:antrag_id>/', views.antrag_detail, name='antrag_detail'),
 ]

@@ -4,31 +4,26 @@
 
 {% block content %}
 <div class="container">
-    <h1>Home</h1>
+    <h1>Meine Freistellungsanträge</h1>
     
     {% if antraege %}
-        {% for antrag_detail in antraege %}
-            {% with antrag=antrag_detail.antrag anfragen_status=antrag_detail.anfragen_status %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h2>{{ antrag.titel }}</h2>
-                </div>
-                <div class="card-body">
-                    <p><strong>Zeitraum:</strong> {{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</p>
-                    <p><strong>Grund:</strong> {{ antrag.grund }}</p>
-                    <p><strong>Klasse:</strong> {{ antrag.klasse }}</p>
-                    <p><strong>Erstellt am:</strong> {{ antrag.erstellt_am }}</p>
-                    
-                    <h3>Status der Anfragen</h3>
-                    <div class="anfragen-status">
-                        <p>Gesamtzahl Anfragen: {{ anfragen_status.total }}</p>
-                        <p>Genehmigt: {{ anfragen_status.accepted }}</p>
-                        <p>Abgelehnt: {{ anfragen_status.declined }}</p>
-                        <p>Ausstehend: {{ anfragen_status.not_responded }}</p>
-                    </div>
-                    
-                    <div class="antrag-status">
-                        <strong>Antragsstatus:</strong> 
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Titel</th>
+                    <th>Zeitraum</th>
+                    <th>Erstellt am</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for antrag in antraege %}
+                <tr>
+                    <td>{{ antrag.titel }}</td>
+                    <td>{{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</td>
+                    <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
+                    <td>
                         {% if antrag.status == 'in_progress' %}
                             <span class="badge bg-warning">In Bearbeitung</span>
                         {% elif antrag.status == 'accepted' %}
@@ -36,11 +31,14 @@
                         {% else %}
                             <span class="badge bg-danger">Abgelehnt</span>
                         {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endwith %}
-        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{% url 'antrag_detail' antrag.id %}" class="btn btn-primary btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>Sie haben keine Freistellungsanträge.</p>
     {% endif %}

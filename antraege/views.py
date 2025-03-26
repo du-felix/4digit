@@ -1,6 +1,6 @@
 import uuid
 from django.urls import reverse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
@@ -65,7 +65,6 @@ def antrag_bestaetigen(request, token):
         "unterricht": anfrage.unterricht,
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
-        "schulleiter": False
     }
     if request.method == "POST":
         answer = request.POST.get("answer")
@@ -89,7 +88,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
-                context["schulleiter"] = send_email_schulleiter(antrag)
+                send_email_schulleiter(antrag)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
@@ -102,30 +101,34 @@ def antrag_bestaetigen(request, token):
             return redirect("home")
         return render(request, "antraege/antrag_bestaetigen.html", context)
 @login_required
-def meine_antraege(request):
+def antraege_liste(request):
     # Hole alle Anträge des aktuellen Benutzers
     antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
     
-    # Erweitere die Anträge mit Informationen zu Anfragen
-    antraege_mit_details = []
-    for antrag in antraege:
-        # Hole alle Anfragen für diesen Antrag
-        anfragen = Anfrage.objects.filter(antrag=antrag)
-        
-        # Bestimme den Gesamtstatus der Anfragen
-        anfragen_status = {
-            'total': len(anfragen),
-            'accepted': anfragen.filter(response=Anfrage.ACCEPTED).count(),
-            'declined': anfragen.filter(response=Anfrage.DECLINED).count(),
-            'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
-        }
-        
-        antraege_mit_details.append({
-            'antrag': antrag,
-            'anfragen_status': anfragen_status
-        })
+    context = {
+        'antraege': antraege
+    }
+    return render(request, 'antraege/antraege_liste.html', context)
+
+@login_required
+def antrag_detail(request, antrag_id):
+    # Hole den spezifischen Antrag oder werfe 404
+    antrag = get_object_or_404(Antrag, id=antrag_id, user=request.user)
+    
+    # Hole alle Anfragen für diesen Antrag
+    anfragen = Anfrage.objects.filter(antrag=antrag)
+    
+    # Bestimme den Gesamtstatus der Anfragen
+    anfragen_status = {
+        'total': len(anfragen),
+        'accepted': anfragen.filter(response=Anfrage.ACCEPTED).count(),
+        'declined': anfragen.filter(response=Anfrage.DECLINED).count(),
+        'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
+    }
     
     context = {
-        'antraege': antraege_mit_details
+        'antrag': antrag,
+        'anfragen': anfragen,
+        'anfragen_status': anfragen_status
     }
-    return render(request, 'antraege/meine_antraege.html', context)
+    return render(request, 'antraege/antrag_detail.html', context)
