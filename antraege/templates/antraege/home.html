@@ -3,18 +3,44 @@
 {% block title %}Homepage{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 240px;">
-    <h1>Home</h1>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
+<div class="container">
+    <h1>Meine Freistellungsanträge</h1>
+    
+    {% if antraege %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Titel</th>
+                    <th>Zeitraum</th>
+                    <th>Erstellt am</th>
+                    <th>Status</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for antrag in antraege %}
+                <tr>
+                    <td>{{ antrag.titel }}</td>
+                    <td>{{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</td>
+                    <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
+                    <td>
+                        {% if antrag.status == 'in_progress' %}
+                            <span class="badge bg-warning">In Bearbeitung</span>
+                        {% elif antrag.status == 'accepted' %}
+                            <span class="badge bg-success">Genehmigt</span>
+                        {% else %}
+                            <span class="badge bg-danger">Abgelehnt</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'antrag_detail' antrag.id %}" class="btn btn-primary btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Sie haben keine Freistellungsanträge.</p>
     {% endif %}
-    <div style="display: flex; flex-direction: column; gap: 16px; padding: 16px 32px; margin-top: 16px; border: 0.5px solid grey; background-color: rgb(232, 232, 232);">
-        <p>Hallo, {{user.first_name}}!</p>
-        <p style="max-width: 400px;">Hier hast du deine Navigation, über die du einen neuen Antrag stellen kannst, sowie alle vergangenen Anträge nochmal einsehen kannst und den Status noch laufender Anträge im Blick hast.</p>
-        <a href="{% url 'neuer_antrag' %}" class = "btn"><input type="button" value="Freistellungsantrag stellen"></a>
-        <a href="{% url 'user_antraege' %}" class = "btn"><input type="button" value="Alle Freistellungsanträge"></a>
-    </div>
 </div>
 {% endblock %}

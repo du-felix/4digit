@@ -56,6 +56,7 @@ def adminview(request, user_id=None):
     
     return render(request, 'adminview/home.html', context)
 
+@login_required
 def adding(request):
     if request.method == 'POST':
         form = Sign_Up_Form(request.POST)
@@ -73,9 +74,6 @@ def adding(request):
     return render(request, 'adminview/add_user.html', {'form': form})
 
 @login_required
-def adminview(request):
-    return render(request, 'adminview.html')
-
 def csv(request):
     if request.method == 'POST':
         if 'csv_file' in request.FILES:
