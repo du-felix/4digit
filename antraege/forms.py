@@ -8,7 +8,8 @@ class AntragForm(forms.ModelForm):#
     class Meta:
         model = Antrag
         fields = ['titel', 'grund', "klasse", 'anfangsdatum', 'enddatum']
-
+    anfangsdatum = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    enddatum = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
 class Unterricht(forms.Form):
     lehrer_email = forms.EmailField(widget=forms.TextInput(attrs={'placeholder': 'Email des Lehrers'}))
     fach = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Betroffenes Fach'}))

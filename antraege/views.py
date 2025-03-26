@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
 from .models import Anfrage, Antrag
-from .functions import send_email, send_email_schulleiter
+from .functions import send_email, send_email_schulleiter, send_email_gm
 from django.utils import timezone
 
 # Create your views here.
@@ -25,8 +25,8 @@ def neuer_antrag(request):
             antrag.user = request.user
 
             lehrer_dict = {}
-            for form in formset:
-                unterricht = form.save(commit=False)
+            for x in range(len(formset)-1):
+                unterricht = formset[x].save(commit=False)
                 email = unterricht.lehrer_email.lower()
                 lehrer_dict[email] += unterricht.fach + "," + str(unterricht.datum) + ";\n"
 
@@ -37,6 +37,13 @@ def neuer_antrag(request):
                 absolute_url = request.build_absolute_uri(relative_url)
                 Anfrage.objects.create(antrag=antrag, email=email, token=token, unterricht=unterricht)
                 send_email(email, email.split("@")[0].split(".")[0], request.user.first_name, unterricht, absolute_url)
+
+            token = str(uuid.uuid4())
+            relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+            # Build the absolute URL using the request object
+            absolute_url = request.build_absolute_uri(relative_url)
+            Anfrage.objects.create(antrag=antrag, email=gm, token=token, unterricht=unterricht)
+            send_email_gm(email, email.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
 
             antrag.save()
             messages.success(request, "Antrag erfolgreich erstellt.")
