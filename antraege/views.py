@@ -143,11 +143,11 @@ def antrag_bestaetigen(request, token):
 def antraege_liste(request):
     # Hole alle Anträge des aktuellen Benutzers
     antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
-    
+
     context = {
         'antraege': antraege
     }
-    return render(request, 'antraege/antraege_liste.html', context)
+    return render(request, 'antraege/home.html', context)
 
 @login_required
 def antrag_detail(request, antrag_id):
