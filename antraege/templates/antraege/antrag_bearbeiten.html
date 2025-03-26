@@ -4,11 +4,11 @@
 
 {% block content %}
 
-<div style="display: flex; flex-direction: row; max-width: 960px; margin: 0 auto; padding: 20px;">
+<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
     <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
 
     <h2>"{{ titel }}"</h2>
-    <p>{{ antrag.anfangsdatum }} bis {{ antrag.enddatum }}</p>
+    <p><b>{{ antrag.anfangsdatum }} bis {{ antrag.enddatum }}</b></p>
     <h3>Grund:</h3>
     <p>{{ schueler_grund }}</p>
 

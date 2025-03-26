@@ -51,5 +51,5 @@ class Anfrage(models.Model):
     )
     reason = models.TextField(null=True, blank=True)
     responded_at = models.DateTimeField(null=True, blank=True)
-    is_principle = models.BooleanField
+    is_principle = models.BooleanField(default=False, blank=True)
     token = models.CharField(max_length=64, unique=True, blank=True, null=True)

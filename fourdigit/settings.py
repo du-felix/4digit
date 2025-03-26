@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+from django.conf import settings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -60,7 +61,8 @@ INTERNAL_IPS = [
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = '/antraege/emails/'  # Ensure this directory exists
+EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
+sender = settings.DEFAULT_FROM_EMAIL
 
 AUTH_USER_MODEL = 'users.CustomUser'
 

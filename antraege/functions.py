@@ -11,7 +11,7 @@ def send_email(email, vorname, schueler, unterricht,token_url):
         \n\n Bitte bearbeiten sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten: {token_url}\n\n Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def send_email_gm(email, vorname, schueler, token_url):
     subject = "Neuer Freistellungsantrag"
@@ -19,7 +19,7 @@ def send_email_gm(email, vorname, schueler, token_url):
         \n\n Bitte bearbeiten sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten: {token_url}\n\n Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def send_email_schulleiter(schueler, token_url):
     subject = "Neuer Freistellungsantrag"
@@ -27,4 +27,4 @@ def send_email_schulleiter(schueler, token_url):
         \n\n Bitte bearbeiten sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten: {token_url}\n\n Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = ["stefan.weih@afra.lernsax.de"]
-    send_mail(subject, body, settings.DEFAULT_FROM_MAIL, empfaenger, fail_silently=False)
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)

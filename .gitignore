@@ -29,3 +29,5 @@ build/
 db.sqlite3
 
 test.html
+
+/emails

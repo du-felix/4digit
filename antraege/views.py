@@ -21,8 +21,9 @@ def neuer_antrag(request):
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
         if antrag.is_valid() and formset.is_valid():
-            antrag = antrag.save(commit=False)
-            antrag.user = request.user
+            antrag_instance = antrag.save(commit=False)
+            antrag_instance.user = request.user
+            antrag_instance.save()
 
             lehrer_dict = {}
             for x in range(len(formset)-1):
@@ -35,17 +36,23 @@ def neuer_antrag(request):
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 # Build the absolute URL using the request object
                 absolute_url = request.build_absolute_uri(relative_url)
-                Anfrage.objects.create(antrag=antrag, email=email, token=token, unterricht=unterricht)
+                Anfrage.objects.create(antrag=antrag_instance, email=email, token=token, unterricht=unterricht)
                 send_email(email, email.split("@")[0].split(".")[0], request.user.first_name, unterricht, absolute_url)
 
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
-            Anfrage.objects.create(antrag=antrag, email=gm, token=token, unterricht=unterricht)
-            send_email_gm(email, email.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
+            Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token)
+            send_email_gm(gm, gm.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
+            token = str(uuid.uuid4())
+            relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+            # Build the absolute URL using the request object
+            absolute_url = request.build_absolute_uri(relative_url)
+            Anfrage.objects.create(antrag=antrag_instance, email=im, token=token)
+            send_email_gm(im, gm.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
 
-            antrag.save()
+
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
         else:
@@ -76,7 +83,7 @@ def antrag_bestaetigen(request, token):
     if request.method == "POST":
         answer = request.POST.get("answer")
         if anfrage.is_principle:
-            pass
+            return redirect("home")
         elif anfrage.NOT_RESPONDED:
             if answer == "annehmen":
                 anfrage.response = Anfrage.ACCEPTED
@@ -91,11 +98,11 @@ def antrag_bestaetigen(request, token):
                 if mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token)
+                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
                     absolute_url = request.build_absolute_url(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
-                redirect("home")
+                return redirect("home")
             elif answer == "ablehnen":
                 grund = request.POST.get("grund",'')
                 if not grund.strip():
@@ -115,12 +122,12 @@ def antrag_bestaetigen(request, token):
                 if mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token)
+                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
                     absolute_url = request.build_absolute_url(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
-                redirect("home")
+                return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
                 return render(request, "antraege/antrag_bestaetigen.html", context)
@@ -131,7 +138,7 @@ def antrag_bestaetigen(request, token):
         if anfrage.response != Anfrage.NOT_RESPONDED:
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
-        return render(request, "antraege/antrag_bestaetigen.html", context)
+        return render(request, "antraege/antrag_bearbeiten.html", context)
 @login_required
 def antraege_liste(request):
     # Hole alle Anträge des aktuellen Benutzers
