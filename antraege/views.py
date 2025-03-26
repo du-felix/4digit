@@ -43,7 +43,7 @@ def neuer_antrag(request):
             return redirect("home")
         else:
             messages.error(request, "Es ist ein Fehler aufgetreten.")
-            return render(request, "submit_form.html", {"antrag": antrag, "formset": formset})
+            return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "formset": formset})
 
     else:
         antrag = AntragForm()
