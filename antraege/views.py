@@ -71,12 +71,23 @@ def antrag_bestaetigen(request, token):
         answer = request.POST.get("answer")
         if anfrage.is_principle:
             pass
-        else:
+        elif anfrage.NOT_RESPONDED:
             if answer == "annehmen":
                 anfrage.response = Anfrage.ACCEPTED
                 anfrage.responded_at = timezone.now()
                 anfrage.save()
-                send_email_schulleiter(antrag)
+                mail_bool = True
+                anfragen = Anfrage.objects.filter(antrag=antrag)
+                for af in anfragen:
+                    if af.response == af.NOT_RESPONDED:
+                        mail_bool = False
+                        break
+                if mail_bool:
+                    token = str(uuid.uuid4())
+                    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token)
+                    absolute_url = request.build_absolute_url(relative_url)
+                    send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
             elif answer == "ablehnen":
@@ -89,13 +100,27 @@ def antrag_bestaetigen(request, token):
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
-                context["schulleiter"] = send_email_schulleiter(antrag)
+                mail_bool = True
+                anfragen = Anfrage.objects.filter(antrag=antrag)
+                for af in anfragen:
+                    if af.response == af.NOT_RESPONDED:
+                        mail_bool = False
+                        break
+                if mail_bool:
+                    token = str(uuid.uuid4())
+                    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token)
+                    absolute_url = request.build_absolute_url(relative_url)
+                    send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
                 return render(request, "antraege/antrag_bestaetigen.html", context)
+        else:
+            messages.error(request, "Anfrage bereits bearbeitet")
+            return redirect("home")
     else:
         if anfrage.response != Anfrage.NOT_RESPONDED:
             messages.error(request, "Anfrage bereits bearbeitet")
