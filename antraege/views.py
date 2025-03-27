@@ -26,18 +26,18 @@ def neuer_antrag(request):
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
         if antrag.is_valid() and formset.is_valid():
-            if len(formset) < 2:
-                messages.error(request, "Es muss mindestens ein Unterricht angegeben werden.")
-                return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "formset": formset})
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
 
             lehrer_dict = {}
-            for x in range(len(formset)-1):
-                unterricht = formset[x].save(commit=False)
-                email = unterricht.lehrer_email.lower()
-                lehrer_dict[email] += unterricht.fach + "," + str(unterricht.datum) + ";\n"
+            for x in range(len(formset)):
+                unterricht = formset[x]
+                email = unterricht.cleaned_data.get("lehrer_email").lower()
+                if email not in lehrer_dict:
+                    lehrer_dict[email] = unterricht.cleaned_data.get("fach") + "," + str(unterricht.cleaned_data.get("datum")) + ";\n"
+                else:
+                    lehrer_dict[email] += unterricht.fach + "," + str(unterricht.datum) + ";\n"
 
             for email, unterricht in lehrer_dict.items():
                 token = str(uuid.uuid4())
@@ -58,7 +58,7 @@ def neuer_antrag(request):
             # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=im, token=token)
-            send_email_gm(im, gm.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
+            send_email_gm(im, im.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
 
 
             messages.success(request, "Antrag erfolgreich erstellt.")
