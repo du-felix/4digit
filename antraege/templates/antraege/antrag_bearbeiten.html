@@ -14,8 +14,34 @@
 
     {% if schulleiter %}
     <h3>Bestätigungen der Lehrer</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Lehrer</th>
+                <th>Status</th>
+                <th>Grund</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bestaetigungen %}
+            <tr>
+                <td>{{ b.name }}</td>
+                <td>
+                    {% if b.response == 'declined' %}
+                        <span class="badge badge-danger">Abgelehnt</span>
+                    {% elif b.response == 'accepted' %}
+                        <span class="badge badge-success">Genehmigt</span>
+                    {% endif %}
+                </td>
+                <td>{{ b.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     <ul>
-        Alle Lehrer Bearbeitungen
+        {% for article in articles %}
+            <li>{{ article.title }}</li>
+        {% endfor %}
     </ul>
     {% else %}
     <h3>Ausfallender Unterricht:</h3>
