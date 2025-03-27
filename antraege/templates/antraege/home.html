@@ -7,7 +7,7 @@
     <h1>Meine Freistellungsanträge</h1>
     
     {% if antraege %}
-        <table class="table table-hover">
+        <table class="user-table">
             <thead>
                 <tr>
                     <th>Titel</th>
@@ -25,11 +25,11 @@
                     <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
                     <td>
                         {% if antrag.status == 'in_progress' %}
-                            <span class="badge bg-warning">In Bearbeitung</span>
+                            <span class="badge badge-warning">In Bearbeitung</span>
                         {% elif antrag.status == 'accepted' %}
-                            <span class="badge bg-success">Genehmigt</span>
+                            <span class="badge badge-success">Genehmigt</span>
                         {% else %}
-                            <span class="badge bg-danger">Abgelehnt</span>
+                            <span class="badge badge-danger">Abgelehnt</span>
                         {% endif %}
                     </td>
                     <td>
