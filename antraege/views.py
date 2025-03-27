@@ -26,6 +26,9 @@ def neuer_antrag(request):
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
         if antrag.is_valid() and formset.is_valid():
+            if len(formset) < 2:
+                messages.error(request, "Es muss mindestens ein Unterricht angegeben werden.")
+                return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "formset": formset})
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
@@ -88,7 +91,9 @@ def antrag_bestaetigen(request, token):
     if request.method == "POST":
         answer = request.POST.get("answer")
         if anfrage.is_principle:
-            return redirect("home")
+            bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+            context["bestaetigungen"] = bestaetigungen
+            return render(request, "antraege/antrag_bearbeiten.html", context)
         elif anfrage.NOT_RESPONDED:
             if answer == "annehmen":
                 anfrage.response = Anfrage.ACCEPTED

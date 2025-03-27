@@ -42,6 +42,10 @@ class Anfrage(models.Model):
     antrag = models.ForeignKey(Antrag, on_delete=models.CASCADE)
     # Momentan wird der Antragssteller die Emaiil eingeben. Es gibt keine klare Zuodnung von Lehrer und Mail.
     email = models.EmailField()
+    @property
+    def name(self):
+        local_part = self.email.split('@')[0]
+        return " ".join(word.capitalize() for word in local_part.split('.'))
     unterricht = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     response = models.CharField(
