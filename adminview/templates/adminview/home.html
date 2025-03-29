@@ -135,11 +135,11 @@
                                 <td>${user.birth_date || ''}</td>
                                 <td>${user.is_active
                                     ? '<span class="badge badge-success">Active</span>'
-                                    : '<span class="badge badge-success">Inactive</span>'}
+                                    : '<span class="badge badge-danger">Inactive</span>'}
                                 </td>
                                 <td>${user.is_staff
-                                    ? '<span class="badge badge-primary">Active</span>'
-                                    : '<span class="badge badge-danger">Inactive</span>'}
+                                    ? '<span class="badge badge-primary">Admin</span>'
+                                    : '<span class="badge badge-secondary">User</span>'}
                                 </td>
                                 <td>
                                     <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Edit</a>
