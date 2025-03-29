@@ -142,7 +142,7 @@
                                     : '<span class="badge badge-danger">Inactive</span>'}
                                 </td>
                                 <td>
-                                    <a href="{% url 'adminview-home' %}${user.id}" class="btn btn-warning">Edit</a>
+                                    <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Edit</a>
                                     <form method="POST" action="{% url 'adminview-home' %}" style="display: inline;">
                                         {% csrf_token %}
                                         <input type="hidden" name="delete_user" value="${user.id}">
