@@ -3,135 +3,7 @@
 {% block title %}Adminview{% endblock %}
 
 {% block extra_head %}
-<style>
-    .container {
-        padding: 20px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    .user-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    .user-table th, .user-table td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #ddd;
-        text-align: left;
-    }
-    .user-table th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-    }
-    .user-table tr:hover {
-        background-color: #f5f5f5;
-    }
-    .badge {
-        padding: 5px 10px;
-        border-radius: 12px;
-        font-size: 0.85em;
-        font-weight: bold;
-        color: white;
-    }
-    .badge-success {
-        background-color: #28a745;
-    }
-    .badge-danger {
-        background-color: #dc3545;
-    }
-    .badge-primary {
-        background-color: #007bff;
-    }
-    .badge-secondary {
-        background-color: #6c757d;
-    }
-    .btn {
-        display: inline-block;
-        padding: 6px 12px;
-        cursor: pointer;
-        border: none;
-        border-radius: 4px;
-        text-decoration: none;
-        font-size: 14px;
-    }
-    .btn-warning {
-        background-color: #ffc107;
-        color: #212529;
-    }
-    .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-    }
-    .btn-primary {
-        background-color: #007bff;
-        color: white;
-    }
-    .messages {
-        list-style: none;
-        padding: 0;
-        margin-bottom: 20px;
-    }
-    .messages li {
-        padding: 10px 15px;
-        margin-bottom: 5px;
-        border-radius: 4px;
-    }
-    .success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    .form-card {
-        background-color: #fff;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 25px;
-        margin: 20px 0;
-    }
-    .form-group {
-        margin-bottom: 15px;
-    }
-    .form-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-    .form-group input, .form-group select {
-        width: 100%;
-        padding: 8px 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 16px;
-    }
-    .form-actions {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 25px;
-    }
-    .text-danger {
-        color: #dc3545;
-        font-size: 14px;
-        margin-top: 5px;
-    }
-    .flex-layout {
-        display: flex;
-        gap: 20px;
-    }
-    .list-panel {
-        flex: 1;
-    }
-    .edit-panel {
-        flex: 1;
-        min-width: 300px;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .flex-layout {
-            flex-direction: column;
-        }
-    }
-</style>
+
 {% endblock %}
 
 {% block content %}
@@ -146,7 +18,12 @@
     </ul>
     {% endif %}
 
-    <a href="{% url 'add_user' %}" class="btn btn-primary">Neuen Nutzer hinzufügen</a>    
+    <a href="{% url 'add_user' %}" class="btn btn-primary">Neuen Nutzer hinzufügen</a>
+
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" id="live-search" name="q" placeholder="Search users..." value="{{ search_query }}">
+    </div>
+
     <div class="flex-layout">
         <!-- User List Panel -->
         <div class="list-panel">
@@ -161,7 +38,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="users-table-body">
                     {% for user in users %}
                     <tr {% if edit_user and edit_user.id == user.id %}style="background-color: #e0f7fa;"{% endif %}>
                         <td>{{ user.email }}</td>
@@ -192,14 +69,14 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" style="text-align: center;">No users found</td>
+                    <tr id="no-results-row">
+                        <td colspan="6" style="text-align: center;">No users found</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Edit User Panel (shown only when editing) -->
         {% if edit_user %}
         <div class="edit-panel">
@@ -228,4 +105,75 @@
         {% endif %}
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('live-search');
+        const tbody = document.getElementById('users-table-body');
+        const noResultsRow = document.getElementById('no-results-row');
+        
+        // Function to update the table based on search query
+        function updateTable() {
+            const query = searchInput.value.trim();
+            
+            // Create AJAX request
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `{% url 'adminview-home' %}?q=${query}`, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    
+                    // Clear current table content
+                    tbody.innerHTML = '';
+                    
+                        response.users.forEach(user => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${user.email}</td>
+                                <td>${user.name}</td>
+                                <td>${user.birth_date || ''}</td>
+                                <td>${user.is_active
+                                    ? '<span class="badge badge-success">Active</span>'
+                                    : '<span class="badge badge-success">Inactive</span>'}
+                                </td>
+                                <td>${user.is_staff
+                                    ? '<span class="badge badge-primary">Active</span>'
+                                    : '<span class="badge badge-danger">Inactive</span>'}
+                                </td>
+                                <td>
+                                    <a href="{% url 'adminview-home' %}${user.id}" class="btn btn-warning">Edit</a>
+                                    <form method="POST" action="{% url 'adminview-home' %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="delete_user" value="${user.id}">
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        if (response.users.length === 0) {
+                            const noResultsRow = document.createElement('tr');
+                             noResultsRow.setAttribute('id', 'no-results-row');
+                             noResultsRow.innerHTML = `<td colspan="6" style="text-align: center;">No users found matching your search.</td>`;
+                            tbody.appendChild(noResultsRow);
+
+                    }
+                }
+            };
+            
+            xhr.send();
+        }
+        
+        // Add event listener for keyup in search input
+        let debounceTimer;
+        searchInput.addEventListener('keyup', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateTable, 300); // 300ms debounce
+        });
+        
+        // Also trigger when clearing the field
+        searchInput.addEventListener('search', updateTable);
+    });
+    </script>
 {% endblock %}

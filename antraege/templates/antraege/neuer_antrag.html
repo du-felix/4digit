@@ -22,24 +22,25 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        <h3>Mentoren:</h3>
         <label for="gm">Gymnasialer Mentor:</label>
-        <input type="text" name="gm" id="gm" required>
+        <input type="text" name="gm" id="gm" placeholder="Email-Adresse Deines GM" required>
+        <p></p>
         <label for="im">Internatsmentor:</label>
-        <input type="text" name="im" id="im" required>
+        <input type="text" name="im" id="im" placeholder="Email-Adresse Deines IM" required>
+        <p></p>
 
         {{ antrag.as_p }}
         <h2>Verpasster Unterricht:</h2>
         {{ unterricht_formset.management_form }}
         <div id="formset-container">
             {% for untericht in unterricht_formset %}
-            <div style="display: flex; flex-direction: row; background-color: grey;flex-wrap: wrap;">
+            <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
                 {{ untericht.as_p }}
             </div>
             {% endfor %}
         </div>
         <div id="empty-form" style="display: none;">
-            <div style="margin-bottom: 12px; background-color: grey;">
+            <div style="margin-bottom: 12px;">
                 {{ unterricht_formset.empty_form.as_p }}
 
                 <button type="button" class="remove-form-btn">Remove</button>

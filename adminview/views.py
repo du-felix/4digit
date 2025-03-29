@@ -7,6 +7,8 @@ from .forms import UserEditForm
 from users.forms import Sign_Up_Form
 from users.models import CustomUser
 from users.views import signup
+from django.db.models import Q
+from django.http import JsonResponse
 
 
 User = get_user_model()
@@ -20,8 +22,31 @@ def validate_afra_email(email):
 
 @login_required
 def adminview(request, user_id=None):
-    users = User.objects.all().order_by('email')
+    search_query = request.GET.get('q', '')
     
+    # Filter users if search query exists, otherwise get all users
+    if search_query:
+        users = User.objects.filter(
+            Q(email__icontains=search_query) | 
+            Q(username__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query)
+        ).order_by('email')
+    else:
+        users = User.objects.all().order_by('email')
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        user_data = []
+        for user in users:
+            user_data.append({
+                'id': user.id,
+                'email': user.email,
+                'name':f"{user.first_name} {user.last_name}",
+                'birth_date': user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '',
+                'is_active': user.is_active,
+                'is_staff': user.is_staff,
+
+            })
+        return JsonResponse({'users': user_data})
     if user_id:
         edit_user = get_object_or_404(User, id=user_id)
         if request.method == 'POST':
@@ -51,7 +76,8 @@ def adminview(request, user_id=None):
     context = {
         'users': users,
         'edit_user': edit_user,
-        'form': form
+        'form': form,
+        'search_query': search_query,
     }
     
     return render(request, 'adminview/home.html', context)
