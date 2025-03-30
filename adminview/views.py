@@ -73,6 +73,35 @@ def adminview(request, user_id=None):
         messages.success(request, f'User {user_to_delete.email} deleted successfully')
         return redirect('adminview-home')
     
+    if request.method == 'POST' and 'action' in request.POST:
+        selected_users = request.POST.getlist('selected_users')
+        action = request.POST.get('action')
+
+        if not selected_users:
+            messages.error(request, 'No users selected')
+            return redirect('adminview-home')
+        
+        if not action:
+            messages.error(request, 'No action selected')
+            return redirect('adminview-home')
+        
+        users = CustomUser.objects.filter(id__in=selected_users)
+
+        if action == 'delete':
+            emails = [user.email for user in users]
+            users.delete()
+            messages.success(request, f'{len(selected_users)} users have been deleted')
+
+        elif action == 'active':
+            users.update(is_active=True)
+            messages.success(request, f'{len(selected_users)} users have been set to active')
+
+        elif action == 'active':
+            users.update(is_active=False)
+            messages.success(request, f'{len(selected_users)} users have been set to inactive')
+
+        return redirect('adminview-home')
+    
     context = {
         'users': users,
         'edit_user': edit_user,
