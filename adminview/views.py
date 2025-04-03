@@ -42,7 +42,6 @@ def adminview(request, user_id=None):
                 'email': user.email,
                 'name':f"{user.first_name} {user.last_name}",
                 'birth_date': user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '',
-                'is_active': user.is_active,
                 'is_staff': user.is_staff,
 
             })
@@ -91,15 +90,6 @@ def adminview(request, user_id=None):
             emails = [user.email for user in users]
             users.delete()
             messages.success(request, f'{len(selected_users)} users have been deleted')
-
-        elif action == 'active':
-            users.update(is_active=True)
-            messages.success(request, f'{len(selected_users)} users have been set to active')
-
-        elif action == 'active':
-            users.update(is_active=False)
-            messages.success(request, f'{len(selected_users)} users have been set to inactive')
-
         return redirect('adminview-home')
     
     context = {

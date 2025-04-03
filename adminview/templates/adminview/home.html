@@ -26,13 +26,7 @@
     <form method="post">
         {% csrf_token %}
         <div class="batch-actions">
-            <select name="action" id="batch-action">
-                <option value="">Select action</option>
-                <option value="delete">Delete selected users</option>
-                <option value="active">Set selected users active</option>
-                <option value="inactive">Set selected users inactive</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Apply</button>
+            <button name="action" type="submit" class="btn btn-primary" value="delete" >Delete selected users</button>
         </div>
 
         <div class="flex-layout">
@@ -44,7 +38,6 @@
                             <th>Email</th>
                             <th>Name</th>
                             <th>Geburtsdatum</th>
-                            <th>Status</th>
                             <th>Role</th>
                             <th>Actions</th>
                         </tr>
@@ -56,13 +49,6 @@
                             <td>{{ user.email }}</td>
                             <td>{{ user.first_name }} {{ user.last_name }}</td>
                             <td>{{ user.birth_date }}</td>
-                            <td>
-                                {% if user.is_active %}
-                                    <span class="badge badge-success">Active</span>
-                                {% else %}
-                                    <span class="badge badge-danger">Inactive</span>
-                                {% endif %}
-                            </td>
                             <td>
                                 {% if user.is_staff %}
                                     <span class="badge badge-primary">Admin</span>
@@ -153,10 +139,6 @@
                                 <td>${user.email}</td>
                                 <td>${user.name}</td>
                                 <td>${user.birth_date || ''}</td>
-                                <td>${user.is_active
-                                    ? '<span class="badge badge-success">Active</span>'
-                                    : '<span class="badge badge-danger">Inactive</span>'}
-                                </td>
                                 <td>${user.is_staff
                                     ? '<span class="badge badge-primary">Admin</span>'
                                     : '<span class="badge badge-secondary">User</span>'}
