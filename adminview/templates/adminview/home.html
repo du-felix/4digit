@@ -61,9 +61,10 @@
     
                                 <form method="post" style="display:inline;">
                                     {% csrf_token %}
-                                    <button type="submit" name="delete_user" value="{{ user.id }}" class="btn btn-danger"
+                                    <button type="submit" name="delete_user" value="{{ user.id }}" class="btn delete-button"
+                                    style="background-color: #dc3545;"
                                     onclick="return confirm('Are your sure you want to delete this user?');">
-                                    Delete
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
                                     </button>
                                 </form>
                             </td>
