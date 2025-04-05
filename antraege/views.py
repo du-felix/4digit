@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
 from .models import Anfrage, Antrag
-from .functions import send_email, send_email_schulleiter, send_email_gm
+from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im
 from django.utils import timezone
 
 # Create your views here.
@@ -45,20 +45,20 @@ def neuer_antrag(request):
                 # Build the absolute URL using the request object
                 absolute_url = request.build_absolute_uri(relative_url)
                 Anfrage.objects.create(antrag=antrag_instance, email=email, token=token, unterricht=unterricht)
-                send_email(email, email.split("@")[0].split(".")[0], request.user.first_name, unterricht, absolute_url)
+                send_email(email, email.split("@")[0].split(".")[0], email.split("@")[0].split(".")[1], request.user.first_name, unterricht, absolute_url)
 
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token)
-            send_email_gm(gm, gm.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
+            send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=im, token=token)
-            send_email_gm(im, im.split("@")[0].split(".")[0], request.user.first_name, absolute_url)
+            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1],request.user.first_name, absolute_url)
 
 
             messages.success(request, "Antrag erfolgreich erstellt.")
