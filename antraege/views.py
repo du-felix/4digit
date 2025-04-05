@@ -109,7 +109,7 @@ def antrag_bestaetigen(request, token):
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
-                    absolute_url = request.build_absolute_url(relative_url)
+                    absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
                 return redirect("home")
