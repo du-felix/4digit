@@ -77,13 +77,13 @@ def neuer_antrag(request):
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token, gm=gm)
-            send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url, gm_first_part, gm_second_part)
+            send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
             
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=im, token=token, im=im)
-            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url, im_first_part, im_second_part)
+            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
             
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
@@ -118,6 +118,35 @@ def antrag_bestaetigen(request, token):
         if anfrage.is_principle:
             bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
             context["bestaetigungen"] = bestaetigungen
+            
+            if request.method == "POST":
+                answer = request.POST.get("answer")
+                if answer == "annehmen":
+                    anfrage.response = Anfrage.ACCEPTED
+                    anfrage.responded_at = timezone.now()
+                    anfrage.save()
+                    antrag.status = 'accepted'
+                    antrag.save()
+                    messages.success(request, "Antrag genehmigt.")
+                    return redirect("home")
+
+                elif answer == "ablehnen":
+                    grund = request.POST.get("grund", '')
+                    if not grund.strip():
+                        messages.error(request, "Grund fehlt")
+                        return render(request, "antraege/antrag_bearbeiten.html", context)
+                    # Handle principal's rejection
+                    anfrage.response = Anfrage.DECLINED
+                    anfrage.responded_at = timezone.now()
+                    anfrage.reason = grund
+                    anfrage.save()
+                    antrag.status = 'declined'
+                    antrag.save()
+                    messages.success(request, "Antrag als Schulleiter abgelehnt.")
+                    return redirect("home")
+                else:
+                    messages.error(request, "Kein Feld ausgewählt")
+            
             return render(request, "antraege/antrag_bearbeiten.html", context)
         elif anfrage.NOT_RESPONDED:
             if answer == "annehmen":

@@ -4,7 +4,7 @@ from .models import Anfrage
 import uuid
 from django.urls import reverse
 
-def send_email(email, vorname, nachname, schueler, unterricht,token_url):
+def send_email(email, vorname, nachname, schueler, unterricht, token_url):
     subject = "Neuer Freistellungsantrag"
     body = f"""Hallo {vorname.capitalize()} {nachname.capitalize()},\n Ihr Schüler {schueler} hat einen Antrag gestellt. Folgende Stunden sind davon betroffen:\n\n
     {unterricht}
