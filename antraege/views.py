@@ -29,48 +29,71 @@ def neuer_antrag(request):
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
-
+            
             lehrer_dict = {}
-            for x in range(len(formset)):
-                unterricht = formset[x]
-                email = unterricht.cleaned_data.get("lehrer_email").lower()
-                if email not in lehrer_dict:
-                    lehrer_dict[email] = unterricht.cleaned_data.get("fach") + "," + str(unterricht.cleaned_data.get("datum")) + ";\n"
-                else:
-                    lehrer_dict[email] += unterricht.fach + "," + str(unterricht.datum) + ";\n"
-
-            for email, unterricht in lehrer_dict.items():
+            for form in formset:
+                if form.cleaned_data:  # Check if form has data
+                    email = form.cleaned_data.get("lehrer_email").lower()
+                    fach = form.cleaned_data.get("fach")
+                    datum = form.cleaned_data.get("datum")
+                    
+                    if email not in lehrer_dict:
+                        lehrer_dict[email] = []
+                    
+                    lehrer_dict[email].append({
+                        "fach": fach,
+                        "datum": datum
+                    })
+            
+            # Process each teacher's entries
+            for email, unterricht_list in lehrer_dict.items():
+                # Create formatted string for email
+                unterricht_text = ""
+                for entry in unterricht_list:
+                    unterricht_text += f"{entry['fach']},{entry['datum']};\n"
+                
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                # Build the absolute URL using the request object
                 absolute_url = request.build_absolute_uri(relative_url)
-                Anfrage.objects.create(antrag=antrag_instance, email=email, token=token, unterricht=unterricht)
-                send_email(email, email.split("@")[0].split(".")[0], email.split("@")[0].split(".")[1], request.user.first_name, unterricht, absolute_url)
-
+                
+                Anfrage.objects.create(
+                    antrag=antrag_instance,
+                    email=email,
+                    token=token,
+                    unterricht=unterricht_text
+                )
+                
+                send_email(
+                    email, 
+                    email.split("@")[0].split(".")[0], 
+                    email.split("@")[0].split(".")[1], 
+                    request.user.first_name, 
+                    unterricht_text, 
+                    absolute_url
+                )
+            
+            # Rest of your code for gm and im remains the same
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-            # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token)
             send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+            
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-            # Build the absolute URL using the request object
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=im, token=token)
-            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1],request.user.first_name, absolute_url)
-
-
+            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+            
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
         else:
             messages.error(request, "Es ist ein Fehler aufgetreten.")
             return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "formset": formset})
-
     else:
         antrag = AntragForm()
         unterricht_formset = UnterrichtFormSet()
-    return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": unterricht_formset})
+        return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": unterricht_formset})
 
 @login_required(login_url="login")
 def user_antraege(request):
