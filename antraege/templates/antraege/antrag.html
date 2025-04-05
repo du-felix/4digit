@@ -41,7 +41,15 @@
             <tbody>
                 {% for anfrage in anfragen %}
                 <tr>
-                    <td>{{ anfrage.unterricht }}</td>
+                    <td>
+                        {% if anfrage.unterricht %}
+                            {{ anfrage.unterricht }} {{anfrage.email}}
+                        {% elif anfrage.gm %}
+                            {{ anfrage.gm }}
+                        {% elif anfrage.im %}
+                            {{ anfrage.im }}
+                        {% endif %}
+                        </td>
                     <td>
                         {% if anfrage.response == 'not_responded' %}
                             <span class="badge badge-secondary">Noch nicht geantwortet</span>

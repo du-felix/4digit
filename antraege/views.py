@@ -25,6 +25,7 @@ def neuer_antrag(request):
         im = request.POST.get("im")
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
+
         if antrag.is_valid() and formset.is_valid():
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
@@ -72,18 +73,17 @@ def neuer_antrag(request):
                     absolute_url
                 )
             
-            # Rest of your code for gm and im remains the same
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
-            Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token)
-            send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+            Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token, gm=gm)
+            send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url, gm_first_part, gm_second_part)
             
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
-            Anfrage.objects.create(antrag=antrag_instance, email=im, token=token)
-            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+            Anfrage.objects.create(antrag=antrag_instance, email=im, token=token, im=im)
+            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url, im_first_part, im_second_part)
             
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
@@ -93,7 +93,9 @@ def neuer_antrag(request):
     else:
         antrag = AntragForm()
         unterricht_formset = UnterrichtFormSet()
-        return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": unterricht_formset})
+        return render(request, "antraege/neuer_antrag.html", {
+            "antrag": antrag,
+            "unterricht_formset": unterricht_formset,})
 
 @login_required(login_url="login")
 def user_antraege(request):
@@ -189,9 +191,20 @@ def antrag_detail(request, antrag_id):
         'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
     }
     
+    gm = None
+    im = None
+    for anfrage in anfragen:
+        if anfrage.gm:  # Wenn es ein GM ist
+            gm = anfrage.email
+        elif anfrage.im:  # Wenn es ein IM ist
+            im = anfrage.email
+
     context = {
         'antrag': antrag,
         'anfragen': anfragen,
-        'anfragen_status': anfragen_status
+        'anfragen_status': anfragen_status,
+        'gm': gm,
+        'im': im,
+
     }
     return render(request, 'antraege/antrag.html', context)
