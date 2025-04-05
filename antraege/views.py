@@ -117,7 +117,7 @@ def antrag_bestaetigen(request, token):
                 grund = request.POST.get("grund",'')
                 if not grund.strip():
                     messages.error(request, "Grund fehlt")
-                    return render(request, "antraege/antrag_bestaetigen.html", context)
+                    return render(request, "antraege/antrag_bearbeiten.html", context)
                 
                 anfrage.response = Anfrage.DECLINED
                 anfrage.responded_at = timezone.now()
@@ -140,7 +140,7 @@ def antrag_bestaetigen(request, token):
                 return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
-                return render(request, "antraege/antrag_bestaetigen.html", context)
+                return render(request, "antraege/antrag_bearbeiten.html", context)
         else:
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
