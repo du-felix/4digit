@@ -20,17 +20,17 @@
         </ul>
         {% endif %}
         <div>
-            <label for="id_username">Email:</label>
+            <label for="id_username">E-Mail:</label>
             <input type="text" name="username" id="id_username" placeholder="vorname.nachname@afra.lernsax.de"  required>
         </div>
         <div>
-            <label for="id_password">Password:</label>
+            <label for="id_password">Passwort:</label>
             <input type="password" name="password" id="id_password" required>
         </div>
-        <button type="submit">Login</button>
+        <button type="submit">Anmelden</button>
     </form>
     <p>Du hast noch keinen Account?</p>
-    <a href="{% url 'signup' %}"><input type="button" value="Signup"></a>
+    <a href="{% url 'signup' %}"><input type="button" value="Registrieren"></a>
 
 </div>
 

@@ -3,7 +3,7 @@
 {% block title %}Signup Page{% endblock %}
 
 {% block content %}
-<h1>Sign Up</h1>
+<h1>Registrieren</h1>
 <form method="post">
     {% csrf_token %}
     {% if form.errors %}
@@ -19,6 +19,6 @@
         </ul>
         {% endif %}
     {{ form.as_p }}
-    <button type="submit">Sign Up</button>
+    <button type="submit">Registrieren</button>
 </form>
 {% endblock %}
