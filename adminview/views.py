@@ -13,18 +13,15 @@ from django.http import JsonResponse
 
 User = get_user_model()
 
-# Add this validator function at the top
 def validate_afra_email(email):
-    """Validate that email ends with @afra.lernsax.de"""
     if not email.endswith('@afra.lernsax.de'):
-        raise ValidationError('Only email addresses ending with @afra.lernsax.de are allowed.')
+        raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
     return email
 
 @login_required
 def adminview(request, user_id=None):
     search_query = request.GET.get('q', '')
     
-    # Filter users if search query exists, otherwise get all users
     if search_query:
         users = User.objects.filter(
             Q(email__icontains=search_query) | 
@@ -51,7 +48,6 @@ def adminview(request, user_id=None):
         if request.method == 'POST':
             form = UserEditForm(request.POST, instance=edit_user)
             if form.is_valid():
-                # Validate email format before saving
                 try:
                     validate_afra_email(form.cleaned_data['email'])
                     form.save()

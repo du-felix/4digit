@@ -2,6 +2,7 @@
 from django import forms
 from .models import Antrag, Anfrage
 from django.forms import formset_factory
+from adminview.views import validate_afra_email
 
 
 class AntragForm(forms.ModelForm):#
@@ -14,7 +15,7 @@ class AntragForm(forms.ModelForm):#
     anfangsdatum = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
     enddatum = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
 class Unterricht(forms.Form):
-    lehrer_email = forms.EmailField(label="Lehrer-Email",widget=forms.TextInput(attrs={'placeholder': 'Email-Adresse des Lehrers'}))
+    lehrer_email = forms.EmailField(validators=[validate_afra_email], label="Lehrer-Email",widget=forms.TextInput(attrs={'placeholder': 'Email-Adresse des Lehrers'}))
     fach = forms.CharField(widget=forms.TextInput(attrs={'placeholder': 'Betroffenes Fach'}))
     datum = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
 

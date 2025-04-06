@@ -5,7 +5,11 @@
 {% block content %}
 <h1>Neuer Freistellungsantrag</h1>
 <div>
-
+  {% if messages %}
+  {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+  {% endfor %}
+{% endif %}
 </div>
 <div>
     <form method="post">
@@ -42,18 +46,13 @@
         <div id="empty-form" style="display: none;">
             <div style="margin-bottom: 12px;">
                 {{ unterricht_formset.empty_form.as_p }}
-
                 <button type="button" class="remove-form-btn">Remove</button>
             </div>
         </div>
         <button type="button" id="addButton" style="margin-bottom: 12px;">Unterricht hinzufügen</button>
         <button type="submit">Antrag stellen</button>
     </form>
-    {% if messages %}
-      {% for message in messages %}
-          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
+
 </div>
  <script>
    document.addEventListener('DOMContentLoaded', function() {

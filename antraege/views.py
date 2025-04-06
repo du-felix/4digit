@@ -7,8 +7,14 @@ from .forms import AntragForm, UnterrichtFormSet
 from .models import Anfrage, Antrag
 from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 # Create your views here.
+def validate_afra_email(email):
+    if not email.endswith('@afra.lernsax.de'):
+        raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
+    return email
+
 @login_required(login_url="login")
 def home(request):
     antraege = Antrag.objects.filter(user=request.user).order_by('-erstellt_am')
@@ -26,6 +32,16 @@ def neuer_antrag(request):
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
 
+        try:
+            validate_afra_email(gm)
+            validate_afra_email(im)
+        except ValidationError:
+            messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
+            return render(request, "antraege/neuer_antrag.html", {
+                "antrag": antrag,
+                "unterricht_formset": formset
+            })
+        
         if antrag.is_valid() and formset.is_valid():
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
@@ -89,13 +105,14 @@ def neuer_antrag(request):
             return redirect("home")
         else:
             messages.error(request, "Es ist ein Fehler aufgetreten.")
-            return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "formset": formset})
+            return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": formset})
     else:
         antrag = AntragForm()
         unterricht_formset = UnterrichtFormSet()
         return render(request, "antraege/neuer_antrag.html", {
             "antrag": antrag,
-            "unterricht_formset": unterricht_formset,})
+            "unterricht_formset": unterricht_formset,
+            })
 
 @login_required(login_url="login")
 def user_antraege(request):
@@ -187,7 +204,7 @@ def antrag_bestaetigen(request, token):
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
-                    absolute_url = request.build_absolute_url(relative_url)
+                    absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
 
                 messages.success(request, "Antrag erfolgreich bearbeitet.")
