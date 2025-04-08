@@ -3,22 +3,24 @@
 {% block title %}Signup Page{% endblock %}
 
 {% block content %}
-<h1>Sign Up</h1>
+<h1>Registrieren</h1>
 <form method="post">
     {% csrf_token %}
-    {% if form.errors %}
-        <ul>
-            {% for field in form %}
-                {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            {% endfor %}
-            {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    {{ form.as_p }}
-    <button type="submit">Sign Up</button>
+    <label for="vorname">Vorname:</label>
+    <input type="text" name="vorname" required>
+
+    <label for="nachname">Nachname:</label>
+    <input type="text" name="nachname" required>
+    
+    <label for="email">Email:</label>
+    <input type="email" name="email" required>
+
+    <label for="birthdate">Geburtsdatum:</label>
+    <input type="date" name="birthdate" required>
+
+    <label for="password">Passwort:</label>
+    <input type="password" name="password" required>
+    
+    <button type="submit">Register</button>
 </form>
 {% endblock %}
