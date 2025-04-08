@@ -33,7 +33,7 @@
                         <span class="badge badge-success">Genehmigt</span>
                     {% endif %}
                 </td>
-                <td>{{ b.reason|default:"Keine" }}</td>
+                <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">{{ b.reason|default:"Keine" }}</td>
             </tr>
             {% endfor %}
         </tbody>

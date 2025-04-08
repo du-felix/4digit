@@ -1,0 +1,14 @@
+{% extends "users/base.html" %}
+
+{% block title %}Signup Page{% endblock %}
+
+{% block content %}
+{% if activated %}
+<h1>Erfolgreich registriert!</h1>
+<a href="{% url 'login' %}"><input type="button" value="Login"></a>
+{% else %}
+<h1>Check deine Emails</h1>
+<p>Klicke auf den Link in der Email und bestätige deine Registrierung.</p>
+<p>Wenn du keine Email erhalten hast, überprüfe deinen Spam-Ordner. Zur Not, registriere dich neu.</p>
+{% endif %}
+{% endblock %}

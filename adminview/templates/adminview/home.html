@@ -18,28 +18,48 @@
     </ul>
     {% endif %}
 
-    <a href="{% url 'add_user' %}" class="btn btn-primary">Neuen Nutzer hinzufügen</a>
 
     <div class="input-group mb-3">
-        <input type="text" class="form-control" id="live-search" name="q" placeholder="Search users..." value="{{ search_query }}">
+        <input type="text" class="form-control" id="live-search" name="q" placeholder="Benutzer suchen..." value="{{ search_query }}">
     </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
     <form method="post">
         {% csrf_token %}
         <div class="batch-actions">
-            <button name="action" type="submit" class="btn btn-primary" value="delete" >Delete selected users</button>
+          <button name="action" type="submit" value="delete" 
+                  onclick="return confirmDeleteUsers()">Ausgewählte Benutzer löschen</button>
         </div>
+      </form>
+      <a href="{% url 'add_user' %}" ><input type="button" value="Neuen Benutzer hinzufügen"></a>
+    </div>
+
+      
+      <script>
+      function confirmDeleteUsers() {
+        // Zähle ausgewählte Checkboxen
+        var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_users"]:checked').length;
+        
+        if (selectedCount === 0) {
+          alert('Bitte wähle mindestens einen Benutzer aus.');
+          return false;
+        }
+        
+        return confirm('Sind Sie sicher, dass Sie ' + selectedCount + ' Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');
+      }
+      </script>
 
         <div class="flex-layout">
             <div class="list-panel">
                 <table class="user-table">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="select-all"></th>
+                            <th></th>
                             <th>Email</th>
                             <th>Name</th>
                             <th>Geburtsdatum</th>
-                            <th>Role</th>
-                            <th>Actions</th>
+                            <th>Rolle</th>
+                            <th>Aktionen</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body">
@@ -51,19 +71,19 @@
                             <td>{{ user.birth_date }}</td>
                             <td>
                                 {% if user.is_staff %}
-                                    <span class="badge badge-primary">Admin</span>
+                                    <span class="badge badge-primary">Administrator</span>
                                 {% else %}
-                                    <span class="badge badge-secondary">User</span>
+                                    <span class="badge badge-secondary">Schüler</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Edit</a>
+                                <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Bearbeiten</a>
     
                                 <form method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <button type="submit" name="delete_user" value="{{ user.id }}" class="btn delete-button"
                                     style="background-color: #dc3545;"
-                                    onclick="return confirm('Are your sure you want to delete this user?');">
+                                    onclick="return confirm('Sind Sie sicher, dass Sie {{user.email}} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');">
                                     <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
                                     </button>
                                 </form>
@@ -87,7 +107,7 @@
         {% if edit_user %}
         <div class="edit-panel">
             <div class="form-card">
-                <h2>Edit User: {{ edit_user.email }}</h2>
+                <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
                 <form method="post">
                     {% csrf_token %}
                     
@@ -102,7 +122,7 @@
                     {% endfor %}
                     
                     <div class="form-actions">
-                        <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
                         <button type="submit" class="btn btn-primary">Änderungen speichern</button>
                     </div>
                 </form>
@@ -145,7 +165,7 @@
                                     : '<span class="badge badge-secondary">User</span>'}
                                 </td>
                                 <td>
-                                    <a href="/user_edit/${user.id}" class="btn btn-warning">Edit</a>
+                                    <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Bearbeiten</a>
                                     <button type="button" class="btn btn-danger delete-btn" style="background-color:#dc3545;"
                                             data-user-id="${user.id}" data-user-email="${user.email}">
                                         <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
@@ -159,7 +179,7 @@
                                 const userId = this.getAttribute('data-user-id');
                                 const userEmail = this.getAttribute('data-user-email');
                                 
-                                if (confirm(`Are you sure you want to delete user ${userEmail}?`)) {
+                                if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig geacht werden.`)) {
                                     const deleteForm = document.getElementById('delete-form');
                                     document.getElementById('delete-user-id').value = userId;
                                     deleteForm.submit();
@@ -194,18 +214,12 @@
 
 {% block extra_js %}
 <script>
-    document.getElementById('select-all').addEventListener('change', function(){
-        const checkboxes = document.querySelectorAll('input[name="selected_users"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userID = this.getAttribute('data-user-id');
             const userEmail = this.getAttribute('data-user-email');
 
-            if (confirm(`Are you sure you want to delete user ${userEmail}?`)) {
+            if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
                 const deleteForm = document.getElementById('delete-form');
                 document.getElementById('delete-user-id').value = userId;
                 deleteForm.submit();
@@ -229,7 +243,7 @@
             return false;
         }
         
-        if (selectedAction === 'delete' && !confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) {
+        if (selectedAction === 'delete' && !confirm(`Sind Sie sicher, dass Sie ${selectedUsers.length} Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
             e.preventDefault();
             return false;
         }

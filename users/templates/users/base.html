@@ -14,7 +14,9 @@
 <body>
     <header style="display: flex; justify-content: center; width: 100%; padding: 16px, 32px;">
         <div>
-            <img src="{% static 'images/logo.png' %}" alt="4digit">
+            <a href="{% url 'login' %}">
+                <img src="{% static 'images/logo.png' %}" alt="4digit">
+            </a>
         </div>
     </header>
     <main style="min-height: 88vh; display: flex; flex-direction: column;">

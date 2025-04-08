@@ -22,7 +22,7 @@
             <a href="{% url 'neuer_antrag' %}"><input type="button" value="Freistellungsantrag stellen"></a>
             <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
-                <button type="submit">Sign Out</button>
+                <button type="submit">Abmelden</button>
             </form>
         </div>
     </header>

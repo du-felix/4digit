@@ -3,7 +3,7 @@
 {% block title %}Adminview{% endblock %}
 
 {% block content %}
-<h2>Neuen Nutzer hinzufügen</h2>
+<h2>Neuen Benutzer hinzufügen</h2>
     <form method="post">
         {% csrf_token %}
         {% for field in form %}
@@ -15,6 +15,6 @@
             {% endif %}
         </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary">Nutzer hinzufügen</button>
+        <button type="submit" class="btn btn-primary">Benutzer hinzufügen</button>
     </form>
 {% endblock %}

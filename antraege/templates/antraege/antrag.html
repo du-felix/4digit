@@ -30,6 +30,7 @@
     <h2>Ausstehende Anfragen</h2>
     {% if anfragen %}
         <p>Ausstehend: {{ anfragen_status.not_responded }}</p>
+<div style=" max-width: 80vw;"></div>
         <table class="user-table">
             <thead>
                 <tr>
@@ -47,7 +48,9 @@
                         {% elif anfrage.gm %}
                             {{ anfrage.gm }}
                         {% elif anfrage.im %}
-                            {{ anfrage.im }}
+                            {{ anfrage.im }} 
+                        {% elif anfrage.is_principle %}
+                            Stefan Weih
                         {% endif %}
                         </td>
                     <td>
@@ -59,7 +62,7 @@
                             <span class="badge badge-danger">Abgelehnt</span>
                         {% endif %}
                     </td>
-                    <td>{{ anfrage.reason|default:"Keine Begründung" }}</td>
+                    <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">{{ anfrage.reason|default:"Keine Begründung" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -67,7 +70,8 @@
     {% else %}
         <p>Keine Anfragen für diesen Antrag.</p>
     {% endif %}
+</div>
     
-    <a href="{% url 'home' %}" class="btn btn-secondary">Zurück zur Liste</a>
+    <a href="{% url 'home' %}" style="display: flex;"><input type="button" value="Zurück zur Liste"></a>
 </div>
 {% endblock %}
