@@ -18,19 +18,22 @@
     </ul>
     {% endif %}
 
-    <a href="{% url 'add_user' %}" ><input type="button" value="Neuen Benutzer hinzufügen"></a>
 
     <div class="input-group mb-3">
         <input type="text" class="form-control" id="live-search" name="q" placeholder="Benutzer suchen..." value="{{ search_query }}">
     </div>
 
+    <div style="display: flex; justify-content: space-between; align-items: center;">
     <form method="post">
         {% csrf_token %}
         <div class="batch-actions">
-          <button name="action" type="submit"  value="delete" 
+          <button name="action" type="submit" value="delete" 
                   onclick="return confirmDeleteUsers()">Ausgewählte Benutzer löschen</button>
         </div>
       </form>
+      <a href="{% url 'add_user' %}" ><input type="button" value="Neuen Benutzer hinzufügen"></a>
+    </div>
+
       
       <script>
       function confirmDeleteUsers() {
@@ -51,7 +54,7 @@
                 <table class="user-table">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="select-all"></th>
+                            <th></th>
                             <th>Email</th>
                             <th>Name</th>
                             <th>Geburtsdatum</th>
@@ -70,7 +73,7 @@
                                 {% if user.is_staff %}
                                     <span class="badge badge-primary">Administrator</span>
                                 {% else %}
-                                    <span class="badge badge-secondary">Benutzer</span>
+                                    <span class="badge badge-secondary">Schüler</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -211,12 +214,6 @@
 
 {% block extra_js %}
 <script>
-    document.getElementById('select-all').addEventListener('change', function(){
-        const checkboxes = document.querySelectorAll('input[name="selected_users"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-    });
     document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function() {
             const userID = this.getAttribute('data-user-id');
