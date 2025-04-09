@@ -66,7 +66,7 @@ def signup(request):
                 last_name=nachname.capitalize(),
                 email=email,
                 password=password,
-                birth_date=geburtsdatum
+                #birth_date=geburtsdatum
             )
             user.is_active = False
             user.save()
