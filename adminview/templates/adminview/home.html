@@ -3,7 +3,6 @@
 {% block title %}Adminview{% endblock %}
 
 {% block extra_head %}
-
 {% endblock %}
 
 {% block content %}
@@ -18,36 +17,34 @@
     </ul>
     {% endif %}
 
-
     <div class="input-group mb-3">
         <input type="text" class="form-control" id="live-search" name="q" placeholder="Benutzer suchen..." value="{{ search_query }}">
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-    <form method="post">
+    <!-- Main form that includes both batch actions and the user table -->
+    <form method="post" id="batch-form">
         {% csrf_token %}
-        <div class="batch-actions">
-          <button name="action" type="submit" value="delete" 
-                  onclick="return confirmDeleteUsers()">Ausgewählte Benutzer löschen</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="batch-actions">
+                <button name="action" type="submit" value="delete" 
+                      onclick="return confirmDeleteUsers()">Ausgewählte Benutzer löschen</button>
+            </div>
+            <a href="{% url 'add_user' %}"><input type="button" value="Neuen Benutzer hinzufügen"></a>
         </div>
-      </form>
-      <a href="{% url 'add_user' %}" ><input type="button" value="Neuen Benutzer hinzufügen"></a>
-    </div>
 
-      
-      <script>
-      function confirmDeleteUsers() {
-        // Zähle ausgewählte Checkboxen
-        var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_users"]:checked').length;
-        
-        if (selectedCount === 0) {
-          alert('Bitte wähle mindestens einen Benutzer aus.');
-          return false;
+        <script>
+        function confirmDeleteUsers() {
+            // Zähle ausgewählte Checkboxen
+            var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_users"]:checked').length;
+            
+            if (selectedCount === 0) {
+                alert('Bitte wähle mindestens einen Benutzer aus.');
+                return false;
+            }
+            
+            return confirm('Sind Sie sicher, dass Sie ' + selectedCount + ' Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');
         }
-        
-        return confirm('Sind Sie sicher, dass Sie ' + selectedCount + ' Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');
-      }
-      </script>
+        </script>
 
         <div class="flex-layout">
             <div class="list-panel">
@@ -79,14 +76,12 @@
                             <td>
                                 <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Bearbeiten</a>
     
-                                <form method="post" style="display:inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" name="delete_user" value="{{ user.id }}" class="btn delete-button"
+                                <button type="button" class="btn delete-btn" 
                                     style="background-color: #dc3545;"
-                                    onclick="return confirm('Sind Sie sicher, dass Sie {{user.email}} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');">
+                                    data-user-id="{{ user.id }}" 
+                                    data-user-email="{{ user.email }}">
                                     <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
-                                    </button>
-                                </form>
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
@@ -97,45 +92,46 @@
                     </tbody>
                 </table>
             </div>
+        </div>
     </form>
 
+    <!-- Hidden form for single user deletion -->
     <form id="delete-form" method="post" style="display:none;">
         {% csrf_token %}
         <input type="hidden" name="delete_user" id="delete-user-id">
     </form>
 
-        {% if edit_user %}
-        <div class="edit-panel">
-            <div class="form-card">
-                <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                    <div class="form-group">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                            <div class="text-danger">{{ field.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    
-                    <div class="form-actions">
-                        <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
-                        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
-                    </div>
-                </form>
-            </div>
+    {% if edit_user %}
+    <div class="edit-panel">
+        <div class="form-card">
+            <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <div class="form-actions">
+                    <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
+                    <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+                </div>
+            </form>
         </div>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('live-search');
         const tbody = document.getElementById('users-table-body');
-        const noResultsRow = document.getElementById('no-results-row');
         
         // Function to update the table based on search query
         function updateTable() {
@@ -153,51 +149,61 @@
                     // Clear current table content
                     tbody.innerHTML = '';
                     
-                        response.users.forEach(user => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td><input type="checkbox" name="selected_users" value="${user.id}"></td>
-                                <td>${user.email}</td>
-                                <td>${user.name}</td>
-                                <td>${user.birth_date || ''}</td>
-                                <td>${user.is_staff
-                                    ? '<span class="badge badge-primary">Admin</span>'
-                                    : '<span class="badge badge-secondary">User</span>'}
-                                </td>
-                                <td>
-                                    <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Bearbeiten</a>
-                                    <button type="button" class="btn btn-danger delete-btn" style="background-color:#dc3545;"
-                                            data-user-id="${user.id}" data-user-email="${user.email}">
-                                        <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
-                                    </button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                        document.querySelectorAll('.delete-btn').forEach(button => {
-                            button.addEventListener('click', function() {
-                                const userId = this.getAttribute('data-user-id');
-                                const userEmail = this.getAttribute('data-user-email');
-                                
-                                if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig geacht werden.`)) {
-                                    const deleteForm = document.getElementById('delete-form');
-                                    document.getElementById('delete-user-id').value = userId;
-                                    deleteForm.submit();
-                                }
-                            });
-                        });
-                        if (response.users.length === 0) {
-                            const noResultsRow = document.createElement('tr');
-                             noResultsRow.setAttribute('id', 'no-results-row');
-                             noResultsRow.innerHTML = `<td colspan="6" style="text-align: center;">No users found matching your search.</td>`;
-                            tbody.appendChild(noResultsRow);
-
+                    response.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="checkbox" name="selected_users" value="${user.id}"></td>
+                            <td>${user.email}</td>
+                            <td>${user.name}</td>
+                            <td>${user.birth_date || ''}</td>
+                            <td>${user.is_staff
+                                ? '<span class="badge badge-primary">Administrator</span>'
+                                : '<span class="badge badge-secondary">Schüler</span>'}
+                            </td>
+                            <td>
+                                <a href="{% url 'user_edit' 0 %}".replace('0', user.id) class="btn btn-warning">Bearbeiten</a>
+                                <button type="button" class="btn delete-btn" style="background-color:#dc3545;"
+                                        data-user-id="${user.id}" data-user-email="${user.email}">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to the newly created delete buttons
+                    setupDeleteButtons();
+                    
+                    if (response.users.length === 0) {
+                        const noResultsRow = document.createElement('tr');
+                        noResultsRow.setAttribute('id', 'no-results-row');
+                        noResultsRow.innerHTML = `<td colspan="6" style="text-align: center;">No users found matching your search.</td>`;
+                        tbody.appendChild(noResultsRow);
                     }
                 }
             };
             
             xhr.send();
         }
+        
+        // Function to set up delete button event listeners
+        function setupDeleteButtons() {
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const userEmail = this.getAttribute('data-user-email');
+                    
+                    if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                        const deleteForm = document.getElementById('delete-form');
+                        document.getElementById('delete-user-id').value = userId;
+                        deleteForm.submit();
+                    }
+                });
+            });
+        }
+        
+        // Set up initial delete buttons
+        setupDeleteButtons();
         
         // Add event listener for keyup in search input
         let debounceTimer;
@@ -209,45 +215,5 @@
         // Also trigger when clearing the field
         searchInput.addEventListener('search', updateTable);
     });
-    </script>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const userID = this.getAttribute('data-user-id');
-            const userEmail = this.getAttribute('data-user-email');
-
-            if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-                const deleteForm = document.getElementById('delete-form');
-                document.getElementById('delete-user-id').value = userId;
-                deleteForm.submit();
-            }
-        });
-    });
-
-    document.getElementById('batch-form').addEventListener('submit', function(e) {
-        const selectedUsers = document.querySelectorAll('input[name="selected_users"]:checked');
-        const selectedAction = document.getElementById('batch-action').value;
-        
-        if (selectedUsers.length === 0) {
-            e.preventDefault();
-            alert('No users selected');
-            return false;
-        }
-        
-        if (!selectedAction) {
-            e.preventDefault();
-            alert('No action selected');
-            return false;
-        }
-        
-        if (selectedAction === 'delete' && !confirm(`Sind Sie sicher, dass Sie ${selectedUsers.length} Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-            e.preventDefault();
-            return false;
-        }
-    });
-
 </script>
 {% endblock %}
