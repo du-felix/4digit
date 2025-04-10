@@ -30,9 +30,9 @@ def adminview(request, user_id=None):
             Q(username__icontains=search_query) |
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query)
-        ).order_by('email')
+        ).order_by('-is_staff', 'email')
     else:
-        users = User.objects.all().order_by('email')
+        users = User.objects.all().order_by('-is_staff', 'email')
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         user_data = []
         for user in users:
