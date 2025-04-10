@@ -136,7 +136,6 @@ def csv(request):
                 
                 io_string = io.StringIO(csv_data)
                 reader = csv.reader(io_string, delimiter=';')
-                next(reader)  # Skip header row
                 
                 success_count = 0
                 error_count = 0
@@ -326,8 +325,7 @@ def lehrer_csv(request):
                 
                 io_string = io.StringIO(csv_data)
                 reader = csv.reader(io_string, delimiter=';')
-                next(reader)  # Skip header row
-                
+
                 success_count = 0
                 error_count = 0
                 errors = []
@@ -387,7 +385,7 @@ def lehrer_csv(request):
                 
                 # Show results
                 if success_count > 0:
-                    messages.success(request, f'Erfoglreich {success_count} Lehrer erstellt')
+                    messages.success(request, f'Erfolgreich {success_count} Lehrer erstellt')
                 if error_count > 0:
                     messages.warning(request, f'{error_count} Lehrer konnten nicht erstellt werden')
                     for error in errors[:10]:  # Show only first 10 errors
