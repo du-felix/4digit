@@ -1,0 +1,179 @@
+{% extends "adminview/base.html" %}
+{% load static %}
+{% block title %}Lehrer{% endblock %}
+
+{% block extra_head %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Lehrer-Liste</h1>
+    
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" id="live-search" name="q" placeholder="Lehrer suchen..." value="{{ search_query }}">
+    </div>
+
+    <!-- Main form that includes both batch actions and the lehrer table -->
+    <form method="post" id="batch-form">
+        {% csrf_token %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="batch-actions">
+                <button name="action" type="submit" value="delete" 
+                      onclick="return confirmDeleteLehrer()">Ausgewählte Lehrer löschen</button>
+            </div>
+            <a href="{% url 'add_lehrer' %}"><input type="button" value="Neuen Lehrer hinzufügen"></a>
+        </div>
+
+        <script>
+        function confirmDeleteLehrer() {
+            // Zähle ausgewählte Checkboxen
+            var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_lehrers"]:checked').length;
+            
+            if (selectedCount === 0) {
+                alert('Bitte wähle mindestens einen Lehrer aus.');
+                return false;
+            }
+            
+            return confirm('Sind Sie sicher, dass Sie ' + selectedCount + ' Lehrer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');
+        }
+        </script>
+
+        <div class="flex-layout">
+            <div class="list-panel">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lehrers-table-body">
+                        {% for lehrer in lehrers %}
+                        <tr {% if edit_lehrer and edit_lehrer.id == lehrer.id %}style="background-color: #e0f7fa;"{% endif %}>
+                            <td><input type="checkbox" name="selected_lehrers" value="{{ lehrer.id }}"></td>
+                            <td>{{ lehrer.email }}</td>
+                            <td>{{ lehrer.name }}</td>
+                            <td>
+                                <a href="{% url 'lehrer_edit' lehrer.id %}" class="btn btn-warning">Bearbeiten</a>
+    
+                                <button type="button" class="btn delete-btn" 
+                                    style="background-color: #dc3545;"
+                                    data-lehrer-id="{{ lehrer.id }}" 
+                                    data-lehrer-email="{{ lehrer.email }}">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr id="no-results-row">
+                            <td colspan="6" style="text-align: center;">Keine Lehrer gefunden</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+
+    <!-- Hidden form for single lehrer deletion -->
+    <form id="delete-form" method="post" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="delete_lehrer" id="delete-lehrer-id">
+    </form>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('live-search');
+        const tbody = document.getElementById('lehrers-table-body');
+        
+        // Function to update the table based on search query
+        function updateTable() {
+            const query = searchInput.value.trim();
+            
+            // Create AJAX request
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `{% url 'lehrer' %}?q=${query}`, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    
+                    // Clear current table content
+                    tbody.innerHTML = '';
+                    
+                    response.lehrers.forEach(lehrer => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><input type="checkbox" name="selected_lehrers" value="${lehrer.id}"></td>
+                            <td>${lehrer.email}</td>
+                            <td>${lehrer.name}</td>
+                            <td>
+                                <a href="/adminview/lehrer/${lehrer.id}/" class="btn btn-warning">Bearbeiten</a>
+                                <button type="button" class="btn delete-btn" style="background-color:#dc3545;"
+                                        data-lehrer-id="${lehrer.id}" data-lehrer-email="${lehrer.email}">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    // Add event listeners to the newly created delete buttons
+                    setupDeleteButtons();
+                    
+                    if (response.lehrers.length === 0) {
+                        const noResultsRow = document.createElement('tr');
+                        noResultsRow.setAttribute('id', 'no-results-row');
+                        noResultsRow.innerHTML = `<td colspan="6" style="text-align: center;">Keine Lehrer anhand dieser Suche gefunden.</td>`;
+                        tbody.appendChild(noResultsRow);
+                    }
+                }
+            };
+            
+            xhr.send();
+        }
+        
+        // Function to set up delete button event listeners
+        function setupDeleteButtons() {
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const lehrerId = this.getAttribute('data-lehrer-id');
+                    const lehrerEmail = this.getAttribute('data-lehrer-email');
+                    
+                    if (confirm(`Sind Sie sicher, dass Sie ${lehrerEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
+                        const deleteForm = document.getElementById('delete-form');
+                        document.getElementById('delete-lehrer-id').value = lehrerId;
+                        deleteForm.submit();
+                    }
+                });
+            });
+        }
+        
+        // Set up initial delete buttons
+        setupDeleteButtons();
+        
+        // Add event listener for keyup in search input
+        let debounceTimer;
+        searchInput.addEventListener('keyup', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(updateTable, 300); // 300ms debounce
+        });
+        
+        // Also trigger when clearing the field
+        searchInput.addEventListener('search', updateTable);
+    });
+</script>
+{% endblock %}

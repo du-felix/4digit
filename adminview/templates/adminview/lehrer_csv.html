@@ -1,7 +1,7 @@
 {% extends 'adminview/base.html' %}
 {% block content %}
 <div class="container">
-    <h1>Benutzer aus CSV-Datei importieren</h1>
+    <h1>Lehrer aus CSV-Datei importieren</h1>
     
     {% if messages %}
     <div class="messages">
@@ -43,7 +43,7 @@ vorname.nachname, vorname.nachname@afra.lernsax.de, Vorname Nachname</pre>
     </div>
     
     <div class="mt-3">
-        <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Zurück zur Benutzerliste</a>
+        <a href="{% url 'lehrer' %}" class="btn btn-secondary">Zurück zur Lehrerliste</a>
     </div>
 </div>
 {% endblock %}
