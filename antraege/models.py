@@ -63,6 +63,16 @@ class Anfrage(models.Model):
 class Fach(models.Model):
     name = models.CharField(max_length=100)
     kuerzel = models.CharField(max_length=10, unique=True)
+    def __str__(self):
+        return self.kuerzel
 class Lehrer(models.Model):
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(null=True, blank=True, unique=True)
     name = models.CharField(max_length=100, null=True, blank=True)
+    def __str__(self):
+        return self.name
+
+class Zaehler(models.Model):
+    schueler = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    lehrer = models.ForeignKey(Lehrer, on_delete=models.CASCADE)
+    fach = models.ForeignKey(Fach, on_delete=models.CASCADE)
+    zaehler = models.IntegerField(default=0)

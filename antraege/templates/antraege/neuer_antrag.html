@@ -37,18 +37,22 @@
         <h2>Verpasster Unterricht:</h2>
         {{ unterricht_formset.management_form }}
         <div id="formset-container">
-            {% for untericht in unterricht_formset %}
+            {% for unterricht in unterricht_formset %}
             <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
-                {{ untericht.as_p }}
+                {{ unterricht.fach.label_tag }} {{ unterricht.fach }}
+                {{ unterricht.lehrer.label_tag }} {{ unterricht.lehrer }}
+                {{ unterricht.datum.label_tag }} {{ unterricht.datum }}
             </div>
             {% endfor %}
         </div>
         <div id="empty-form" style="display: none;">
-            <div style="margin-bottom: 12px;">
-                {{ unterricht_formset.empty_form.as_p }}
-                <button type="button" class="remove-form-btn">Remove</button>
-            </div>
-        </div>
+          <div style="margin-bottom: 12px;">
+              {{ unterricht_formset.empty_form.fach.label_tag }} {{ unterricht_formset.empty_form.fach }}
+              {{ unterricht_formset.empty_form.lehrer.label_tag }} {{ unterricht_formset.empty_form.lehrer }}
+              {{ unterricht_formset.empty_form.datum.label_tag }} {{ unterricht_formset.empty_form.datum }}
+              <button type="button" class="remove-form-btn">Remove</button>
+          </div>
+      </div>
         <button type="button" id="addButton" style="margin-bottom: 12px;">Unterricht hinzufügen</button>
         <button type="submit">Antrag stellen</button>
     </form>

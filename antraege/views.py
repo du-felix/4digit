@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
-from .models import Anfrage, Antrag
+from .models import Anfrage, Antrag, Zaehler
 from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -50,15 +50,24 @@ def neuer_antrag(request):
             lehrer_dict = {}
             for form in formset:
                 if form.cleaned_data:  # Check if form has data
-                    email = form.cleaned_data.get("lehrer_email").lower()
-                    fach = form.cleaned_data.get("fach")
+                    lehrer_id = form.cleaned_data.get("lehrer")
+                    fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
                     
-                    if email not in lehrer_dict:
+                    if lehrer_id.email not in lehrer_dict:
                         lehrer_dict[email] = []
+
+                    zaehler, _ = Zaehler.objects.get_or_create(
+                        schueler=request.user,
+                        lehrer=lehrer_id,
+                        fach=fach_id
+                    )    
+                    zaehler.zaehler += 1
+                    zaehler.save()
+                    email = lehrer_id.email
                     
                     lehrer_dict[email].append({
-                        "fach": fach,
+                        "fach": fach_id.kuerzel,
                         "datum": datum
                     })
             
