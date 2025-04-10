@@ -59,3 +59,7 @@ class Anfrage(models.Model):
     responded_at = models.DateTimeField(null=True, blank=True)
     is_principle = models.BooleanField(default=False, blank=True)
     token = models.CharField(max_length=64, unique=True, blank=True, null=True)
+
+class Fach(models.Model):
+    name = models.CharField(max_length=100)
+    kuerzel = models.CharField(max_length=10, unique=True)
