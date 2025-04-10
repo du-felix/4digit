@@ -60,17 +60,17 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.lernsax.de'
-EMAIL_PORT = 465  # or 587, depending on your configuration
-EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
-EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
-EMAIL_HOST_PASSWORD = 'Freistellung123!'
-DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#EMAIL_HOST = 'mail.lernsax.de'
+#EMAIL_PORT = 465  # or 587, depending on your configuration
+#EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
+#EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
+#EMAIL_HOST_PASSWORD = 'Freistellung123!'
+#DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
 
-#EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-#EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
-#sender = settings.DEFAULT_FROM_EMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
+sender = settings.DEFAULT_FROM_EMAIL
 
 AUTH_USER_MODEL = 'users.CustomUser'
 

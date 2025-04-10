@@ -1,0 +1,31 @@
+{% extends "adminview/base.html" %}
+{% load static %}
+
+{% block title %}Lehrer bearbeiten{% endblock %}
+{% block content %}
+{% if edit_lehrer %}
+<div class="edit-panel">
+    <div class="form-card">
+        <h2>Lehrer bearbeiten: {{ edit_lehrer.name }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="form-actions">
+                <a href="{% url 'lehrer' %}" class="btn btn-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
