@@ -1,0 +1,31 @@
+{% extends "adminview/base.html" %}
+{% load static %}
+
+{% block title %}Benutzerprofil bearbeiten{% endblock %}
+{% block content %}
+{% if edit_user %}
+<div class="edit-panel">
+    <div class="form-card">
+        <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="text-danger">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="form-actions">
+                <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

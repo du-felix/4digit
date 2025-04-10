@@ -54,7 +54,7 @@
                             <th></th>
                             <th>Email</th>
                             <th>Name</th>
-                            <th>Geburtsdatum</th>
+                            <!--<th>Geburtsdatum</th>-->
                             <th>Rolle</th>
                             <th>Aktionen</th>
                         </tr>
@@ -65,7 +65,7 @@
                             <td><input type="checkbox" name="selected_users" value="{{ user.id }}"></td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.first_name }} {{ user.last_name }}</td>
-                            <td>{{ user.birth_date }}</td>
+                            {% comment %} <td>{{ user.birth_date }}</td> {% endcomment %}
                             <td>
                                 {% if user.is_staff %}
                                     <span class="badge badge-primary">Administrator</span>
@@ -86,7 +86,7 @@
                         </tr>
                         {% empty %}
                         <tr id="no-results-row">
-                            <td colspan="6" style="text-align: center;">No users found</td>
+                            <td colspan="6" style="text-align: center;">Keine Benutzer gefunden</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -101,31 +101,6 @@
         <input type="hidden" name="delete_user" id="delete-user-id">
     </form>
 
-    {% if edit_user %}
-    <div class="edit-panel">
-        <div class="form-card">
-            <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
-            <form method="post">
-                {% csrf_token %}
-                
-                {% for field in form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger">{{ field.errors }}</div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                
-                <div class="form-actions">
-                    <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
-                    <button type="submit" class="btn btn-primary">Änderungen speichern</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 <script>
@@ -155,13 +130,13 @@
                             <td><input type="checkbox" name="selected_users" value="${user.id}"></td>
                             <td>${user.email}</td>
                             <td>${user.name}</td>
-                            <td>${user.birth_date || ''}</td>
+                    {% comment %} <td>${user.birth_date || ''}</td> {% endcomment %}
                             <td>${user.is_staff
                                 ? '<span class="badge badge-primary">Administrator</span>'
                                 : '<span class="badge badge-secondary">Schüler</span>'}
                             </td>
                             <td>
-                                <a href="{% url 'user_edit' 0 %}".replace('0', user.id) class="btn btn-warning">Bearbeiten</a>
+                                <a href="/adminview/users/${user.id}/" class="btn btn-warning">Bearbeiten</a>
                                 <button type="button" class="btn delete-btn" style="background-color:#dc3545;"
                                         data-user-id="${user.id}" data-user-email="${user.email}">
                                     <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">

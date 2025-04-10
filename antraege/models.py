@@ -59,3 +59,7 @@ class Anfrage(models.Model):
     responded_at = models.DateTimeField(null=True, blank=True)
     is_principle = models.BooleanField(default=False, blank=True)
     token = models.CharField(max_length=64, unique=True, blank=True, null=True)
+
+    class Lehrer(models.Model):
+        email = models.EmailField(null=True, blank=True)
+        name = models.CharField(max_length=100, null=True, blank=True)
