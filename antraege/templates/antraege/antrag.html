@@ -34,35 +34,47 @@
         <table class="user-table">
             <thead>
                 <tr>
+                    <th>Lehrer</th>
                     <th>Unterricht</th>
+                    <th>Datum</th>
                     <th>Status</th>
                     <th>Begründung</th>
                 </tr>
             </thead>
             <tbody>
-                {% for anfrage in anfragen %}
+                {% for lehrer, unterricht, datum, status, grund in rows %}
                 <tr>
                     <td>
-                        {% if anfrage.unterricht %}
-                            {{ anfrage.unterricht }} {{anfrage.email}}
-                        {% elif anfrage.gm %}
-                            {{ anfrage.gm }}
-                        {% elif anfrage.im %}
-                            {{ anfrage.im }} 
-                        {% elif anfrage.is_principle %}
-                            Stefan Weih
+                        {% if lehrer %}
+                            {{ lehrer }}
                         {% endif %}
-                        </td>
+                    </td>
                     <td>
-                        {% if anfrage.response == 'not_responded' %}
-                            <span class="badge badge-secondary">Noch nicht geantwortet</span>
-                        {% elif anfrage.response == 'accepted' %}
+                        {% if unterricht %}
+                            {{ unterricht }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if datum %}
+                            {{ datum }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if status == 'Ausstehend' %}
+                            <span class="badge badge-secondary">Ausstehend</span>
+                        {% elif status == 'Genehmigt' %}
                             <span class="badge badge-success">Genehmigt</span>
                         {% else %}
                             <span class="badge badge-danger">Abgelehnt</span>
                         {% endif %}
                     </td>
-                    <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">{{ anfrage.reason|default:"Keine Begründung" }}</td>
+                    <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">
+                        {% if grund %}
+                            {{ grund }}
+                        {% else %}
+                            Keine Begründung
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

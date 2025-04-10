@@ -12,10 +12,23 @@ class Antrag(models.Model):
         (STATUS_DECLINED, 'Declined'),
     ]
 
+    KLASSE_CHOICES = [
+        ("7", "7"),
+        ("8", "8"),
+        ("9a", "9a"),
+        ("9b", "9b"),
+        ("9c", "9c"),
+        ("10a", "10a"),
+        ("10b", "10b"),
+        ("10c", "10c"),
+        ("11", "11"),
+        ("12", "12"),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    titel = models.CharField(max_length=100)
+    titel = models.CharField(max_length=50)
     grund = models.TextField()
-    klasse = models.CharField(max_length=100)
+    klasse = models.CharField(max_length=3, choices=KLASSE_CHOICES)
     erstellt_am = models.DateTimeField(auto_now_add=True)
     anfangsdatum = models.DateField()
     enddatum = models.DateField()
@@ -76,3 +89,4 @@ class Zaehler(models.Model):
     lehrer = models.ForeignKey(Lehrer, on_delete=models.CASCADE)
     fach = models.ForeignKey(Fach, on_delete=models.CASCADE)
     zaehler = models.IntegerField(default=0)
+    temp = models.IntegerField(default=0)

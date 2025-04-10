@@ -4,10 +4,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
-from .models import Anfrage, Antrag, Zaehler
+from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach
 from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 
 # Create your views here.
 def validate_afra_email(email):
@@ -27,33 +28,32 @@ def home(request):
 @login_required(login_url="login")
 def neuer_antrag(request):
     if request.method == "POST":
-        gm = request.POST.get("gm")
-        im = request.POST.get("im")
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
-
-        try:
-            validate_afra_email(gm)
-            validate_afra_email(im)
-        except ValidationError:
-            messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
-            return render(request, "antraege/neuer_antrag.html", {
-                "antrag": antrag,
-                "unterricht_formset": formset
-            })
+        while False:
+            try:
+                validate_afra_email(gm)
+                validate_afra_email(im)
+            except ValidationError:
+                messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
+                return render(request, "antraege/neuer_antrag.html", {
+                    "antrag": antrag,
+                    "unterricht_formset": formset
+                })
         
         if antrag.is_valid() and formset.is_valid():
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
-            
+            gm = antrag.cleaned_data.get("gm").email
+            im = antrag.cleaned_data.get("im").email
             lehrer_dict = {}
             for form in formset:
                 if form.cleaned_data:  # Check if form has data
                     lehrer_id = form.cleaned_data.get("lehrer")
                     fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
-                    
+                    email = lehrer_id.email
                     if lehrer_id.email not in lehrer_dict:
                         lehrer_dict[email] = []
 
@@ -62,9 +62,9 @@ def neuer_antrag(request):
                         lehrer=lehrer_id,
                         fach=fach_id
                     )    
-                    zaehler.zaehler += 1
+                    zaehler.temp += 1
                     zaehler.save()
-                    email = lehrer_id.email
+
                     
                     lehrer_dict[email].append({
                         "fach": fach_id.kuerzel,
@@ -154,6 +154,7 @@ def antrag_bestaetigen(request, token):
     if anfrage.is_principle:
         bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
         context["bestaetigungen"] = bestaetigungen
+        context["fehlzeiten"] = Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0
     
     # Handle form submission
     if request.method == "POST":
@@ -167,6 +168,16 @@ def antrag_bestaetigen(request, token):
                 anfrage.save()
                 antrag.status = 'accepted'
                 antrag.save()
+                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                for bestaetigung in bestaetigungen:
+                    obj = Zaehler.objects.get(
+                        schueler=antrag.user,
+                        lehrer=bestaetigung.email,
+                        fach=bestaetigung.unterricht.split(",")[0]
+                    )
+                    obj.zaehler += obj.temp
+                    obj.temp = 0
+                    obj.save()
                 messages.success(request, "Antrag genehmigt.")
                 return redirect("home")
             elif answer == "ablehnen":
@@ -174,7 +185,15 @@ def antrag_bestaetigen(request, token):
                 if not grund.strip():
                     messages.error(request, "Grund fehlt")
                     return render(request, "antraege/antrag_bearbeiten.html", context)
-                
+                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                for bestaetigung in bestaetigungen:
+                    obj = Zaehler.objects.get(
+                        schueler=antrag.user,
+                        lehrer=bestaetigung.email,
+                        fach=bestaetigung.unterricht.split(",")[0]
+                    )
+                    obj.temp = 0
+                    obj.save()
                 anfrage.response = Anfrage.DECLINED
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
@@ -264,20 +283,87 @@ def antrag_detail(request, antrag_id):
         'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
     }
     
-    gm = None
-    im = None
+    unterricht = []
+    daten = []
+    lehrer = []
+    responses = []
+    gruende = []
+
     for anfrage in anfragen:
         if anfrage.gm:  # Wenn es ein GM ist
             gm = anfrage.email
+            gm = Lehrer.objects.get(email=gm).name
+            if anfrage.response == Anfrage.ACCEPTED:
+                gm_response = "Genehmigt"
+            elif anfrage.response == Anfrage.DECLINED:
+                gm_response = "Abgelehnt"
+            else:
+                gm_response = "Ausstehend"
+            gm_grund = anfrage.reason
         elif anfrage.im:  # Wenn es ein IM ist
             im = anfrage.email
+            im = Lehrer.objects.get(email=im).name
+            if anfrage.response == Anfrage.ACCEPTED:
+                im_response = "Genehmigt"
+            elif anfrage.response == Anfrage.DECLINED:
+                im_response = "Abgelehnt"
+            else:
+                im_response = "Ausstehend"
+            im_grund = anfrage.reason
+        elif anfrage.is_principle:  # Wenn es ein Schulleiter ist
+            schulleiter = "Stefan Weih"
+            schulleiter_datum = anfrage.created
+            schulleiter_response = anfrage.response
+            schulleiter_grund = anfrage.reason
+        else:
+            stunden = anfrage.unterricht.strip("\n").split(";")[:-1]
+            for stunde in stunden:
+                elements = stunde.strip("\n").split(",")
+                daten.append(transform_date(elements[1]))
+                unterricht.append(Fach.objects.get(kuerzel=elements[0]).name)
+                lehrer.append(Lehrer.objects.get(email=anfrage.email).name)
+                gruende.append(anfrage.reason)
+                if anfrage.response == Anfrage.ACCEPTED:
+                    responses.append("Genehmigt")
+                elif anfrage.response == Anfrage.DECLINED:
+                    responses.append("Abgelehnt")
+                else:
+                    responses.append("Ausstehend")
+    lehrer.append(im)
+    lehrer.append(gm)
+    daten.append(" ")
+    daten.append(" ")
+    unterricht.append("IM")
+    unterricht.append("GM")
+    responses.append(im_response)
+    responses.append(gm_response)
+    gruende.append(im_grund)
+    gruende.append(gm_grund)
+    try:
+        lehrer.append(schulleiter)
+        responses.append(schulleiter_response)
+        gruende.append(schulleiter_grund)
+        daten.append(transform_datetime(schulleiter_datum))
+        unterricht.append("Schulleiter")
+    except Exception as e:
+        pass
+
+    rows = zip(lehrer, unterricht, daten, responses, gruende)
 
     context = {
         'antrag': antrag,
         'anfragen': anfragen,
         'anfragen_status': anfragen_status,
-        'gm': gm,
-        'im': im,
-
+        "rows": rows
     }
     return render(request, 'antraege/antrag.html', context)
+
+def transform_date(date):
+    elements = date.strip("\n").split("-")
+    return elements[2] + "." + elements[1] + "." + elements[0]
+def transform_datetime(datetime):
+    elements = datetime.strip("\n").split(" ")
+    date = elements[0]
+    time = elements[1]
+    date_elements = date.strip("\n").split("-")
+    return date_elements[2] + "+" + date_elements[1] + "." + date_elements[0]
