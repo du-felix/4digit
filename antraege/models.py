@@ -63,3 +63,6 @@ class Anfrage(models.Model):
 class Fach(models.Model):
     name = models.CharField(max_length=100)
     kuerzel = models.CharField(max_length=10, unique=True)
+class Lehrer(models.Model):
+    email = models.EmailField(null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)

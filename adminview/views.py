@@ -38,28 +38,11 @@ def adminview(request, user_id=None):
                 'id': user.id,
                 'email': user.email,
                 'name':f"{user.first_name} {user.last_name}",
-                'birth_date': user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '',
+                #'birth_date': user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '',
                 'is_staff': user.is_staff,
 
             })
         return JsonResponse({'users': user_data})
-    if user_id:
-        edit_user = get_object_or_404(User, id=user_id)
-        if request.method == 'POST':
-            form = UserEditForm(request.POST, instance=edit_user)
-            if form.is_valid():
-                try:
-                    validate_afra_email(form.cleaned_data['email'])
-                    form.save()
-                    messages.success(request, f"User {edit_user.email} updated successfully")
-                    return redirect('adminview-home')
-                except ValidationError as e:
-                    form.add_error('email', e)
-        else:
-            form = UserEditForm(instance=edit_user)
-    else:
-        edit_user = None
-        form = Sign_Up_Form()
 
     if request.method == 'POST' and 'delete_user' in request.POST:
         user_id_to_delete = request.POST.get('delete_user')
@@ -91,7 +74,6 @@ def adminview(request, user_id=None):
     context = {
         'users': users,
         'edit_user': edit_user,
-        'form': form,
         'search_query': search_query,
     }
     
@@ -113,6 +95,27 @@ def adding(request):
         form = Sign_Up_Form()
     
     return render(request, 'adminview/add_user.html', {'form': form})
+
+@login_required
+def edit_user(request, user_id=None):
+    if user_id:
+        edit_user = get_object_or_404(User, id=user_id)
+        if request.method == 'POST':
+            form = UserEditForm(request.POST, instance=edit_user)
+            if form.is_valid():
+                try:
+                    validate_afra_email(form.cleaned_data['email'])
+                    form.save()
+                    messages.success(request, f"User {edit_user.email} updated successfully")
+                    return redirect('adminview-home')
+                except ValidationError as e:
+                    form.add_error('email', e)
+        else:
+            form = UserEditForm(instance=edit_user)
+    else:
+        edit_user = None
+        form = Sign_Up_Form()
+    return render(request, 'edit_user.html', {'form': form, 'edit_user': edit_user})
 
 @login_required
 def csv(request):
@@ -142,13 +145,11 @@ def csv(request):
                 
                 for row in reader:
                     try:
-                        # Assuming CSV columns: email, password, first_name, last_name, birth_date
-                        if len(row) >= 5:
-                            email = row[0].strip()
-                            password = row[1].strip()
-                            first_name = row[2].strip()
-                            last_name = row[3].strip()
-                            birth_date_str = row[4].strip()
+                        if len(row) >= 3:
+                            email = row[1].strip()
+                            name_parts = row[2].strip().split (' ', 1)
+                            first_name = name_parts[0]
+                            last_name = name_parts[1] if len(name_parts) > 1 else ''
                             
                             # Validate email format
                             try:
@@ -157,30 +158,28 @@ def csv(request):
                                 errors.append(f"Invalid email for row {email}: {str(e)}")
                                 error_count += 1
                                 continue
-                            
-                            # Parse birth date with multiple format support
-                            birth_date = None
-                            if birth_date_str:
-                                # Try multiple date formats
-                                date_formats = [
-                                    '%Y-%m-%d',  # YYYY-MM-DD
-                                    '%d.%m.%Y',  # DD.MM.YYYY
-                                    '%d.%m.%y',  # DD.MM.YY (Excel default)
-                                    '%m/%d/%Y',  # MM/DD/YYYY
-                                    '%m/%d/%y',  # MM/DD/YY
-                                ]
+
+                            #birth_date = None
+                            #if birth_date_str:
+                                #date_formats = [
+                                    #'%Y-%m-%d',  # YYYY-MM-DD
+                                    #'%d.%m.%Y',  # DD.MM.YYYY
+                                    #'%d.%m.%y',  # DD.MM.YY (Excel default)
+                                    #'%m/%d/%Y',  # MM/DD/YYYY
+                                    #'%m/%d/%y',  # MM/DD/YY
+                                #]
                                 
-                                for date_format in date_formats:
-                                    try:
-                                        birth_date = datetime.strptime(birth_date_str, date_format).date()
-                                        break  # Exit the loop if successful
-                                    except ValueError:
-                                        continue
+                                #for date_format in date_formats:
+                                    #try:
+                                        #birth_date = datetime.strptime(birth_date_str, date_format).date()
+                                        #break  # Exit the loop if successful
+                                    #except ValueError:
+                                        #continue
                                 
-                                if birth_date is None:
-                                    errors.append(f"Invalid date format for {email}: {birth_date_str}")
-                                    error_count += 1
-                                    continue
+                                #if birth_date is None:
+                                    #errors.append(f"Invalid date format for {email}: {birth_date_str}")
+                                    #error_count += 1
+                                    #continue
                             
                             # Check if user already exists
                             if not CustomUser.objects.filter(email=email).exists():
@@ -188,9 +187,7 @@ def csv(request):
                                     email=email,
                                     first_name=first_name,
                                     last_name=last_name,
-                                    birth_date=birth_date
                                 )
-                                user.set_password(password)
                                 user.save()
                                 success_count += 1
                             else:
