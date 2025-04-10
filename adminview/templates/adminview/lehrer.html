@@ -35,7 +35,7 @@
         <script>
         function confirmDeleteLehrer() {
             // Zähle ausgewählte Checkboxen
-            var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_lehrer"]:checked').length;
+            var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_lehrers"]:checked').length;
             
             if (selectedCount === 0) {
                 alert('Bitte wähle mindestens einen Lehrer aus.');
@@ -117,7 +117,7 @@
                     response.lehrers.forEach(lehrer => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td><input type="checkbox" name="selected_lehrer" value="${lehrer.id}"></td>
+                            <td><input type="checkbox" name="selected_lehrers" value="${lehrer.id}"></td>
                             <td>${lehrer.email}</td>
                             <td>${lehrer.name}</td>
                             <td>
@@ -151,6 +151,7 @@
             document.querySelectorAll('.delete-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const lehrerId = this.getAttribute('data-lehrer-id');
+                    const lehrerEmail = this.getAttribute('data-lehrer-email');
                     
                     if (confirm(`Sind Sie sicher, dass Sie ${lehrerEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
                         const deleteForm = document.getElementById('delete-form');

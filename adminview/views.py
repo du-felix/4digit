@@ -50,7 +50,7 @@ def adminview(request, user_id=None):
         user_id_to_delete = request.POST.get('delete_user')
         user_to_delete = get_object_or_404(User, id=user_id_to_delete)
         user_to_delete.delete()
-        messages.success(request, f'User {user_to_delete.email} deleted successfully')
+        messages.success(request, f'Benutzer {user_to_delete.email} erfolgreich gelöscht')
         return redirect('adminview-home')
     
     if request.method == 'POST' and 'action' in request.POST:
@@ -58,11 +58,7 @@ def adminview(request, user_id=None):
         action = request.POST.get('action')
 
         if not selected_users:
-            messages.error(request, 'No users selected')
-            return redirect('adminview-home')
-        
-        if not action:
-            messages.error(request, 'No action selected')
+            messages.error(request, 'Keine Benutzer ausgewählt')
             return redirect('adminview-home')
         
         users = CustomUser.objects.filter(id__in=selected_users)
@@ -70,7 +66,7 @@ def adminview(request, user_id=None):
         if action == 'delete':
             emails = [user.email for user in users]
             users.delete()
-            messages.success(request, f'{len(selected_users)} users have been deleted')
+            messages.success(request, f'{len(selected_users)} Benutzer wurden gelöscht')
         return redirect('adminview-home')
     
     context = {
