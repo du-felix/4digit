@@ -13,7 +13,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     default-libmysqlclient-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
 
 # 5. Copy the requirements.txt file into the container
 COPY requirements.txt /app/
