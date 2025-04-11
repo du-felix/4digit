@@ -1,5 +1,5 @@
 # 1. Choose a Base Image: Use an official Python image (using the slim variant for a smaller image)
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 # 2. Set environment variables to prevent Python from buffering output and writing .pyc files.
 ENV PYTHONUNBUFFERED=1
@@ -23,9 +23,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # 7. Copy the rest of your Django project code into the container
 COPY . /app/
-
-# 8. (Optional) Collect static files. (If you need this in production, otherwise you can omit.)
-RUN python manage.py collectstatic --noinput
 
 # 9. Expose the port your Django application uses (here, it's 8000)
 EXPOSE 8000

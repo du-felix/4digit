@@ -60,9 +60,9 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if status == 'Ausstehend' %}
+                        {% if status == 'not_responded' %}
                             <span class="badge badge-secondary">Ausstehend</span>
-                        {% elif status == 'Genehmigt' %}
+                        {% elif status == 'accepted' %}
                             <span class="badge badge-success">Genehmigt</span>
                         {% else %}
                             <span class="badge badge-danger">Abgelehnt</span>

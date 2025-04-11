@@ -170,15 +170,17 @@ def antrag_bestaetigen(request, token):
                 antrag.save()
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
-                    obj = Zaehler.objects.get(
-                        schueler=antrag.user,
-                        lehrer=bestaetigung.email,
-                        fach=bestaetigung.unterricht.split(",")[0]
-                    )
-                    obj.zaehler += obj.temp
-                    obj.temp = 0
-                    obj.save()
-                messages.success(request, "Antrag genehmigt.")
+                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    for stunde in stunden:
+                        print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
+                        obj = Zaehler.objects.get(
+                            schueler=antrag.user,
+                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
+                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                        )
+                        obj.zaehler += obj.temp
+                        obj.temp = 0
+                        obj.save()
                 return redirect("home")
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
@@ -187,20 +189,21 @@ def antrag_bestaetigen(request, token):
                     return render(request, "antraege/antrag_bearbeiten.html", context)
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
-                    obj = Zaehler.objects.get(
-                        schueler=antrag.user,
-                        lehrer=bestaetigung.email,
-                        fach=bestaetigung.unterricht.split(",")[0]
-                    )
-                    obj.temp = 0
-                    obj.save()
+                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    for stunde in stunden:
+                        obj = Zaehler.objects.get(
+                            schueler=antrag.user,
+                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
+                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                        )
+                        obj.temp = 0
+                        obj.save()
                 anfrage.response = Anfrage.DECLINED
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
                 anfrage.save()
                 antrag.status = 'declined'
                 antrag.save()
-                messages.success(request, "Antrag als Schulleiter abgelehnt.")
                 return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
@@ -226,8 +229,6 @@ def antrag_bestaetigen(request, token):
                     Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
-                
-                messages.success(request, "Antrag erfolgreich bearbeitet.")
                 return redirect("home")
                 
             elif answer == "ablehnen":
@@ -255,8 +256,6 @@ def antrag_bestaetigen(request, token):
                     Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
-
-                messages.success(request, "Antrag erfolgreich bearbeitet.")
                 return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
@@ -290,27 +289,19 @@ def antrag_detail(request, antrag_id):
     gruende = []
 
     for anfrage in anfragen:
+        print(anfrage.response)
         if anfrage.gm:  # Wenn es ein GM ist
             gm = anfrage.email
             gm = Lehrer.objects.get(email=gm).name
-            if anfrage.response == Anfrage.ACCEPTED:
-                gm_response = "Genehmigt"
-            elif anfrage.response == Anfrage.DECLINED:
-                gm_response = "Abgelehnt"
-            else:
-                gm_response = "Ausstehend"
+            gm_response = anfrage.response
             gm_grund = anfrage.reason
         elif anfrage.im:  # Wenn es ein IM ist
             im = anfrage.email
             im = Lehrer.objects.get(email=im).name
-            if anfrage.response == Anfrage.ACCEPTED:
-                im_response = "Genehmigt"
-            elif anfrage.response == Anfrage.DECLINED:
-                im_response = "Abgelehnt"
-            else:
-                im_response = "Ausstehend"
+            im_response = anfrage.response
             im_grund = anfrage.reason
-        elif anfrage.is_principle:  # Wenn es ein Schulleiter ist
+        elif anfrage.is_principle: 
+     # Wenn es ein Schulleiter ist
             schulleiter = "Stefan Weih"
             schulleiter_datum = anfrage.created
             schulleiter_response = anfrage.response
@@ -323,12 +314,7 @@ def antrag_detail(request, antrag_id):
                 unterricht.append(Fach.objects.get(kuerzel=elements[0]).name)
                 lehrer.append(Lehrer.objects.get(email=anfrage.email).name)
                 gruende.append(anfrage.reason)
-                if anfrage.response == Anfrage.ACCEPTED:
-                    responses.append("Genehmigt")
-                elif anfrage.response == Anfrage.DECLINED:
-                    responses.append("Abgelehnt")
-                else:
-                    responses.append("Ausstehend")
+                responses.append(anfrage.response)
     lehrer.append(im)
     lehrer.append(gm)
     daten.append(" ")
@@ -362,8 +348,8 @@ def transform_date(date):
     elements = date.strip("\n").split("-")
     return elements[2] + "." + elements[1] + "." + elements[0]
 def transform_datetime(datetime):
-    elements = datetime.strip("\n").split(" ")
+    elements = str(datetime).split(" ")
     date = elements[0]
     time = elements[1]
     date_elements = date.strip("\n").split("-")
-    return date_elements[2] + "+" + date_elements[1] + "." + date_elements[0]
+    return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
