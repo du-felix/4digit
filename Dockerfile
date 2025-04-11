@@ -25,10 +25,3 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # 7. Copy the rest of your Django project code into the container
 COPY . /app/
-
-# 9. Expose the port your Django application uses (here, it's 8000)
-EXPOSE 8000
-
-# 10. Define the default command to run when starting the container.
-#     For development, we can use Django’s built-in server.
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

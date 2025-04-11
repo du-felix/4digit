@@ -104,9 +104,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': '4digit_db',
-        'USER': 'root',
+        'USER': 'user',
         'PASSWORD': '01871689@4Digit',
-        'HOST': 'localhost',  # because both containers are in the same pod
+        'HOST': 'mysql',  # container name within the pod
         'PORT': '3306',
     }
 }
