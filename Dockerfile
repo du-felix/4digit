@@ -25,3 +25,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # 7. Copy the rest of your Django project code into the container
 COPY . /app/
+EXPOSE 8000
+
+# Automatically run the development server on container start
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

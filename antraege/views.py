@@ -93,7 +93,7 @@ def neuer_antrag(request):
                     email, 
                     email.split("@")[0].split(".")[0], 
                     email.split("@")[0].split(".")[1], 
-                    request.user.first_name, 
+                    request.user.first_name+" "+request.user.last_name, 
                     unterricht_text, 
                     absolute_url
                 )
@@ -102,7 +102,7 @@ def neuer_antrag(request):
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 absolute_url = request.build_absolute_uri(relative_url)
                 Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token, gm=gm)
-                send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+                send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name+" "+request.user.last_name, absolute_url)
             except Exception as e:
                 print(f"Failed to send email to IM {im}: {str(e)}")
                 messages.warning(request, f"Fehler beim Senden der E-Mail an GM ({gm}).")
@@ -111,7 +111,7 @@ def neuer_antrag(request):
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
             Anfrage.objects.create(antrag=antrag_instance, email=im, token=token, im=im)
-            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name, absolute_url)
+            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name+" "+request.user.last_name, absolute_url)
             
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")

@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#r0(pztdd^nk)%a56$52e$6xf5s)+0jm!r8$e#k5o7c4wi0_)i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['mdm.sankt-afra.de', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 LOGIN_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,17 +59,20 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-#EMAIL_HOST = 'mail.lernsax.de'
-#EMAIL_PORT = 465  # or 587, depending on your configuration
-#EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
-#EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
-#EMAIL_HOST_PASSWORD = 'Freistellung123!'
-#DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
+FORCE_SCRIPT_NAME = '/freistellung'
 
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
-sender = settings.DEFAULT_FROM_EMAIL
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.lernsax.de'
+EMAIL_PORT = 465  # or 587, depending on your configuration
+EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
+EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
+EMAIL_HOST_PASSWORD = 'Freistellung123!'
+DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
+
+#EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+#EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
+#sender = settings.DEFAULT_FROM_EMAIL
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -97,6 +101,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fourdigit.wsgi.application'
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://mdm.sankt-afra.de',
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -153,11 +160,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/freistellung/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
