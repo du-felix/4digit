@@ -62,17 +62,17 @@ INTERNAL_IPS = [
 FORCE_SCRIPT_NAME = '/freistellung'
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.lernsax.de'
-EMAIL_PORT = 465  # or 587, depending on your configuration
-EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
-EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
-EMAIL_HOST_PASSWORD = 'Freistellung123!'
-DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
+#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#EMAIL_HOST = 'mail.lernsax.de'
+#EMAIL_PORT = 465  # or 587, depending on your configuration
+#EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
+#EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
+#EMAIL_HOST_PASSWORD = 'Freistellung123!'
+#DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
 
-#EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-#EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
-#sender = settings.DEFAULT_FROM_EMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
+sender = settings.DEFAULT_FROM_EMAIL
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -107,23 +107,23 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
+#DATABASES = {
+ #   'default': {
+  #      'ENGINE': 'django.db.backends.mysql',
+   #     'NAME': '4digit_db',
+    #    'USER': 'user',
+     #   'PASSWORD': '01871689@4Digit',
+      #  'HOST': 'mysql',  # container name within the pod
+       # 'PORT': '3306',
+    #}
+#}
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': '4digit_db',
-        'USER': 'user',
-        'PASSWORD': '01871689@4Digit',
-        'HOST': 'mysql',  # container name within the pod
-        'PORT': '3306',
-    }
+       'ENGINE': 'django.db.backends.sqlite3',
+       'NAME': BASE_DIR / 'db.sqlite3',
+  }
 }
-
-#DATABASES = {
-#    'default': {
-#       'ENGINE': 'django.db.backends.sqlite3',
-#       'NAME': BASE_DIR / 'db.sqlite3',
-#  }
-#}
 
 
 # Password validation
