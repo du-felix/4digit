@@ -1,0 +1,203 @@
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.user-table th, .user-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.user-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.user-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    color: white;
+}
+
+.badge-success {
+    background-color: #28a745;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+}
+
+.badge-primary {
+    background-color: #007bff;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+}
+
+.delete-button {
+    background-color: #dc3545 !important;
+}
+
+.delete-button :hover {
+    background-color: darkred ipor !important;
+}
+
+.btn {
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+
+.messages {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.messages li {
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.form-card {
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin: 20px 0;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+.text-danger {
+    color: #dc3545;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.flex-layout {
+    display: flex;
+    gap: 20px;
+}
+
+.list-panel {
+    flex: 1;
+}
+
+.edit-panel {
+    flex: 1;
+    min-width: 300px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .flex-layout {
+        flex-direction: column;
+    }
+}
+
+.card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 6px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #003366;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.card-body p {
+    margin: 10px 0;
+    font-size: 16px;
+    color: #555;
+}
+
+.antrag-status {
+    margin-top: 15px;
+    font-size: 16px;
+}
