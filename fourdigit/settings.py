@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#r0(pztdd^nk)%a56$52e$6xf5s)+0jm!r8$e#k5o7c4wi0_)i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['mdm.sankt-afra.de', 'localhost', '127.0.0.1']
 
@@ -59,7 +59,7 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-FORCE_SCRIPT_NAME = '/freistellung'
+#FORCE_SCRIPT_NAME = '/freistellung'
 
 
 #EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -165,6 +165,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 #STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 

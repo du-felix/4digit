@@ -37,9 +37,11 @@ class Antrag(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_IN_PROGRESS,
     )
+    
 
     def __str__(self):
         return self.user.first_name, self.titel
+    
 
 
 class Anfrage(models.Model):
@@ -77,10 +79,12 @@ class Fach(models.Model):
     name = models.CharField(max_length=100)
     kuerzel = models.CharField(max_length=10, unique=True)
     def __str__(self):
-        return self.kuerzel
+        return self.name
 class Lehrer(models.Model):
     email = models.EmailField(null=True, blank=True, unique=True)
     name = models.CharField(max_length=100, null=True, blank=True)
+    principal = models.BooleanField(default=False, blank=True)
+    secretariat = models.BooleanField(default=False, blank=True)
     def __str__(self):
         return self.name
 

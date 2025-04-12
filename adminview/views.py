@@ -232,9 +232,9 @@ def lehrer(request, lehrer_id=None):
         lehrers = Lehrer.objects.filter(
             Q(email__icontains=search_query) | 
             Q(name__icontains=search_query)
-        ).order_by('email')
+        ).order_by('-secretariat', '-principal', 'email')
     else:
-        lehrers = Lehrer.objects.all().order_by('email')
+        lehrers = Lehrer.objects.all().order_by('-secretariat', '-principal', 'email')
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         lehrer_data = []
         for lehrer in lehrers:

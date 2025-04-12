@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach
-from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im
+from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -32,21 +32,21 @@ def neuer_antrag(request):
         antrag = AntragForm(request.POST)
         while False:
             try:
-                validate_afra_email(gm)
-                validate_afra_email(im)
+                    validate_afra_email(gm)
+                    validate_afra_email(im)
             except ValidationError:
-                messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
-                return render(request, "antraege/neuer_antrag.html", {
-                    "antrag": antrag,
-                    "unterricht_formset": formset
+                    messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
+                    return render(request, "antraege/neuer_antrag.html", {
+                        "antrag": antrag,
+                        "unterricht_formset": formset
                 })
-        
         if antrag.is_valid() and formset.is_valid():
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
             gm = antrag.cleaned_data.get("gm").email
             im = antrag.cleaned_data.get("im").email
+            
             lehrer_dict = {}
             for form in formset:
                 if form.cleaned_data:  # Check if form has data
@@ -143,6 +143,8 @@ def antrag_bestaetigen(request, token):
         "unterricht": anfrage.unterricht,
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
+        "fehlzeiten": Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0,
+
     }
     
     # If already responded, redirect with message
@@ -181,6 +183,11 @@ def antrag_bestaetigen(request, token):
                         obj.zaehler += obj.temp
                         obj.temp = 0
                         obj.save()
+                send_email_sekretariat(
+            antrag.user.first_name + " " + antrag.user.last_name, 
+            antrag.klasse,
+            antrag  # Füge den Antrag als Parameter hinzu
+        )
                 return redirect("home")
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
@@ -190,6 +197,7 @@ def antrag_bestaetigen(request, token):
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    print(stunden)
                     for stunde in stunden:
                         obj = Zaehler.objects.get(
                             schueler=antrag.user,
@@ -226,7 +234,7 @@ def antrag_bestaetigen(request, token):
                 if mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
+                    Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 return redirect("home")
@@ -253,7 +261,7 @@ def antrag_bestaetigen(request, token):
                 if mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email="stefan.weih@afra.lernsax.de", token=token, is_principle=True)
+                    Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 return redirect("home")
@@ -302,7 +310,7 @@ def antrag_detail(request, antrag_id):
             im_grund = anfrage.reason
         elif anfrage.is_principle: 
      # Wenn es ein Schulleiter ist
-            schulleiter = "Stefan Weih"
+            schulleiter = Lehrer.objects.filter(principal=True).values_list('name', flat=True).first()
             schulleiter_datum = anfrage.created
             schulleiter_response = anfrage.response
             schulleiter_grund = anfrage.reason
@@ -311,6 +319,7 @@ def antrag_detail(request, antrag_id):
             for stunde in stunden:
                 elements = stunde.strip("\n").split(",")
                 daten.append(transform_date(elements[1]))
+                print(elements)
                 unterricht.append(Fach.objects.get(kuerzel=elements[0]).name)
                 lehrer.append(Lehrer.objects.get(email=anfrage.email).name)
                 gruende.append(anfrage.reason)
