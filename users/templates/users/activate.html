@@ -4,8 +4,16 @@
 {% block content %}
 <h1>Aktiviere deinen Account</h1>
 <p>Aktualisiere dazu dein Passwort. Danach wird dein Initialpasswort nicht länger funktionieren.</p>
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" style="width: 100%; text-wrap: break-word;">
+        {{ message }}
+        </div>
+    {% endfor %}
+    {% endif %}
+    
 <div>
-    <form method="post", action="{% url 'activate' %}">
+    <form method="post", action="{% url 'activate' uid=uid token=token%}">
         {% csrf_token %}
         <div>
             <label for="id_new_password1">Neues Passwort:</label><br>

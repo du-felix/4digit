@@ -24,13 +24,20 @@ def login(request):
                 messages.success(request, "Login successful!")
 
                 return redirect("adminview-home")  # Redirect to staff dashboard
-            elif not user.is_active:
-                return render(request, "users/acivate.html", {"uid": user.pk})
             else:
                 lg(request, user)
                 return redirect("home")  
         else:
-            messages.error(request, "Invalid email or password.")
+            try:
+                user = CustomUser.objects.get(email=email)
+                if user.password == password and not user.is_active:
+                    token = default_token_generator.make_token(user)
+                    return render(request, "users/activate.html", {"uid": user.pk, "token": token})
+                else:
+                    messages.error(request, "Invalid password.")
+            except CustomUser.DoesNotExist:
+                messages.error(request, "Invalid email.")
+
 
     return render(request, "users/login.html")  # Render the login page
 
@@ -92,13 +99,21 @@ def activate(request, uid, token):
     user = get_object_or_404(CustomUser, pk=uid)
     
     if default_token_generator.check_token(user, token):
-        user.is_active = True
-        user.save()
-        messages.success(request, "Dein Account wurde erfolgreich aktiviert! Du kannst dich jetzt einloggen.")
-        return render(request, "users/signup_complete.html", {"activated": True})
+        password = request.POST.get("password1")
+        password2 = request.POST.get("password2")
+
+        if password == password2:
+            user.set_password(password)
+            user.is_active = True
+            user.save()
+
+            return render(request, "users/signup_complete.html", {"activated": True})
+        else:
+            messages.error(request, "Passwörter stimmen nicht überein.")
+            return render(request, "users/activate.html", {"uid": uid, "token": token})
     else:
-        messages.error(request, "Activation Link ist ungültig oder abgelaufen, registriere dich bitte ")
-        return redirect('signup')
+        messages.error(request, "Es ist ein Fehler aufgetreten.")
+        return redirect('login')
     
 def edit_password(request, uid, token):
     user = get_object_or_404(CustomUser, pk=uid)

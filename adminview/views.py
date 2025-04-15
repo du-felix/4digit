@@ -194,7 +194,7 @@ def csv(request):
                                 send_mail(
                                     subject='Dein neuer Account für Freistellungen',
                                     message=f'Dein Account wurde erstellt. Dein Initialpasswort lautet: {password}\n Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.',
-                                    from_mail=settings.DEFAULT_FROM_EMAIL,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
                                     recipient_list=[email],
                                     fail_silently=False)
                                 success_count += 1
