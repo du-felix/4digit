@@ -279,40 +279,31 @@ def lehrer(request, lehrer_id=None):
 
 @login_required
 def add_lehrer(request):
-    form=add_lehrer_Form(request.POST)
     if request.method == 'POST':
         form = add_lehrer_Form(request.POST)
         if form.is_valid():
-            try:
-                validate_afra_email(form.cleaned_data['email'])
-                form.save()
-                return redirect('lehrer')
-            except ValidationError as e:
-                form.add_error('email', e)
+            form.save()
+            return redirect('lehrer')
     else:
         form = add_lehrer_Form()
-    
-    return render(request, 'adminview/add_lehrer.html', {'form': add_lehrer_Form})
 
-@login_required
+    return render(request, 'adminview/add_lehrer.html', {'form': form})
+
 def edit_lehrer(request, lehrer_id=None):
     if lehrer_id:
         edit_lehrer = get_object_or_404(Lehrer, id=lehrer_id)
         if request.method == 'POST':
             form = add_lehrer_Form(request.POST, instance=edit_lehrer)
             if form.is_valid():
-                try:
-                    validate_afra_email(form.cleaned_data['email'])
-                    form.save()
-                    messages.success(request, f"Lehrer {edit_lehrer.email} erfolgreich aktualisiert")
-                    return redirect('lehrer')
-                except ValidationError as e:
-                    form.add_error('email', e)
+                form.save()
+                messages.success(request, f"Lehrer {edit_lehrer.email} erfolgreich aktualisiert")
+                return redirect('lehrer')
         else:
             form = add_lehrer_Form(instance=edit_lehrer)
     else:
         edit_lehrer = None
         form = add_lehrer_Form()
+        
     return render(request, 'adminview/edit_lehrer.html', {'form': form, 'edit_lehrer': edit_lehrer})
 
 @login_required
@@ -345,14 +336,8 @@ def lehrer_csv(request):
                         if len(row) >= 3:
                             email = row[1].strip()
                             name = row[2].strip()
-                            
-                            try:
-                                validate_afra_email(email)
-                            except ValidationError as e:
-                                errors.append(f"Invalid email for row {email}: {str(e)}")
-                                error_count += 1
-                                continue
-
+                        
+                        
                             #birth_date = None
                             #if birth_date_str:
                                 #date_formats = [
