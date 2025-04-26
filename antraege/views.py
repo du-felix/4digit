@@ -191,7 +191,9 @@ def antrag_bestaetigen(request, token):
                 send_email_sekretariat(
             antrag.user.first_name + " " + antrag.user.last_name, 
             antrag.klasse,
-            antrag  # Füge den Antrag als Parameter hinzu
+            antrag.titel,
+            antrag.grund,
+            antrag
         )
                 return redirect("home")
             elif answer == "ablehnen":

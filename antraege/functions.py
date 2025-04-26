@@ -41,7 +41,7 @@ def send_email_schulleiter(schueler, token_url):
     empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def send_email_sekretariat(schueler, klasse, antrag=None):
+def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
     from django.core.mail import send_mail
     from django.conf import settings
     from .models import Anfrage, Fach, Lehrer
@@ -66,9 +66,10 @@ def send_email_sekretariat(schueler, klasse, antrag=None):
         
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
-    subject = f"Neuer Freistellungsantrag von {schueler}"
+    subject = f"Neuer Freistellungsantrag {titel} von {schueler}"
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für folgende Schulstunden von der Schulleitung freistellen lassen:
     {unterrichte_text}
+    Grund dafür ist: {grund}.
     Vielen Dank!
     \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first()]
