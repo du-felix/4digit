@@ -198,9 +198,6 @@ def antrag_bestaetigen(request, token):
                 return redirect("home")
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
-                if not grund.strip():
-                    messages.error(request, "Grund fehlt")
-                    return render(request, "antraege/antrag_bearbeiten.html", context)
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
@@ -250,9 +247,6 @@ def antrag_bestaetigen(request, token):
                 
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
-                if not grund.strip():
-                    messages.error(request, "Grund fehlt")
-                    return render(request, "antraege/antrag_bearbeiten.html", context)
                 
                 anfrage.response = Anfrage.DECLINED
                 anfrage.responded_at = timezone.now()
