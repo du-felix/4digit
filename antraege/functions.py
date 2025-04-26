@@ -69,7 +69,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
     subject = f"Neuer Freistellungsantrag {titel} von {schueler}"
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für folgende Schulstunden von der Schulleitung freistellen lassen:
     {unterrichte_text}
-    Grund dafür ist: {grund}.
+    \nGrund dafür ist: {grund}
     Vielen Dank!
     \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first()]
