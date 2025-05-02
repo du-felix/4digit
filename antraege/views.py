@@ -44,8 +44,8 @@ def neuer_antrag(request):
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
-            gm = antrag.cleaned_data.get("gm").email
-            im = antrag.cleaned_data.get("im").email
+            gm = antrag.cleaned_data.get("gm")
+            im = antrag.cleaned_data.get("im")
             
             lehrer_dict = {}
             for form in formset:
@@ -54,8 +54,8 @@ def neuer_antrag(request):
                     fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
                     email = lehrer_id.email
-                    if lehrer_id.email not in lehrer_dict:
-                        lehrer_dict[email] = []
+                    if lehrer_id not in lehrer_dict:
+                        lehrer_dict[lehrer_id] = []
 
                     zaehler, _ = Zaehler.objects.get_or_create(
                         schueler=request.user,
@@ -66,13 +66,13 @@ def neuer_antrag(request):
                     zaehler.save()
 
                     
-                    lehrer_dict[email].append({
+                    lehrer_dict[lehrer_id].append({
                         "fach": fach_id.kuerzel,
                         "datum": datum
                     })
             
             # Process each teacher's entries
-            for email, unterricht_list in lehrer_dict.items():
+            for lehrer, unterricht_list in lehrer_dict.items():
                 # Create formatted string for email
                 unterricht_text = ""
                 for entry in unterricht_list:
@@ -85,15 +85,14 @@ def neuer_antrag(request):
                 
                 Anfrage.objects.create(
                     antrag=antrag_instance,
-                    email=email,
+                    email=lehrer.email,
                     token=token,
                     unterricht=unterricht_text
                 )
                 
                 send_email(
-                    email, 
-                    email.split("@")[0].split(".")[0], 
-                    email.split("@")[0].split(".")[1], 
+                    lehrer.email, 
+                    lehrer.name,
                     request.user.first_name+" "+request.user.last_name, 
                     unterricht_text, 
                     absolute_url
@@ -104,19 +103,19 @@ def neuer_antrag(request):
                 absolute_url = request.build_absolute_uri(relative_url)
                 absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-                Anfrage.objects.create(antrag=antrag_instance, email=gm, token=token, gm=gm)
-                send_email_gm(gm, gm.split("@")[0].split(".")[0], gm.split("@")[0].split(".")[1], request.user.first_name+" "+request.user.last_name, absolute_url)
+                Anfrage.objects.create(antrag=antrag_instance, email=gm.email, token=token, gm=gm.email)
+                send_email_gm(gm.email, gm.name, request.user.first_name+" "+request.user.last_name, absolute_url)
             except Exception as e:
-                print(f"Failed to send email to IM {im}: {str(e)}")
-                messages.warning(request, f"Fehler beim Senden der E-Mail an GM ({gm}).")
+                print(f"Failed to send email to IM {im.email}: {str(e)}")
+                messages.warning(request, f"Fehler beim Senden der E-Mail an GM ({gm.email}).")
             
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
             absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-            Anfrage.objects.create(antrag=antrag_instance, email=im, token=token, im=im)
-            send_email_im(im, im.split("@")[0].split(".")[0], im.split("@")[0].split(".")[1], request.user.first_name+" "+request.user.last_name, absolute_url)
+            Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email)
+            send_email_im(im.email, im.name, request.user.first_name+" "+request.user.last_name, absolute_url)
             
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
