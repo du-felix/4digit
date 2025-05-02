@@ -121,7 +121,32 @@ def neuer_antrag(request):
             messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
         else:
-            messages.error(request, "Es ist ein Fehler aufgetreten.")
+            # Detaillierte Fehlermeldungen
+            if not antrag.is_valid():
+                for field, errors in antrag.errors.items():
+                    field_name = antrag.fields[field].label or field
+                    for error in errors:
+                        messages.error(request, f"Fehler im Feld '{field_name}': {error}")
+            
+            if not formset.is_valid():
+                # Prüfe auf Formset-Fehler
+                for i, form in enumerate(formset):
+                    if form.errors:
+                        messages.error(request, f"Fehler im Unterrichtsformular #{i+1}")
+                        for field, errors in form.errors.items():
+                            field_name = form.fields[field].label or field
+                            for error in errors:
+                                messages.error(request, f"- Feld '{field_name}': {error}")
+                
+                # Prüfe auf Fehler im gesamten Formset
+                if formset.non_form_errors():
+                    for error in formset.non_form_errors():
+                        messages.error(request, f"Formularfehler: {error}")
+            
+            # Füge eine allgemeine Fehlermeldung hinzu, falls keine spezifische gefunden wurde
+            if not any(m.level == messages.ERROR for m in messages.get_messages(request)):
+                messages.error(request, "Es ist ein Fehler aufgetreten. Bitte überprüfen Sie Ihre Eingaben.")
+                
             return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": formset})
     else:
         antrag = AntragForm()
