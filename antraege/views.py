@@ -81,7 +81,7 @@ def neuer_antrag(request):
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 absolute_url = request.build_absolute_uri(relative_url)
-               # absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
                 
                 Anfrage.objects.create(
                     antrag=antrag_instance,
@@ -101,7 +101,7 @@ def neuer_antrag(request):
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 absolute_url = request.build_absolute_uri(relative_url)
-                #absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
                 Anfrage.objects.create(antrag=antrag_instance, email=gm.email, token=token, gm=gm.email)
                 send_email_gm(gm.email, gm.name, request.user.first_name+" "+request.user.last_name, absolute_url)
@@ -112,7 +112,7 @@ def neuer_antrag(request):
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
-            #absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
             Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email)
             send_email_im(im.email, im.name, request.user.first_name+" "+request.user.last_name, absolute_url)
@@ -264,7 +264,7 @@ def antrag_bestaetigen(request, token):
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
-                   # absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 return redirect("home")
@@ -290,7 +290,7 @@ def antrag_bestaetigen(request, token):
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
-                    #absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
                     send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 return redirect("home")
