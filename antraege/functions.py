@@ -4,9 +4,9 @@ from .models import Anfrage, Lehrer
 import uuid
 from django.urls import reverse
 
-def send_email(email, vorname, nachname, schueler, unterricht, token_url):
-    subject = f"Neuer Freistellungsantrag von {schueler}"
-    body = f"""Guten Tag {vorname.capitalize()} {nachname.capitalize()},\n Ihr Schüler {schueler} hat einen Antrag auf Freistellung gestellt. Folgende Stunden sind davon betroffen:\n\n
+def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
+    subject = f"Neuer Freistellungsantrag von {schueler_name}"
+    body = f"""Guten Tag {lehrer_name},\n Ihr Schüler {schueler_name} hat einen Antrag auf Freistellung gestellt. Folgende Stunden sind davon betroffen:\n\n
     {unterricht}
         \n\n Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:\n{token_url}\n\nVielen Dank!
         \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
@@ -14,18 +14,18 @@ def send_email(email, vorname, nachname, schueler, unterricht, token_url):
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def send_email_gm(email, vorname, nachname, schueler, token_url):
-    subject = f"Neuer Freistellungsantrag von {schueler}"
-    body = f"""Guten Tag {vorname.capitalize()} {nachname.capitalize()},\n Ihr Mentee {schueler} hat einen Antrag auf Freistellung gestellt.
+def send_email_gm(email, gm_name, schueler_name, token_url):
+    subject = f"Neuer Freistellungsantrag von {schueler_name}"
+    body = f"""Guten Tag {gm_name},\n Ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
         \n\n Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:\n\n{token_url}\n\nVielen Dank!
         \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def send_email_im(email, vorname, nachname, schueler, token_url):
-    subject = f"Neuer Freistellungsantrag von {schueler}"
-    body = f"""Guten Tag {vorname.capitalize()} {nachname.capitalize()},\n Ihr Mentee {schueler} hat einen Antrag auf Freistellung gestellt.
+def send_email_im(email, im_name, schueler_name, token_url):
+    subject = f"Neuer Freistellungsantrag von {schueler_name}"
+    body = f"""Guten Tag {im_name},\n Ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
         \n\n Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:\n\n{token_url}\n\nVielen Dank!
         \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
@@ -66,10 +66,10 @@ def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
         
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
-    subject = f"Neuer Freistellungsantrag {titel} von {schueler}"
+    subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für folgende Schulstunden von der Schulleitung freistellen lassen:
     {unterrichte_text}
-    \nGrund dafür ist: {grund}
+    \nDer Grund dafür ist: {grund}
     Vielen Dank!
     \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first()]
