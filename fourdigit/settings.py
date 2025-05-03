@@ -61,7 +61,6 @@ INTERNAL_IPS = [
 
 FORCE_SCRIPT_NAME = '/freistellung'
 
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'mail.lernsax.de'
 EMAIL_PORT = 465  # or 587, depending on your configuration
