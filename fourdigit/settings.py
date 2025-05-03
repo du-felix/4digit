@@ -59,10 +59,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 FORCE_SCRIPT_NAME = '/freistellung'
 
 
@@ -109,13 +105,9 @@ CSRF_TRUSTED_ORIGINS = [
     'https://mdm.sankt-afra.de',
 ]
 
-<<<<<<< Updated upstream
-#Database
-#https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-=======
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
->>>>>>> Stashed changes
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -128,17 +120,12 @@ DATABASES = {
 }
 
 #DATABASES = {
-<<<<<<< Updated upstream
- #   'default': {
-  #     'ENGINE': 'django.db.backends.sqlite3',
-   #    'NAME': BASE_DIR / 'db.sqlite3',
-  #}
-=======
+
 #    'default': {
 #       'ENGINE': 'django.db.backends.sqlite3',
 #       'NAME': BASE_DIR / 'db.sqlite3',
 #  }
->>>>>>> Stashed changes
+
 #}
 
 
@@ -176,13 +163,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-<<<<<<< Updated upstream
 STATIC_URL = '/freistellung/static/'
-#STATIC_URL = '/static/'
-=======
-#STATIC_URL = '/freistellung/static/'
-STATIC_URL = 'freistellung/static/'
->>>>>>> Stashed changes
+
+
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]

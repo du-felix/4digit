@@ -16,21 +16,24 @@ class AntragForm(forms.ModelForm):
     grund = forms.CharField(required=True,widget=forms.Textarea(attrs={'placeholder': 'ggf. ausführliche Begründung des Antrags', 'style': 'width: 500px; height: 150px;'}))
     anfangsdatum = forms.DateField(required=True,widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
     enddatum = forms.DateField(required=True,widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
-<<<<<<< Updated upstream
     im = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
     gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 class Unterricht(forms.Form):
     lehrer = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="Lehrer", widget=forms.Select(attrs={'style': 'width: 500px'}))
     fach = forms.ModelChoiceField(required=True,queryset=Fach.objects.all().order_by('name'), label="Fach", widget=forms.Select(attrs={'style': 'width: 500px'}))
-=======
+    im = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.exclude(secretariat=True), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
+    gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.exclude(secretariat=True), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
+
+class Unterricht(forms.Form):
+
     im = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.exclude(secretariat=True), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
     gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.exclude(secretariat=True), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 class Unterricht(forms.Form):
     lehrer = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.exclude(secretariat=True), label="Lehrer", widget=forms.Select(attrs={'style': 'width: 500px'}))
     fach = forms.ModelChoiceField(required=True,queryset=Fach.objects.all(), label="Fach", widget=forms.Select(attrs={'style': 'width: 500px'}))
->>>>>>> Stashed changes
+
     datum = forms.DateField(required=True,label="Datum", widget=forms.DateInput(attrs={'type': 'date'}))
 
 UnterrichtFormSet = formset_factory(Unterricht, extra=1)
