@@ -16,7 +16,7 @@
     {% if schulleiter %}
     <h3>Bestätigungen der Lehrer</h3>
     <table>
-        <thead>
+        <thead style="text-align: left;">
             <tr>
                 <th>Lehrer</th>
                 <th>Status</th>
@@ -26,15 +26,17 @@
         <tbody>
             {% for b in bestaetigungen %}
             <tr>
-                <td>{{ b.name }}</td>
-                <td>
+                <td style="padding-top: 10px; padding-bottom: 10px;">{{ b.name }}</td>
+                <td style="padding-top: 10px; padding-bottom: 10px;">
                     {% if b.response == 'declined' %}
                         <span class="badge badge-danger">Abgelehnt</span>
                     {% elif b.response == 'accepted' %}
                         <span class="badge badge-success">Genehmigt</span>
                     {% endif %}
                 </td>
-                <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">{{ b.reason|default:"Keine" }}</td>
+                <td style="max-width: 320px; overflow: hidden; word-wrap: break-word; padding-top: 10px; padding-bottom: 10px;">
+                    {{ b.reason|default:"Keine" }}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -66,7 +68,7 @@
         <label>Gründe einer Ablehnung:</label>
         <textarea name="grund" id="" placeholder="Gründe für die Ablehnung des Antrags..."></textarea>
         
-        <button type="submit">Submit</button>
+        <button type="submit">Absenden</button>
     </form>
 </div>
 
