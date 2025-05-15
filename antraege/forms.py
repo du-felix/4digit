@@ -25,3 +25,24 @@ class Unterricht(forms.Form):
     datum = forms.DateField(required=True,label="Datum", widget=forms.DateInput(attrs={'type': 'date'}))
 
 UnterrichtFormSet = formset_factory(Unterricht, extra=1)
+
+YES_NO = (("ja", "Ja"), ("nein", "Nein"))
+class TwoStepForm(forms.Form):
+    first_question  = forms.ChoiceField(
+        label="Do you want to answer a follow-up question?",
+        choices=YES_NO,
+        widget=forms.RadioSelect
+    )
+    second_question = forms.ChoiceField(
+        label="Follow-up: … ?",
+        choices=YES_NO,
+        widget=forms.RadioSelect,
+        required=False       # always optional at field-declaration time
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        # if they said “yes” to the first, they must answer the second
+        if cleaned.get("first_question") == "yes" and not cleaned.get("second_question"):
+            self.add_error("second_question", "This field is required when you answer Yes above.")
+        return cleaned

@@ -1,8 +1,9 @@
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Anfrage, Lehrer
+from .models import Anfrage, Lehrer, Fach
 import uuid
 from django.urls import reverse
+from .views import transform_date
 
 def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
@@ -42,15 +43,9 @@ def send_email_schulleiter(schueler, token_url):
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
-    from django.core.mail import send_mail
-    from django.conf import settings
-    from .models import Anfrage, Fach, Lehrer
-    
-    unterrichte_text = ""
     
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
     if antrag:
-        from .views import transform_date
         anfragen = Anfrage.objects.filter(antrag=antrag, is_principle=False, gm__isnull=True, im__isnull=True)
         unterrichte_info = []
         
@@ -63,7 +58,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
                     datum = transform_date(elements[1])
                     lehrer = Lehrer.objects.get(email=anfrage.email).name
                     unterrichte_info.append(f"{fach} ({datum}) bei {lehrer}")
-        
+
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
@@ -74,3 +69,15 @@ def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
     \nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first()]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+
+def send_eltern_bestaetigung(schueler, token_url, klasse, titel, grund):
+    subject = f"Elternbestätigung prüfen von {schueler}: {titel}"
+    body = f"""Hallo liebes Seki,\nder Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat einen Freistellungsantrag gestellt.
+   \n\nBitte prüft, ob eine Elternbestätigung vorliegen muss, und wenn, ob eine vorliegt.
+    \n\n Hier der Link: {token_url}
+    \n\nVielen Dank!\n\nBITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
+    empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+
+def schueler_benachrichtigung():
+    pass

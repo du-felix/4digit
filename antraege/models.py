@@ -37,7 +37,8 @@ class Antrag(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_IN_PROGRESS,
     )
-    
+    eltern_notwendig = models.BooleanField(default=False)
+    eltern_bestaetigung = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.first_name, self.titel

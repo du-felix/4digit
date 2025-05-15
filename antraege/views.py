@@ -3,9 +3,9 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import AntragForm, UnterrichtFormSet
+from .forms import AntragForm, UnterrichtFormSet, TwoStepForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach
-from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat
+from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -188,7 +188,15 @@ def antrag_bestaetigen(request, token):
         context["fehlzeiten"] = Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0
     
     # Handle form submission
-    if request.method == "POST":
+    if request.method == "POST" and request.POST.get("btn") == "bestaetigung":
+        def _create_schulleiter(antrag):
+            token = str(uuid.uuid4())
+            relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+            Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
+            absolute_url = request.build_absolute_uri(relative_url)
+            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+
+            send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
         answer = request.POST.get("answer")
         
         # Principal handling
@@ -259,14 +267,27 @@ def antrag_bestaetigen(request, token):
                         mail_bool = False
                         break
                 
-                if mail_bool:
+                if mail_bool and antrag.eltern_bestaetigung:
+                    _create_schulleiter(antrag)
+                elif mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                    Anfrage.objects.create(
+                        antrag=antrag,
+                        email=Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first(),
+                        token=token
+                    )
+                    send_eltern_bestaetigung(
+                        antrag.user.first_name + " " + antrag.user.last_name, 
+                        absolute_url,
+                        antrag.klasse,
+                        antrag.titel,
+                        antrag.grund
+                    )
 
-                    send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
+
                 return redirect("home")
                 
             elif answer == "ablehnen":
@@ -285,23 +306,57 @@ def antrag_bestaetigen(request, token):
                         mail_bool = False
                         break
                 
-                if mail_bool:
+                if mail_bool and antrag.eltern_bestaetigung:
+                    _create_schulleiter(antrag)
+                elif mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
                     absolute_url = request.build_absolute_uri(relative_url)
                     absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+                    Anfrage.objects.create(
+                        antrag=antrag,
+                        email=Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first(),
+                        token=token
+                    )
+                    send_eltern_bestaetigung(
+                        antrag.user.first_name + " " + antrag.user.last_name, 
+                        absolute_url,
+                        antrag.klasse,
+                        antrag.titel,
+                        antrag.grund
+                    )
 
-                    send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
                 return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
         else:
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
-    
-    # Always render the template with complete context at the end
-    return render(request, "antraege/antrag_bearbeiten.html", context)
+    elif request.method == "POST" and request.POST.get("btn") == "eltern":
+        form = TwoStepForm(request.POST)
+        if form.is_valid():
+            first = form.cleaned_data("first_question")
+            second = form.cleaned_data.get("second_question")
+            if first == "ja":
+                antrag.eltern_notwendig = True
+            else:
+                antrag.eltern_notwendig = False
+                _create_schulleiter(antrag)
+            if second == "ja":
+                antrag.eltern_bestaetigung = True
+                _create_schulleiter(antrag)
+            else:
+                antrag.eltern_bestaetigung = False
+                schueler_benachrichtigung()
+        else:
+            pass
+        pass
+    else:
+        # Always render the template with complete context at the end
+        if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
+            context["sekretariat"] = True
+            context["form"] = TwoStepForm()
+        return render(request, "antraege/antrag_bearbeiten.html", context)
 
 @login_required
 def antrag_detail(request, antrag_id):

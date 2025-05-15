@@ -4,6 +4,61 @@
 
 {% block content %}
 
+{% if sekretariat %}
+<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
+    <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
+
+    <h2>"{{ titel }}"</h2>
+    <p><b>{{ antrag.anfangsdatum }} bis {{ antrag.enddatum }}</b></p>
+    <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
+    <h3>Grund:</h3>
+    <p>{{ schueler_grund }}</p>
+    <h3>Ist eine Bestätigung der Eltern notwendig?</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    <form method="post" id="two-step-form">
+        {% csrf_token %}
+        
+        <!-- first yes/no -->
+        <div class="mb-3">
+          {{ form.first_question.label_tag }}
+          {{ form.first_question }}
+        </div>
+      
+        <!-- second yes/no, hidden by default -->
+        <div id="second-wrapper" class="mb-3" style="display:none;">
+          {{ form.second_question.label_tag }}
+          {{ form.second_question }}
+        </div>
+      
+        <button type="submit" name="btn" value="eltern">Absenden</button>
+      </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const firstRadios    = document.querySelectorAll('input[name="first_question"]');
+      const secondWrapper  = document.getElementById("second-wrapper");
+    
+      const toggleSecond = () => {
+        const yesSelected = [...firstRadios].some(r => r.checked && r.value === "yes");
+        secondWrapper.style.display = yesSelected ? "" : "none";
+    
+        // optional: clear 2nd answer if the block just disappeared
+        if (!yesSelected) {
+          secondWrapper.querySelectorAll('input[name="second_question"]')
+                       .forEach(r => r.checked = false);
+        }
+      };
+    
+      firstRadios.forEach(r => r.addEventListener("change", toggleSecond));
+      toggleSecond();   // run once on load – needed after validation errors
+    });
+</script>
+{% else %}
 <div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
     <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
 
@@ -68,8 +123,9 @@
         <label>Gründe einer Ablehnung:</label>
         <textarea name="grund" id="" placeholder="Gründe für die Ablehnung des Antrags..."></textarea>
         
-        <button type="submit">Absenden</button>
+        <button type="submit" name="btn" value="bestaetigung">Absenden</button>
     </form>
 </div>
+{% endif %}
 
 {% endblock %}
