@@ -4,7 +4,32 @@
 
 {% block content %}
 
-{% if sekretariat %}
+{% if trigger %}
+<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
+    <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
+
+    <h2>"{{ titel }}"</h2>
+    <p><b>{{ antrag.anfangsdatum }} bis {{ antrag.enddatum }}</b></p>
+    <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
+    <h3>Grund:</h3>
+    <p>{{ schueler_grund }}</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    <form method="post" action="{% url 'antrag_bestaetigen' %}">
+        {% csrf_token %}
+        <div class="form-check form-switch mb-3">
+          {{ form.agree }}
+          {{ form.agree.label_tag }}
+        </div>
+      
+        <button type="submit" class="btn btn-primary" name="btn" value="eltern2">Absenden</button>
+    </form>
+</div>
+{% elif sekretariat %}
 <div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
     <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
 

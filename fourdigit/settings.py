@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-#r0(pztdd^nk)%a56$52e$6xf5s)+0jm!r8$e#k5o7c4wi0_)i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['mdm.sankt-afra.de', 'localhost', '127.0.0.1']
 
@@ -118,12 +118,12 @@ CSRF_TRUSTED_ORIGINS = [
 #    }
 #}
 
-#DATABASES = {
- #   'default': {
-  #     'ENGINE': 'django.db.backends.sqlite3',
-   #    'NAME': BASE_DIR / 'db.sqlite3',
-  #}
-#}
+DATABASES = {
+    'default': {
+       'ENGINE': 'django.db.backends.sqlite3',
+       'NAME': BASE_DIR / 'db.sqlite3',
+  }
+}
 
 
 # Password validation

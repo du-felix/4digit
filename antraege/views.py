@@ -3,9 +3,9 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import AntragForm, UnterrichtFormSet, TwoStepForm
+from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach
-from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung
+from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -190,13 +190,14 @@ def antrag_bestaetigen(request, token):
     # Handle form submission
     if request.method == "POST" and request.POST.get("btn") == "bestaetigung":
         def _create_schulleiter(antrag):
+            context["sekretariat"] = False
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
             absolute_url = request.build_absolute_uri(relative_url)
             absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-
             send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
+
         answer = request.POST.get("answer")
         
         # Principal handling
@@ -221,12 +222,13 @@ def antrag_bestaetigen(request, token):
                         obj.temp = 0
                         obj.save()
                 send_email_sekretariat(
-            antrag.user.first_name + " " + antrag.user.last_name, 
-            antrag.klasse,
-            antrag.titel,
-            antrag.grund,
-            antrag
-        )
+                    antrag.user.first_name + " " + antrag.user.last_name, 
+                    antrag.klasse,
+                    antrag.titel,
+                    antrag.grund,
+                    antrag
+                    )
+                schueler_benachrichtigung_antrag(antrag, True)
                 return redirect("home")
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
@@ -248,6 +250,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.save()
                 antrag.status = 'declined'
                 antrag.save()
+                schueler_benachrichtigung_antrag(antrag, False)
                 return redirect("home")
             else:
                 messages.error(request, "Kein Feld ausgewählt")
@@ -267,9 +270,7 @@ def antrag_bestaetigen(request, token):
                         mail_bool = False
                         break
                 
-                if mail_bool and antrag.eltern_bestaetigung:
-                    _create_schulleiter(antrag)
-                elif mail_bool:
+                if mail_bool:
                     token = str(uuid.uuid4())
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     absolute_url = request.build_absolute_uri(relative_url)
@@ -342,21 +343,40 @@ def antrag_bestaetigen(request, token):
             else:
                 antrag.eltern_notwendig = False
                 _create_schulleiter(antrag)
+                schueler_benachrichtigung_seki(antrag)
             if second == "ja":
                 antrag.eltern_bestaetigung = True
                 _create_schulleiter(antrag)
+                schueler_benachrichtigung_seki(antrag)
             else:
                 antrag.eltern_bestaetigung = False
-                schueler_benachrichtigung()
+                schueler_benachrichtigung_eltern(antrag)
+            antrag.save()
+            redirect("home")
         else:
-            pass
-        pass
-    else:
+            messages.error(request, "Felder wurden nicht ausgefüllt")
+
+    elif request.method == "POST" and request.POST.get("btn") == "eltern2":
+        form = YesNoForm(request.POST)
+        if form.is_valid():
+            answer = form.cleaned_data.get("agree")
+            if answer:
+                antrag.eltern_bestaetigung = True
+                _create_schulleiter(antrag)
+                schueler_benachrichtigung_seki(antrag)
+                antrag.save()
+                return redirect("home")
+            else:
+                antrag.eltern_bestaetigung = False
+                schueler_benachrichtigung_eltern(antrag)
+                antrag.save()
+                return redirect("home")
+    
         # Always render the template with complete context at the end
-        if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
-            context["sekretariat"] = True
-            context["form"] = TwoStepForm()
-        return render(request, "antraege/antrag_bearbeiten.html", context)
+    if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
+        context["sekretariat"] = True
+        context["form"] = TwoStepForm()
+    return render(request, "antraege/antrag_bearbeiten.html", context)
 
 @login_required
 def antrag_detail(request, antrag_id):
@@ -435,6 +455,8 @@ def antrag_detail(request, antrag_id):
         'anfragen_status': anfragen_status,
         "rows": rows
     }
+    if not antrag.eltern_bestaetigung and antrag.eltern_notwendig:
+        context["eltern"] = True
     return render(request, 'antraege/antrag.html', context)
 
 def transform_date(date):
@@ -446,3 +468,7 @@ def transform_datetime(datetime):
     time = elements[1]
     date_elements = date.strip("\n").split("-")
     return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
+
+def seki_anfordern(request):
+    form = YesNoForm()
+    return render(request, "antraege/antrag_bearbeiten.html", {"trigger": True, "form": form})

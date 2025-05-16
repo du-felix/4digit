@@ -46,3 +46,13 @@ class TwoStepForm(forms.Form):
         if cleaned.get("first_question") == "yes" and not cleaned.get("second_question"):
             self.add_error("second_question", "This field is required when you answer Yes above.")
         return cleaned
+    
+class YesNoForm(forms.Form):
+    agree = forms.BooleanField(
+        label="Yes / No",
+        required=False,  # unchecked → False; checked → True
+        widget=forms.CheckboxInput(attrs={
+            "class": "form-check-input", 
+            "role": "switch"
+        })
+    )

@@ -26,6 +26,14 @@
             </div>
         </div>
     </div>
+    {% if eltern %}
+    <div style="margin-top: 12px; margin-bottom: 12px; padding: 12px; border: 1px solid #d24343; background-color: #e26e6e; display: flex; flex-direction: column; gap:8px;">
+        <h3>Achtung</h3>
+        <p>Dieser Antrag ist noch nicht von den Eltern genehmigt worden. Wenn deine Eltern eine Mail ans Seki geschrieben haben, benachrichtige das Seki:</p>
+        <a class="btn btn-primary btn-sm" href="{% url 'seki_anfordern' %}" onclick="this.disabled=True; this.innerText='gesendet';">Informieren</a>
+        <p style="font-size: smaller;">Falls du deine Benachrichtigung abgesendet hast, aber das Seki abgelehnt hat, fordere deine Eltern auf ihre Mail abzusenden, und gehe dann persönlich ins Seki.</p>
+    </div>
+    {% endif %}
     
     <h2>Ausstehende Anfragen</h2>
     {% if anfragen %}

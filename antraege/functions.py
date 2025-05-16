@@ -1,9 +1,6 @@
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
-import uuid
-from django.urls import reverse
-from .views import transform_date
 
 def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
@@ -43,7 +40,6 @@ def send_email_schulleiter(schueler, token_url):
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
-    
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
     if antrag:
         anfragen = Anfrage.objects.filter(antrag=antrag, is_principle=False, gm__isnull=True, im__isnull=True)
@@ -79,5 +75,37 @@ def send_eltern_bestaetigung(schueler, token_url, klasse, titel, grund):
     empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def schueler_benachrichtigung():
-    pass
+def schueler_benachrichtigung_eltern(antrag):
+    subject = f"Update für Freistellungsantrag: {antrag.titel}"
+    body = f"""Hallo,\nfür dein Antrag ist eine Elternbestätigung notwendig. Bitte fordere deine Eltern auf, 
+    eine Mail an das Sekretariat zu schreiben, um den Antrag zu bestätigen.\n\n Danke! LG FGH"""
+    empfaenger = antrag.user.email
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+
+def schueler_benachrichtigung_antrag(antrag, bool):
+    if bool:
+        subject = f"Dein Antrag: '{antrag.titel}' wurde genehmigt"
+        body = f"""Hallo,\ndein Antrag wurde genehmigt. Viel Spaß bei was auch immer.\n\nLG FGH"""
+        empfaenger = antrag.user.email
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+    else:
+        subject = f"Dein Antrag: '{antrag.titel}' wurde abgelehnt"
+        body = f"""Hallo,\ndein Antrag wurde abgelehnt. Vielleicht klappt's das nächste Mal.\n\nLG FGH"""
+        empfaenger = antrag.user.email
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+
+def schueler_benachrichtigung_seki(antrag):
+    subject = f"Dein Antrag: '{antrag.titel}' wurde an den Schulleiter übermittelt"
+    body = f"""Hallo,\ndein Antrag wurde an den Schulleiter übermittelt. Hoffentlich wird's was!\n\nLG FGH"""
+    empfaenger = antrag.user.email
+    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
+
+def transform_date(date):
+    elements = date.strip("\n").split("-")
+    return elements[2] + "." + elements[1] + "." + elements[0]
+def transform_datetime(datetime):
+    elements = str(datetime).split(" ")
+    date = elements[0]
+    time = elements[1]
+    date_elements = date.strip("\n").split("-")
+    return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
