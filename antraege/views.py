@@ -219,19 +219,22 @@ def antrag_bestaetigen(request, token):
                 anfrage.save()
                 antrag.status = 'accepted'
                 antrag.save()
-                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False, is_secretariat=False)
                 for bestaetigung in bestaetigungen:
-                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
-                    for stunde in stunden:
-                        print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
-                        obj = Zaehler.objects.get(
-                            schueler=antrag.user,
-                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
-                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
-                        )
-                        obj.zaehler += obj.temp
-                        obj.temp = 0
-                        obj.save()
+                    if bestaetigung.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
+                        bestaetigungen.remove(bestaetigung)
+                    else:
+                        stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                        for stunde in stunden:
+                            print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
+                            obj = Zaehler.objects.get(
+                                schueler=antrag.user,
+                                lehrer=Lehrer.objects.get(email=bestaetigung.email),
+                                fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                            )
+                            obj.zaehler += obj.temp
+                            obj.temp = 0
+                            obj.save()
                 send_email_sekretariat(
                     antrag.user.first_name + " " + antrag.user.last_name, 
                     antrag.klasse,
@@ -298,13 +301,10 @@ def antrag_bestaetigen(request, token):
                         antrag.titel,
                         antrag.grund
                     )
-
-
                 return redirect("home")
                 
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
-                
                 anfrage.response = Anfrage.DECLINED
                 anfrage.responded_at = timezone.now()
                 anfrage.reason = grund
