@@ -19,7 +19,12 @@
                 {% endif %}
             </div>
             {% endfor %}
-            
+            <div>
+                <input type ="checkbox" id="is_principal" name="is_principal" {% if edit_lehrer.principal %}checked{% endif %}>
+                <label for="is_principal">Schulleiter</label>
+                <input type ="checkbox" id="is_secretariat" name="is_secretariat" {% if edit_lehrer.secretariat %}checked{% endif %}>
+                <label for="is_secretariat">Sekretariat</label>
+            </div>
             <div class="form-actions">
                 <a href="{% url 'lehrer' %}" class="btn btn-secondary">Abbrechen</a>
                 <button type="submit" class="btn btn-primary">Änderungen speichern</button>

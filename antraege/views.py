@@ -41,6 +41,16 @@ def neuer_antrag(request):
                         "unterricht_formset": formset
                 })
         if antrag.is_valid() and formset.is_valid():
+            anfangsdatum = antrag.cleaned_data.get("anfangsdatum")
+            today = timezone.now().date()
+            min_submission_date = anfangsdatum - timezone.timedelta(days=5)
+            
+            if today > min_submission_date:
+                messages.error(request, "Anträge müssen mindestens 5 Tage vor dem Anfangsdatum erstellt werden.")
+                return render(request, "antraege/neuer_antrag.html", {
+                    "antrag": antrag,
+                    "unterricht_formset": formset
+                })
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()

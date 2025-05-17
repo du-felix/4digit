@@ -262,6 +262,7 @@ def lehrer(request, lehrer_id=None):
         
         lehrer = Lehrer.objects.filter(id__in=selected_lehrers)
 
+
         if action == 'delete':
             emails = [lehrer.email for lehrer in lehrers]
             lehrer.delete()
@@ -295,15 +296,21 @@ def edit_lehrer(request, lehrer_id=None):
         if request.method == 'POST':
             form = add_lehrer_Form(request.POST, instance=edit_lehrer)
             if form.is_valid():
-                form.save()
-                messages.success(request, f"Lehrer {edit_lehrer.email} erfolgreich aktualisiert")
+                lehrer = form.save(commit=False)
+                
+                # Handle checkbox values - get directly from POST data
+                lehrer.principal = 'is_principal' in request.POST
+                lehrer.secretariat = 'is_secretariat' in request.POST
+                
+                lehrer.save()
+                messages.success(request, f"Lehrer {lehrer.email} erfolgreich aktualisiert")
                 return redirect('lehrer')
         else:
             form = add_lehrer_Form(instance=edit_lehrer)
     else:
         edit_lehrer = None
         form = add_lehrer_Form()
-        
+    
     return render(request, 'adminview/edit_lehrer.html', {'form': form, 'edit_lehrer': edit_lehrer})
 
 @login_required
