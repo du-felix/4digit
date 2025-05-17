@@ -29,12 +29,11 @@ UnterrichtFormSet = formset_factory(Unterricht, extra=1)
 YES_NO = (("ja", "Ja"), ("nein", "Nein"))
 class TwoStepForm(forms.Form):
     first_question  = forms.ChoiceField(
-        label="Do you want to answer a follow-up question?",
         choices=YES_NO,
         widget=forms.RadioSelect
     )
     second_question = forms.ChoiceField(
-        label="Follow-up: … ?",
+        label="Liegt die Bestätigung der Eltern vor?",
         choices=YES_NO,
         widget=forms.RadioSelect,
         required=False       # always optional at field-declaration time

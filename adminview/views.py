@@ -290,7 +290,7 @@ def add_lehrer(request):
     return render(request, 'adminview/add_lehrer.html', {'form': form})
 
 def edit_lehrer(request, lehrer_id=None):
-    if lehrer_id:
+    if lehrer_id != None:
         edit_lehrer = get_object_or_404(Lehrer, id=lehrer_id)
         if request.method == 'POST':
             form = add_lehrer_Form(request.POST, instance=edit_lehrer)
