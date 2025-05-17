@@ -30,37 +30,68 @@
     </form>
 </div>
 {% elif sekretariat %}
+<style>
+    /* ─────────────────────────────────────────────────────────
+       Style every <input type="radio"> in your two-step form
+       ───────────────────────────────────────────────────────── */
+    #two-step-form {
+      /* optional: limit the width, center it, etc. */
+      max-width: 480px;
+      margin: 0 auto;
+    }
+  
+    /* make the whole label-click area bigger & bolder */
+    #two-step-form label {
+      display: inline-flex;
+      align-items: center;
+      font-size: 1.1rem;
+      margin-right: 1.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+  
+    /* scale up the actual circle, add a bit of breathing room */
+    #two-step-form input[type="radio"] {
+      transform: scale(1.4);
+      margin-right: 0.5rem;
+      cursor: pointer;
+    }
+  
+    /* add a little more vertical spacing between options */
+    #two-step-form .mb-3 {
+      margin-bottom: 1.25rem;
+    }
+</style>
 <div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
     <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
 
     <h2>"{{ titel }}"</h2>
     <p><b>{{ antrag.anfangsdatum }} bis {{ antrag.enddatum }}</b></p>
     <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
-    <h3>Grund:</h3>
+    <h3 style="margin-bottom: 0px;">Grund:</h3>
     <p>{{ schueler_grund }}</p>
-    <h3>Ist eine Bestätigung der Eltern notwendig?</h3>
+    <label style="margin-bottom: 0px;">Ist eine Bestätigung der Eltern notwendig?</label>
 
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">{{ message }}</div>
         {% endfor %}
     {% endif %}
-    <form method="post" id="two-step-form">
+    <form style="margin-top: 8px;" method="post" id="two-step-form">
         {% csrf_token %}
         
         <!-- first yes/no -->
-        <div class="mb-3">
-          {{ form.first_question.label_tag }}
+        <div class="mb-3" style="margin-bottom: 8px;">
           {{ form.first_question }}
         </div>
-      
+
         <!-- second yes/no, hidden by default -->
-        <div id="second-wrapper" class="mb-3" style="display:none;">
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;" id="second-wrapper" class="mb-3" style="display:none;">
           {{ form.second_question.label_tag }}
           {{ form.second_question }}
         </div>
       
-        <button type="submit" name="btn" value="eltern">Absenden</button>
+        <button style="margin-bottom: 16px;" type="submit" name="btn" value="eltern">Absenden</button>
       </form>
 </div>
 <script>
@@ -69,7 +100,7 @@
       const secondWrapper  = document.getElementById("second-wrapper");
     
       const toggleSecond = () => {
-        const yesSelected = [...firstRadios].some(r => r.checked && r.value === "yes");
+        const yesSelected = [...firstRadios].some(r => r.checked && r.value === "ja");
         secondWrapper.style.display = yesSelected ? "" : "none";
     
         // optional: clear 2nd answer if the block just disappeared
@@ -84,6 +115,7 @@
     });
 </script>
 {% else %}
+
 <div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
     <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
 
@@ -148,7 +180,7 @@
         <label>Gründe einer Ablehnung:</label>
         <textarea name="grund" id="" placeholder="Gründe für die Ablehnung des Antrags..."></textarea>
         
-        <button type="submit" name="btn" value="bestaetigung">Absenden</button>
+        <button style="margin-bottom: 16px;" type="submit" name="btn" value="bestaetigung">Absenden</button>
     </form>
 </div>
 {% endif %}

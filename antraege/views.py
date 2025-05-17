@@ -162,7 +162,16 @@ def user_antraege(request):
 def antrag_bestaetigen(request, token):
     anfrage = Anfrage.objects.get(token=token)
     antrag = anfrage.antrag
-    
+
+    def _create_schulleiter(antrag):
+        context["sekretariat"] = False
+        token = str(uuid.uuid4())
+        relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+        Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
+        absolute_url = request.build_absolute_uri(relative_url)
+        absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+        send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
+
     # Create the initial context
     context = {
         "token": token,
@@ -189,14 +198,6 @@ def antrag_bestaetigen(request, token):
     
     # Handle form submission
     if request.method == "POST" and request.POST.get("btn") == "bestaetigung":
-        def _create_schulleiter(antrag):
-            context["sekretariat"] = False
-            token = str(uuid.uuid4())
-            relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-            Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
-            absolute_url = request.build_absolute_uri(relative_url)
-            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-            send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
 
         answer = request.POST.get("answer")
         
@@ -336,23 +337,23 @@ def antrag_bestaetigen(request, token):
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
         form = TwoStepForm(request.POST)
         if form.is_valid():
-            first = form.cleaned_data("first_question")
+            first = form.cleaned_data.get("first_question")
             second = form.cleaned_data.get("second_question")
             if first == "ja":
                 antrag.eltern_notwendig = True
+                if second == "ja":
+                    antrag.eltern_bestaetigung = True
+                    _create_schulleiter(antrag)
+                    schueler_benachrichtigung_seki(antrag)
+                else:
+                    antrag.eltern_bestaetigung = False
+                    schueler_benachrichtigung_eltern(antrag)
             else:
                 antrag.eltern_notwendig = False
                 _create_schulleiter(antrag)
                 schueler_benachrichtigung_seki(antrag)
-            if second == "ja":
-                antrag.eltern_bestaetigung = True
-                _create_schulleiter(antrag)
-                schueler_benachrichtigung_seki(antrag)
-            else:
-                antrag.eltern_bestaetigung = False
-                schueler_benachrichtigung_eltern(antrag)
             antrag.save()
-            redirect("home")
+            return redirect("home")
         else:
             messages.error(request, "Felder wurden nicht ausgefüllt")
 
