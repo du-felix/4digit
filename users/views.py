@@ -21,7 +21,6 @@ def login(request):
         if user is not None:
             if user.is_staff:
                 lg(request, user)
-                messages.success(request, "Login successful!")
 
                 return redirect("adminview-home")  # Redirect to staff dashboard
             else:

@@ -127,7 +127,6 @@ def neuer_antrag(request):
             Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email)
             send_email_im(im.email, im.name, request.user.first_name+" "+request.user.last_name, absolute_url)
             
-            messages.success(request, "Antrag erfolgreich erstellt.")
             return redirect("home")
         else:
             # Detaillierte Fehlermeldungen
@@ -219,7 +218,7 @@ def antrag_bestaetigen(request, token):
                 anfrage.save()
                 antrag.status = 'accepted'
                 antrag.save()
-                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False, is_secretariat=False)
+                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
                     if bestaetigung.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
                         bestaetigungen.remove(bestaetigung)
@@ -366,6 +365,10 @@ def antrag_bestaetigen(request, token):
             return redirect("home")
         else:
             messages.error(request, "Felder wurden nicht ausgefüllt")
+            return render(request, "antraege/antrag_bearbeiten.html", {
+                "sekretariat": True,
+                "form": form
+            })
 
     elif request.method == "POST" and request.POST.get("btn") == "eltern2":
         form = YesNoForm(request.POST)
