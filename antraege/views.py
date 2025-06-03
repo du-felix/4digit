@@ -114,7 +114,7 @@ def neuer_antrag(request):
                 absolute_url = request.build_absolute_uri(relative_url)
                 absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-                Anfrage.objects.create(antrag=antrag_instance, email=gm.email, token=token, gm=gm.email)
+                Anfrage.objects.create(antrag=antrag_instance, email=gm.email, token=token, gm=gm.email, unterricht=unterricht_text)
                 send_email_gm(gm.email, gm.name, request.user.first_name+" "+request.user.last_name, absolute_url)
             except Exception as e:
                 print(f"Failed to send email to IM {im.email}: {str(e)}")
@@ -125,7 +125,7 @@ def neuer_antrag(request):
             absolute_url = request.build_absolute_uri(relative_url)
             absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-            Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email)
+            Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email, unterricht=unterricht_text)
             send_email_im(im.email, im.name, request.user.first_name+" "+request.user.last_name, absolute_url)
             
             return redirect("home")
