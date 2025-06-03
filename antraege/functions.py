@@ -49,7 +49,7 @@ def send_email_schulleiter(schueler, token_url):
     empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
+def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
     if antrag:
         anfragen = Anfrage.objects.filter(antrag=antrag, is_principle=False, gm__isnull=True, im__isnull=True)
@@ -72,17 +72,17 @@ def send_email_sekretariat(schueler, klasse, titel, grund, antrag=None):
     {unterrichte_text}
     \nDer Grund dafür ist: {grund}
     Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
-    empfaenger = [Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first()]
+    empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
-def send_eltern_bestaetigung(schueler, token_url, klasse, titel, grund):
+def send_eltern_bestaetigung(schueler, token_url, klasse, titel, email):
     subject = f"Elternbestätigung prüfen von {schueler}: {titel}"
     body = f"""Hallo liebes Seki,
     der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat einen Freistellungsantrag gestellt.Bitte prüft, ob eine Elternbestätigung vorliegen muss, und wenn, ob eine vorliegt.
     Hier der Link: {token_url}
     
     Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
-    empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
+    empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def schueler_benachrichtigung_eltern(antrag):

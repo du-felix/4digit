@@ -9,6 +9,7 @@ from .functions import send_email, send_email_schulleiter, send_email_gm, send_e
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from django.core import signing
 
 # Create your views here.
 def validate_afra_email(email):
@@ -234,13 +235,16 @@ def antrag_bestaetigen(request, token):
                             obj.zaehler += obj.temp
                             obj.temp = 0
                             obj.save()
-                send_email_sekretariat(
-                    antrag.user.first_name + " " + antrag.user.last_name, 
-                    antrag.klasse,
-                    antrag.titel,
-                    antrag.grund,
-                    antrag
-                    )
+                seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+                for email in seki_mails:
+                    send_email_sekretariat(
+                        antrag.user.first_name + " " + antrag.user.last_name, 
+                        antrag.klasse,
+                        antrag.titel,
+                        antrag.grund,
+                        email,
+                        antrag
+                        )
                 schueler_benachrichtigung_antrag(antrag, True)
                 return redirect("home")
             elif answer == "ablehnen":
@@ -288,18 +292,21 @@ def antrag_bestaetigen(request, token):
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     absolute_url = request.build_absolute_uri(relative_url)
                     absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-                    Anfrage.objects.create(
-                        antrag=antrag,
-                        email=Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first(),
-                        token=token
-                    )
-                    send_eltern_bestaetigung(
-                        antrag.user.first_name + " " + antrag.user.last_name, 
-                        absolute_url,
-                        antrag.klasse,
-                        antrag.titel,
-                        antrag.grund
-                    )
+                    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+                    for email in seki_mails:
+                        Anfrage.objects.create(
+                            antrag=antrag,
+                            email=email,
+                            token=token
+                        )
+                        send_eltern_bestaetigung(
+                            antrag.user.first_name + " " + antrag.user.last_name,
+                            absolute_url,
+                            antrag.klasse,
+                            antrag.titel,
+                            email
+                        )  
+
                 return redirect("home")
                 
             elif answer == "ablehnen":
@@ -324,18 +331,21 @@ def antrag_bestaetigen(request, token):
                     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                     absolute_url = request.build_absolute_uri(relative_url)
                     absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-                    Anfrage.objects.create(
-                        antrag=antrag,
-                        email=Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first(),
-                        token=token
-                    )
-                    send_eltern_bestaetigung(
-                        antrag.user.first_name + " " + antrag.user.last_name, 
-                        absolute_url,
-                        antrag.klasse,
-                        antrag.titel,
-                        antrag.grund
-                    )
+                    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+                    for email in seki_mails:
+                        Anfrage.objects.create(
+                            antrag=antrag,
+                            email=email,
+                            token=token
+                        )
+                        send_eltern_bestaetigung(
+                            antrag.user.first_name + " " + antrag.user.last_name,
+                            absolute_url,
+                            antrag.klasse,
+                            antrag.titel,
+                            email
+                        )  
+
 
                 return redirect("home")
             else:
@@ -484,5 +494,27 @@ def transform_datetime(datetime):
     return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
 
 def seki_anfordern(request):
-    form = YesNoForm()
-    return render(request, "antraege/antrag_bearbeiten.html", {"trigger": True, "form": form})
+    antrag = get_object_or_404(Antrag, id=request.POST.get("antrag_id"))
+
+    # Create a token with embedded antrag ID
+    token_data = {"anfordern": True}
+    token = signing.dumps(token_data)
+
+    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+    absolute_url = request.build_absolute_uri(relative_url)
+    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+
+    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+    for email in seki_mails:
+        Anfrage.objects.create(
+            antrag=antrag,
+            email=email,
+            token=token
+        )
+        send_eltern_bestaetigung(
+            antrag.user.first_name + " " + antrag.user.last_name,
+            absolute_url,
+            antrag.klasse,
+            antrag.titel,
+            email
+        )  

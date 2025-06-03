@@ -9,4 +9,5 @@ urlpatterns = [
     path('user_antraege/', views.user_antraege, name='user_antraege'),
     path("antrag_bestaetigen/<str:token>/", views.antrag_bestaetigen, name="antrag_bestaetigen"),
     path('antrag/<int:antrag_id>/', views.antrag_detail, name='antrag_detail'),
+    path('anfordern', views.seki_anfordern, name='seki_anfordern'),
 ]
