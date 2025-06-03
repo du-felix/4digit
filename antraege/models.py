@@ -75,6 +75,7 @@ class Anfrage(models.Model):
     responded_at = models.DateTimeField(null=True, blank=True)
     is_principle = models.BooleanField(default=False, blank=True)
     token = models.CharField(max_length=64, unique=True, blank=True, null=True)
+    trigger = models.BooleanField(default=False, blank=True)
 
 class Fach(models.Model):
     name = models.CharField(max_length=100)
@@ -95,3 +96,8 @@ class Zaehler(models.Model):
     fach = models.ForeignKey(Fach, on_delete=models.CASCADE)
     zaehler = models.IntegerField(default=0)
     temp = models.IntegerField(default=0)
+
+class AntragSubmission(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    antrag = models.ForeignKey(Antrag, on_delete=models.CASCADE)
+    submitted_at = models.DateTimeField(auto_now_add=True)

@@ -4,12 +4,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
-from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach
+from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach, AntragSubmission
 from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 from django.core import signing
+from django.utils.timezone import now
+from django.http import HttpResponse
+from datetime import timedelta
 
 # Create your views here.
 def validate_afra_email(email):
@@ -197,13 +200,13 @@ def antrag_bestaetigen(request, token):
     
     # If already responded, redirect with message
     if anfrage.response != Anfrage.NOT_RESPONDED and request.method == "GET":
-        messages.error(request, "Anfrage bereits bearbeitet")
-        return redirect("home")
+        return HttpResponse("Anfrage bereits bearbeitet.", status=403)
     
     # Add teacher confirmations to context if principal view
     if anfrage.is_principle:
         bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
-        context["bestaetigungen"] = bestaetigungen
+        filtered_bestaetigungen = [a for a in bestaetigungen if not a.email in Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)]
+        context["bestaetigungen"] = filtered_bestaetigungen
         context["fehlzeiten"] = Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0
     
     # Handle form submission
@@ -221,20 +224,17 @@ def antrag_bestaetigen(request, token):
                 antrag.save()
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
-                    if bestaetigung.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
-                        bestaetigungen.remove(bestaetigung)
-                    else:
-                        stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
-                        for stunde in stunden:
-                            print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
-                            obj = Zaehler.objects.get(
-                                schueler=antrag.user,
-                                lehrer=Lehrer.objects.get(email=bestaetigung.email),
-                                fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
-                            )
-                            obj.zaehler += obj.temp
-                            obj.temp = 0
-                            obj.save()
+                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    for stunde in stunden:
+                        print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
+                        obj = Zaehler.objects.get(
+                            schueler=antrag.user,
+                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
+                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                        )
+                        obj.zaehler += obj.temp
+                        obj.temp = 0
+                        obj.save()
                 seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
                 for email in seki_mails:
                     send_email_sekretariat(
@@ -354,7 +354,11 @@ def antrag_bestaetigen(request, token):
             messages.error(request, "Anfrage bereits bearbeitet")
             return redirect("home")
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
+        anfragen = Anfrage.objects.filter(token=token)
         form = TwoStepForm(request.POST)
+        print(Anfrage.objects.filter(token=token).first().response)
+        if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
+            return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
             first = form.cleaned_data.get("first_question")
             second = form.cleaned_data.get("second_question")
@@ -372,16 +376,19 @@ def antrag_bestaetigen(request, token):
                 _create_schulleiter(antrag)
                 schueler_benachrichtigung_seki(antrag)
             antrag.save()
-            return redirect("home")
+            for anfrage in anfragen:
+                anfrage.response = Anfrage.ACCEPTED
+                anfrage.save()
+            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
         else:
-            messages.error(request, "Felder wurden nicht ausgefüllt")
-            return render(request, "antraege/antrag_bearbeiten.html", {
-                "sekretariat": True,
-                "form": form
-            })
+            return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
 
     elif request.method == "POST" and request.POST.get("btn") == "eltern2":
         form = YesNoForm(request.POST)
+        anfragen = Anfrage.objects.filter(token=token)
+        form = TwoStepForm(request.POST)
+        if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
+            return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
             answer = form.cleaned_data.get("agree")
             if answer:
@@ -389,13 +396,18 @@ def antrag_bestaetigen(request, token):
                 _create_schulleiter(antrag)
                 schueler_benachrichtigung_seki(antrag)
                 antrag.save()
-                return redirect("home")
+                for anfrage in anfragen:
+                    anfrage.response = Anfrage.ACCEPTED
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
             else:
                 antrag.eltern_bestaetigung = False
                 schueler_benachrichtigung_eltern(antrag)
                 antrag.save()
-                return redirect("home")
-    
+                for anfrage in anfragen:
+                    anfrage.response = Anfrage.ACCEPTED
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+        else:
+            return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
     if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
         context["sekretariat"] = True
@@ -494,8 +506,24 @@ def transform_datetime(datetime):
     return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
 
 def seki_anfordern(request):
-    antrag = get_object_or_404(Antrag, id=request.POST.get("antrag_id"))
 
+    antrag_id = request.POST.get('antrag_id')
+    antrag = Antrag.objects.get(id=antrag_id)
+
+    one_hour_ago = now() - timedelta(hours=1)
+
+    # Check if this user submitted this Antrag in the last hour
+    recent_submission = AntragSubmission.objects.filter(
+        user=request.user,
+        antrag=antrag,
+        submitted_at__gte=one_hour_ago
+    ).exists()
+
+    if recent_submission:
+        messages.error(request, "Du kannst dieses Formular nur einmal pro Stunde absenden.")
+        return HttpResponse("Du kannst nur einmal pro Stunde eine neue Prüfung anfordern", status=403)
+    
+    AntragSubmission.objects.create(user=request.user, antrag=antrag)
     # Create a token with embedded antrag ID
     token_data = {"anfordern": True}
     token = signing.dumps(token_data)
@@ -503,13 +531,14 @@ def seki_anfordern(request):
     relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
     absolute_url = request.build_absolute_uri(relative_url)
     absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-
+ 
     seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
     for email in seki_mails:
         Anfrage.objects.create(
             antrag=antrag,
             email=email,
-            token=token
+            token=token,
+            trigger=True
         )
         send_eltern_bestaetigung(
             antrag.user.first_name + " " + antrag.user.last_name,
@@ -518,3 +547,4 @@ def seki_anfordern(request):
             antrag.titel,
             email
         )  
+    return redirect("home")

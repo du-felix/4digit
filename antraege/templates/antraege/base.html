@@ -13,6 +13,29 @@
     {% endblock %}
 </head>
 <body>
+    <style>
+        .banner {
+    padding: 1em;
+    border-radius: 5px;
+    margin-bottom: 1em;
+    text-align: center;
+}
+
+.banner.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.banner.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.banner.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+    </style>
     <header>
         <div>
             <a href="{% url 'home' %}"><img src="{% static 'images/logo.png' %}" alt="4digit"></a>
@@ -28,7 +51,15 @@
     </header>
     <main style="display: flex; flex-direction: column; min-height: 88vh;">
         {% block content %}
-        <!-- Default content can be placed here if needed -->
+                {% if messages %}
+        <div>
+            {% for message in messages %}
+            <div class="banner {{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endblock %}
     </main>
     <footer>
