@@ -206,7 +206,38 @@ def antrag_bestaetigen(request, token):
     if anfrage.is_principle:
         bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
         filtered_bestaetigungen = [a for a in bestaetigungen if not a.email in Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)]
-        context["bestaetigungen"] = filtered_bestaetigungen
+
+        bestaetigungen_with_function = []
+        for bestaetigung in filtered_bestaetigungen:
+            # Determine the name with function
+            if bestaetigung.gm:
+                try:
+                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
+                    name_with_function = f"{lehrer.name} (GM)"
+                except Lehrer.DoesNotExist:
+                    name_with_function = f"{bestaetigung.name} (GM)"
+            elif bestaetigung.im:
+                try:
+                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
+                    name_with_function = f"{lehrer.name} (IM)"
+                except Lehrer.DoesNotExist:
+                    name_with_function = f"{bestaetigung.name} (IM)"
+            else:
+                # Regular teacher
+                try:
+                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
+                    name_with_function = lehrer.name
+                except Lehrer.DoesNotExist:
+                    name_with_function = bestaetigung.name
+            
+            # Create a structured object for the template
+            bestaetigungen_with_function.append({
+                'name': name_with_function,
+                'response': bestaetigung.response,
+                'reason': bestaetigung.reason
+            })
+        
+        context["bestaetigungen"] = bestaetigungen_with_function
         context["fehlzeiten"] = Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0
     
     # Handle form submission
@@ -421,13 +452,16 @@ def antrag_detail(request, antrag_id):
     
     # Hole alle Anfragen für diesen Antrag
     anfragen = Anfrage.objects.filter(antrag=antrag)
+
+    secretariat_emails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+    anfragen_non_secretariat = anfragen.exclude(email__in=secretariat_emails)
     
     # Bestimme den Gesamtstatus der Anfragen
     anfragen_status = {
-        'total': len(anfragen),
-        'accepted': anfragen.filter(response=Anfrage.ACCEPTED).count(),
-        'declined': anfragen.filter(response=Anfrage.DECLINED).count(),
-        'not_responded': anfragen.filter(response=Anfrage.NOT_RESPONDED).count()
+        'total': anfragen_non_secretariat.count(),
+        'accepted': anfragen_non_secretariat.filter(response=Anfrage.ACCEPTED).count(),
+        'declined': anfragen_non_secretariat.filter(response=Anfrage.DECLINED).count(),
+        'not_responded': anfragen_non_secretariat.filter(response=Anfrage.NOT_RESPONDED).count()
     }
     
     unterricht = []
