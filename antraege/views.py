@@ -134,20 +134,6 @@ def neuer_antrag(request):
             gm = antrag.cleaned_data.get("gm")
             im = antrag.cleaned_data.get("im")
 
-            # Optional: E-Mail-Validierung hier (statt while False)
-            try:
-                validate_afra_email(gm)
-                validate_afra_email(im)
-            except ValidationError:
-                messages.error(
-                    request,
-                    "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt."
-                )
-                return render(request, "antraege/neuer_antrag.html", {
-                    "antrag": antrag,
-                    "unterricht_formset": formset
-                })
-
             # ---- Unterricht/E-Mails vorbereiten ----
             lehrer_dict = {}
             for form in formset:
