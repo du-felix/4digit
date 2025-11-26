@@ -253,15 +253,32 @@ def antrag_bestaetigen(request, token):
                 anfrage.save()
                 antrag.status = 'accepted'
                 antrag.save()
-                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                bestaetigungen = Anfrage.objects.filter(
+                    antrag=antrag,
+                    is_principle=False,
+                    gm__isnull=True,
+                    im__isnull=True,
+                )
+
+                sekretariat_emails = set(
+                    Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+                )
+
                 for bestaetigung in bestaetigungen:
+                    # Sekretariat explizit überspringen
+                    if bestaetigung.email in sekretariat_emails:
+                        continue
+
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
                     for stunde in stunden:
-                        print(Fach.objects.get(kuerzel=stunde.split(",")[0].upper()))
+                        kuerzel = stunde.split(",")[0].strip().upper()
+                        fach = Fach.objects.get(kuerzel=kuerzel)
+
                         obj = Zaehler.objects.get(
                             schueler=antrag.user,
-                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
-                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                            lehrer=lehrer,
+                            fach=fach,
                         )
                         obj.zaehler += obj.temp
                         obj.temp = 0

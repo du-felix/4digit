@@ -5,13 +5,18 @@ from .models import Anfrage, Lehrer, Fach
 def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {lehrer_name},
-    ihr Schüler {schueler_name} hat einen Antrag auf Freistellung gestellt. Folgende Stunden sind davon betroffen:
+    ihr Schüler {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    Folgende Stunden sind davon betroffen:
+
     {unterricht}
     
-    Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
+    Bitte bearbeiten Sie den Antrag in nächster Zeit über den folgenden Link:
+
     {token_url}
     
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
@@ -19,10 +24,14 @@ def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
 def send_email_gm(email, gm_name, schueler_name, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {gm_name},
-    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt. Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
+    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    Bitte bearbeiten Sie den Antrag in nächster Zeit über den folgenden Link:
+
     {token_url}
     
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
@@ -30,10 +39,14 @@ def send_email_gm(email, gm_name, schueler_name, token_url):
 def send_email_im(email, im_name, schueler_name, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {im_name},
-    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt. Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
+    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
+
     {token_url}
     
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
@@ -41,10 +54,14 @@ def send_email_im(email, im_name, schueler_name, token_url):
 def send_email_schulleiter(schueler, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler}"
     body = f"""Guten Tag {Lehrer.objects.filter(principal=True).values_list('name', flat=True).first()},
-    der Schüler / die Schülerin {schueler} hat einen Antrag auf Freistellung gestellt. Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
+    der Schüler / die Schülerin {schueler} hat einen Antrag auf Freistellung gestellt.
+    Bitte bearbeiten Sie den Antrag in nächster Zeit über folgenden Link:
+    
     {token_url}
     
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
@@ -68,29 +85,38 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
-    body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für folgende Schulstunden von der Schulleitung freistellen lassen:
+    body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für den nachfolgenden Zeitraum von der Schulleitung freistellen lassen:
+    (Hier noch Beginn und Ende der Freistellung einfügen).
+
+    Brauchen wir noch GM und IM sowie die Bestätigungen /Ablehungen mit Details.
     {unterrichte_text}
-    \nDer Grund dafür ist: {grund}
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
+    \nDer Grund dafür ist: "{grund}"
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def send_eltern_bestaetigung(schueler, token_url, klasse, titel, email):
     subject = f"Elternbestätigung prüfen von {schueler}: {titel}"
-    body = f"""Hallo liebes Seki,
-    der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat einen Freistellungsantrag gestellt.Bitte prüft, ob eine Elternbestätigung vorliegen muss, und wenn, ob eine vorliegt.
-    Hier der Link: {token_url}
+    body = f"""Guten Tag,
+    der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat einen Freistellungsantrag gestellt.
+    Bitte prüfen Sie, ob eine Elternbestätigung nötig ist, und wenn, ob eine vorliegt.
+    Geben Sie diese Informationen dann über folgenden Link weiter: {token_url}
     
-    Vielen Dank! BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
+    Vielen Dank!
+    
+    BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
 def schueler_benachrichtigung_eltern(antrag):
     subject = f"Update für Freistellungsantrag: {antrag.titel}"
     body = f"""Hallo,
-    für dein Antrag ist eine Elternbestätigung notwendig. Bitte fordere deine Eltern auf, eine Mail an das Sekretariat zu schreiben, um den Antrag zu bestätigen.
+    für dein Antrag ist eine Elternbestätigung notwendig.
+    Bitte fordere deine Eltern auf, eine Mail an das Sekretariat zu schreiben, um den Antrag zu bestätigen.
     
-    Danke! LG FGH"""
+    Danke! LG febriel"""
     empfaenger = [antrag.user.email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
@@ -108,7 +134,7 @@ def schueler_benachrichtigung_antrag(antrag, bool):
         body = f"""Hallo,
         dein Antrag wurde abgelehnt. Vielleicht klappt's das nächste Mal.
         
-        LG FGH"""
+        LG febriel"""
         empfaenger =[antrag.user.email]
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
@@ -117,7 +143,7 @@ def schueler_benachrichtigung_seki(antrag):
     body = f"""Hallo,
     dein Antrag wurde an den Schulleiter übermittelt. Hoffentlich wird's was!
     
-    LG FGH"""
+    LG febriel"""
     empfaenger = [antrag.user.email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=False)
 
