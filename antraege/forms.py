@@ -8,7 +8,7 @@ from adminview.views import validate_afra_email
 class AntragForm(forms.ModelForm):
     class Meta:
         model = Antrag
-        fields = ['titel', 'grund', "klasse", 'anfangsdatum', 'enddatum', 'im', 'gm']
+        fields = ['titel', 'grund', "klasse", 'anfangsdatum','anfangszeit', 'enddatum', 'endzeit', 'im', 'gm']
         widgets = {
             'klasse': forms.Select(attrs={'style': 'width: 500px;'})
         }
