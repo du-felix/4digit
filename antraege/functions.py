@@ -86,11 +86,16 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für den nachfolgenden Zeitraum von der Schulleitung freistellen lassen:
-    (Hier noch Beginn und Ende der Freistellung einfügen).
+    
+    {antrag.anfangsdatum}, {antrag.anfangszeit} Uhr bis {antrag.enddatum}, {antrag.endzeit} Uhr.
 
-    Brauchen wir noch GM und IM sowie die Bestätigungen /Ablehungen mit Details.
     {unterrichte_text}
-    \nDer Grund dafür ist: "{grund}"
+    \nDer Grund dafür ist: "{grund}".
+
+    Der betroffene Schüler hat folgende Mentoren:
+    GM: {antrag.anfrage_set.filter(is_principle=False).first().gm}
+    IM: {antrag.anfrage_set.filter(is_principle=False).first().im}   
+         
     Vielen Dank!
     
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
