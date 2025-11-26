@@ -13,6 +13,7 @@ from django.core import signing
 from django.utils.timezone import now
 from django.http import HttpResponse
 from datetime import timedelta
+from datetime import datetime, time as dtime
 
 # Create your views here.
 def validate_afra_email(email):
@@ -34,33 +35,120 @@ def neuer_antrag(request):
     if request.method == "POST":
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
-        while False:
-            try:
-                    validate_afra_email(gm)
-                    validate_afra_email(im)
-            except ValidationError:
-                    messages.error(request, "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt.")
-                    return render(request, "antraege/neuer_antrag.html", {
-                        "antrag": antrag,
-                        "unterricht_formset": formset
-                })
+
+        # while False Block macht nichts – kann eigentlich weg
+        # while False:
+        #     ...
+
         if antrag.is_valid() and formset.is_valid():
+            # ---- Antrag-Zeitraum aus Formular holen ----
             anfangsdatum = antrag.cleaned_data.get("anfangsdatum")
+            enddatum = antrag.cleaned_data.get("enddatum")
+            anfangszeit = antrag.cleaned_data.get("anfangszeit")
+            endzeit = antrag.cleaned_data.get("endzeit")
+
+            def to_date(v):
+                if v is None:
+                    return None
+                if hasattr(v, "date"):
+                    return v.date()
+                return v
+
+            def to_time(v):
+                if v is None:
+                    return None
+                if hasattr(v, "time"):
+                    return v.time()
+                return v
+
+            anfangsdatum_date = to_date(anfangsdatum)
+            enddatum_date = to_date(enddatum)
+            anfangszeit_val = to_time(anfangszeit)
+            endzeit_val = to_time(endzeit)
+
+            # Falls Zeiten nicht angegeben wurden → Default setzen
+            if anfangszeit_val is None:
+                anfangszeit_val = dtime(0, 0)
+            if endzeit_val is None:
+                endzeit_val = dtime(23, 59)
+
+            start_dt = end_dt = None
+            if anfangsdatum_date and enddatum_date:
+                start_dt = datetime.combine(anfangsdatum_date, anfangszeit_val)
+                end_dt = datetime.combine(enddatum_date, endzeit_val)
+
+            # ---- Prüfung jeder Unterrichtsstunde (Datum+Zeit im Zeitraum?) ----
+            for form in formset:
+                if not form.cleaned_data:
+                    continue
+
+                u_datum = to_date(form.cleaned_data.get("datum"))
+                zeit_von = to_time(form.cleaned_data.get("zeit_von"))
+                zeit_bis = to_time(form.cleaned_data.get("zeit_bis"))
+
+                # Beginn prüfen
+                if u_datum and zeit_von and start_dt and end_dt:
+                    u_start_dt = datetime.combine(u_datum, zeit_von)
+                    if not (start_dt <= u_start_dt <= end_dt):
+                        messages.error(
+                            request,
+                            "Beginn des Unterrichts liegt außerhalb des Antragszeitraums."
+                        )
+                        return render(request, "antraege/neuer_antrag.html", {
+                            "antrag": antrag,
+                            "unterricht_formset": formset
+                        })
+
+                # Ende prüfen
+                if u_datum and zeit_bis and start_dt and end_dt:
+                    u_end_dt = datetime.combine(u_datum, zeit_bis)
+                    if not (start_dt <= u_end_dt <= end_dt):
+                        messages.error(
+                            request,
+                            "Ende des Unterrichts liegt außerhalb des Antragszeitraums."
+                        )
+                        return render(request, "antraege/neuer_antrag.html", {
+                            "antrag": antrag,
+                            "unterricht_formset": formset
+                        })
+
+            # ---- 5-Tage-Frist prüfen ----
             today = timezone.now().date()
-            min_submission_date = anfangsdatum - timezone.timedelta(days=5)
-            
+            # anfangsdatum_date ist ein date-Objekt
+            min_submission_date = anfangsdatum_date - timezone.timedelta(days=5)
+
             if today > min_submission_date:
-                messages.error(request, "Anträge müssen mindestens 5 Tage vor dem Anfangsdatum erstellt werden.")
+                messages.error(
+                    request,
+                    "Anträge müssen mindestens 5 Tage vor dem Anfangsdatum erstellt werden."
+                )
                 return render(request, "antraege/neuer_antrag.html", {
                     "antrag": antrag,
                     "unterricht_formset": formset
                 })
+
+            # ---- Antrag speichern ----
             antrag_instance = antrag.save(commit=False)
             antrag_instance.user = request.user
             antrag_instance.save()
             gm = antrag.cleaned_data.get("gm")
             im = antrag.cleaned_data.get("im")
-            
+
+            # Optional: E-Mail-Validierung hier (statt while False)
+            try:
+                validate_afra_email(gm)
+                validate_afra_email(im)
+            except ValidationError:
+                messages.error(
+                    request,
+                    "Nur E-Mail-Adressen mit '@afra.lernsax.de' sind erlaubt."
+                )
+                return render(request, "antraege/neuer_antrag.html", {
+                    "antrag": antrag,
+                    "unterricht_formset": formset
+                })
+
+            # ---- Unterricht/E-Mails vorbereiten ----
             lehrer_dict = {}
             for form in formset:
                 if form.cleaned_data:  # Check if form has data
@@ -76,30 +164,29 @@ def neuer_antrag(request):
                         schueler=request.user,
                         lehrer=lehrer_id,
                         fach=fach_id
-                    )    
+                    )
                     zaehler.temp += 1
                     zaehler.save()
 
-                    
                     lehrer_dict[lehrer_id].append({
                         "fach": fach_id.kuerzel,
                         "datum": datum,
                         "zeit_von": zeit_von,
                         "zeit_bis": zeit_bis
                     })
-            
+
             # Process each teacher's entries
             for lehrer, unterricht_list in lehrer_dict.items():
                 # Create formatted string for email
                 unterricht_text = ""
                 for entry in unterricht_list:
                     unterricht_text += f"{entry['fach']},{entry['datum']}, {entry['zeit_von']}-{entry['zeit_bis']};\n"
-                
+
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 absolute_url = request.build_absolute_uri(relative_url)
                 absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-                
+
                 Anfrage.objects.create(
                     antrag=antrag_instance,
                     email=lehrer.email,
@@ -108,43 +195,72 @@ def neuer_antrag(request):
                     zeit_von=entry['zeit_von'],
                     zeit_bis=entry['zeit_bis']
                 )
-                
+
                 send_email(
-                    lehrer.email, 
+                    lehrer.email,
                     lehrer.name,
-                    request.user.first_name+" "+request.user.last_name, 
-                    unterricht_text, 
+                    request.user.first_name + " " + request.user.last_name,
+                    unterricht_text,
                     absolute_url
                 )
+
+            # GM
             try:
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
                 absolute_url = request.build_absolute_uri(relative_url)
                 absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-                Anfrage.objects.create(antrag=antrag_instance, email=gm.email, token=token, gm=gm.email, unterricht=unterricht_text)
-                send_email_gm(gm.email, gm.name, request.user.first_name+" "+request.user.last_name, absolute_url)
+                Anfrage.objects.create(
+                    antrag=antrag_instance,
+                    email=gm.email,
+                    token=token,
+                    gm=gm.email,
+                    unterricht=unterricht_text
+                )
+                send_email_gm(
+                    gm.email,
+                    gm.name,
+                    request.user.first_name + " " + request.user.last_name,
+                    absolute_url
+                )
             except Exception as e:
                 print(f"Failed to send email to IM {im.email}: {str(e)}")
-                messages.warning(request, f"Fehler beim Senden der E-Mail an GM ({gm.email}).")
-            
+                messages.warning(
+                    request,
+                    f"Fehler beim Senden der E-Mail an GM ({gm.email})."
+                )
+
+            # IM
             token = str(uuid.uuid4())
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
             absolute_url = request.build_absolute_uri(relative_url)
             absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
 
-            Anfrage.objects.create(antrag=antrag_instance, email=im.email, token=token, im=im.email, unterricht=unterricht_text)
-            send_email_im(im.email, im.name, request.user.first_name+" "+request.user.last_name, absolute_url)
-            
+            Anfrage.objects.create(
+                antrag=antrag_instance,
+                email=im.email,
+                token=token,
+                im=im.email,
+                unterricht=unterricht_text
+            )
+            send_email_im(
+                im.email,
+                im.name,
+                request.user.first_name + " " + request.user.last_name,
+                absolute_url
+            )
+
             return redirect("home")
+
         else:
-            # Detaillierte Fehlermeldungen
+            # ------- Detaillierte Fehlermeldungen bei ungültigen Formularen -------
             if not antrag.is_valid():
                 for field, errors in antrag.errors.items():
                     field_name = antrag.fields[field].label or field
                     for error in errors:
                         messages.error(request, f"Fehler im Feld '{field_name}': {error}")
-            
+
             if not formset.is_valid():
                 # Prüfe auf Formset-Fehler
                 for i, form in enumerate(formset):
@@ -154,24 +270,29 @@ def neuer_antrag(request):
                             field_name = form.fields[field].label or field
                             for error in errors:
                                 messages.error(request, f"- Feld '{field_name}': {error}")
-                
+
                 # Prüfe auf Fehler im gesamten Formset
                 if formset.non_form_errors():
                     for error in formset.non_form_errors():
                         messages.error(request, f"Formularfehler: {error}")
-            
-            # Füge eine allgemeine Fehlermeldung hinzu, falls keine spezifische gefunden wurde
+
+            # Allgemeine Fehlermeldung, falls keine spezifische gefunden wurde
             if not any(m.level == messages.ERROR for m in messages.get_messages(request)):
                 messages.error(request, "Es ist ein Fehler aufgetreten. Bitte überprüfen Sie Ihre Eingaben.")
-                
-            return render(request, "antraege/neuer_antrag.html", {"antrag": antrag, "unterricht_formset": formset})
+
+            return render(request, "antraege/neuer_antrag.html", {
+                "antrag": antrag,
+                "unterricht_formset": formset
+            })
+
     else:
+        # GET: leere Formulare anzeigen
         antrag = AntragForm()
         unterricht_formset = UnterrichtFormSet()
         return render(request, "antraege/neuer_antrag.html", {
             "antrag": antrag,
             "unterricht_formset": unterricht_formset,
-            })
+        })
 
 @login_required(login_url="login")
 def user_antraege(request):
