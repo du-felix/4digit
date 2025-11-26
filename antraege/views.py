@@ -67,7 +67,8 @@ def neuer_antrag(request):
                     lehrer_id = form.cleaned_data.get("lehrer")
                     fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
-                    email = lehrer_id.email
+                    zeit_von = form.cleaned_data.get("zeit_von")
+                    zeit_bis = form.cleaned_data.get("zeit_bis")
                     if lehrer_id not in lehrer_dict:
                         lehrer_dict[lehrer_id] = []
 
@@ -82,7 +83,9 @@ def neuer_antrag(request):
                     
                     lehrer_dict[lehrer_id].append({
                         "fach": fach_id.kuerzel,
-                        "datum": datum
+                        "datum": datum,
+                        "zeit_von": zeit_von,
+                        "zeit_bis": zeit_bis
                     })
             
             # Process each teacher's entries
@@ -90,7 +93,7 @@ def neuer_antrag(request):
                 # Create formatted string for email
                 unterricht_text = ""
                 for entry in unterricht_list:
-                    unterricht_text += f"{entry['fach']},{entry['datum']};\n"
+                    unterricht_text += f"{entry['fach']},{entry['datum']}, {entry['zeit_von']}-{entry['zeit_bis']};\n"
                 
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
@@ -101,7 +104,9 @@ def neuer_antrag(request):
                     antrag=antrag_instance,
                     email=lehrer.email,
                     token=token,
-                    unterricht=unterricht_text
+                    unterricht=unterricht_text,
+                    zeit_von=entry['zeit_von'],
+                    zeit_bis=entry['zeit_bis']
                 )
                 
                 send_email(

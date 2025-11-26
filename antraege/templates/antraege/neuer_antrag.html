@@ -37,6 +37,8 @@
                 {{ unterricht.fach.label_tag }} {{ unterricht.fach }}
                 {{ unterricht.lehrer.label_tag }} {{ unterricht.lehrer }}
                 {{ unterricht.datum.label_tag }} {{ unterricht.datum }}
+                {{ unterricht.zeit_von.label_tag }} {{ unterricht.zeit_von }}
+                {{ unterricht.zeit_bis.label_tag }} {{ unterricht.zeit_bis }}
             </div>
             {% endfor %}
         </div>
@@ -46,6 +48,8 @@
               {{ unterricht_formset.empty_form.fach.label_tag }} {{ unterricht_formset.empty_form.fach }}
               {{ unterricht_formset.empty_form.lehrer.label_tag }} {{ unterricht_formset.empty_form.lehrer }}
               {{ unterricht_formset.empty_form.datum.label_tag }} {{ unterricht_formset.empty_form.datum }}
+              {{ unterricht_formset.empty_form.zeit_von.label_tag }} {{ unterricht_formset.empty_form.zeit_von }}
+              {{ unterricht_formset.empty_form.zeit_bis.label_tag }} {{ unterricht_formset.empty_form.zeit_bis }}
               <button type="button" style="width: 250px;">Stunde entfernen</button>
           </div>
       </div>

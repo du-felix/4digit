@@ -15,7 +15,9 @@ class AntragForm(forms.ModelForm):
     titel = forms.CharField(required=True,max_length=50, widget=forms.TextInput(attrs={'placeholder': 'Kurzer Titel', 'style': 'width: 500px'}))
     grund = forms.CharField(required=True,widget=forms.Textarea(attrs={'placeholder': 'ggf. ausführliche Begründung des Antrags', 'style': 'width: 500px; height: 150px;'}))
     anfangsdatum = forms.DateField(required=True,widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
+    anfangszeit = forms.TimeField(required=True,widget=forms.TimeInput(attrs={'type': 'time', 'style': 'width: 500px'}))    
     enddatum = forms.DateField(required=True,widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
+    endzeit = forms.TimeField(required=True,widget=forms.TimeInput(attrs={'type': 'time', 'style': 'width: 500px'}))
     im = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
     gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
@@ -23,6 +25,8 @@ class Unterricht(forms.Form):
     lehrer = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="Lehrer", widget=forms.Select(attrs={'style': 'width: 500px'}))
     fach = forms.ModelChoiceField(required=True,queryset=Fach.objects.all().order_by('name'), label="Fach", widget=forms.Select(attrs={'style': 'width: 500px'}))
     datum = forms.DateField(required=True,label="Datum", widget=forms.DateInput(attrs={'type': 'date'}))
+    zeit_von = forms.TimeField(required=True,label="Zeit von", widget=forms.TimeInput(attrs={'type': 'time'}))
+    zeit_bis = forms.TimeField(required=True,label="Zeit bis", widget=forms.TimeInput(attrs={'type': 'time'})) 
 
 UnterrichtFormSet = formset_factory(Unterricht, extra=1)
 

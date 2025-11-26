@@ -31,7 +31,9 @@ class Antrag(models.Model):
     klasse = models.CharField(max_length=3, choices=KLASSE_CHOICES)
     erstellt_am = models.DateTimeField(auto_now_add=True)
     anfangsdatum = models.DateField()
+    anfangszeit = models.TimeField()
     enddatum = models.DateField()
+    endzeit = models.TimeField()
     status = models.CharField(
         max_length=100,
         choices=STATUS_CHOICES,
