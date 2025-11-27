@@ -36,10 +36,6 @@ def neuer_antrag(request):
         formset = UnterrichtFormSet(request.POST)
         antrag = AntragForm(request.POST)
 
-        # while False Block macht nichts – kann eigentlich weg
-        # while False:
-        #     ...
-
         if antrag.is_valid() and formset.is_valid():
             # ---- Antrag-Zeitraum aus Formular holen ----
             anfangsdatum = antrag.cleaned_data.get("anfangsdatum")
