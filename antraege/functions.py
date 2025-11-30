@@ -2,7 +2,12 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
 
-
+def get_gm_im(antrag_id):
+    anfrage = Anfrage.objects.filter(antrag_id=antrag_id).first()
+    if not anfrage:
+        return None, None
+    
+    return anfrage.gm, anfrage.im
 def convert_date(date_str) -> str:
     """Convert 'yyyy-mm-dd' to 'dd.mm.yyyy'."""
     y, m, d = date_str.split("-")
@@ -98,6 +103,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
+    gm, im = get_gm_im(antrag.id)
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für den nachfolgenden Zeitraum von der Schulleitung freistellen lassen:
     
     {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
@@ -106,8 +112,8 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     \nDer Grund dafür ist: "{grund}".
 
     Der betroffene Schüler hat folgende Mentoren:
-    GM: {antrag.anfrage_set.filter(is_principle=False).first().gm}
-    IM: {antrag.anfrage_set.filter(is_principle=False).first().im}   
+    GM: {gm}
+    IM: {im}   
          
     Vielen Dank!
     
