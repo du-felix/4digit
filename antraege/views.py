@@ -198,6 +198,7 @@ def neuer_antrag(request):
                     email=gm.email,
                     token=token,
                     gm=gm.email,
+                    gm_boolean=True,
                     unterricht=unterricht_text
                 )
                 send_email_gm(
@@ -224,6 +225,7 @@ def neuer_antrag(request):
                 email=im.email,
                 token=token,
                 im=im.email,
+                im_boolean=True,
                 unterricht=unterricht_text
             )
             send_email_im(
