@@ -233,7 +233,7 @@ def neuer_antrag(request):
                 absolute_url
             )
 
-            return redirect("home")
+            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
 
         else:
             # ------- Detaillierte Fehlermeldungen bei ungültigen Formularen -------
@@ -402,13 +402,12 @@ def antrag_bestaetigen(request, token):
                         antrag
                         )
                 schueler_benachrichtigung_antrag(antrag, True)
-                return redirect("home")
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
-                    print(stunden)
                     for stunde in stunden:
                         obj = Zaehler.objects.get(
                             schueler=antrag.user,
@@ -424,7 +423,7 @@ def antrag_bestaetigen(request, token):
                 antrag.status = 'declined'
                 antrag.save()
                 schueler_benachrichtigung_antrag(antrag, False)
-                return redirect("home")
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
             else:
                 messages.error(request, "Kein Feld ausgewählt")
         
@@ -463,7 +462,7 @@ def antrag_bestaetigen(request, token):
                             email
                         )  
 
-                return redirect("home")
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
                 
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
@@ -503,12 +502,12 @@ def antrag_bestaetigen(request, token):
                         )  
 
 
-                return redirect("home")
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
             else:
                 messages.error(request, "Kein Feld ausgewählt")
         else:
             messages.error(request, "Anfrage bereits bearbeitet")
-            return redirect("home")
+            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
         anfragen = Anfrage.objects.filter(token=token)
         form = TwoStepForm(request.POST)
@@ -706,4 +705,4 @@ def seki_anfordern(request):
             antrag.titel,
             email
         )  
-    return redirect("home")
+    return HttpResponse("Antrag erfolgreich bearbeitet", status=200)

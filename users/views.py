@@ -25,7 +25,7 @@ def login(request):
                 return redirect("adminview-home")  # Redirect to staff dashboard
             else:
                 lg(request, user)
-                return redirect("home")  
+                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)  
         else:
             try:
                 user = CustomUser.objects.get(email=email)

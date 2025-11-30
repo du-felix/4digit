@@ -2,6 +2,17 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
 
+
+def convert_date(date_str) -> str:
+    """Convert 'yyyy-mm-dd' to 'dd.mm.yyyy'."""
+    y, m, d = date_str.split("-")
+    return f"{d}.{m}.{y}"
+
+def convert_time(time_str: str) -> str:
+    """Convert 'hh:mm:ss' to 'hh:mm'."""
+    h, m, _ = time_str.split(":")
+    return f"{h}:{m}"
+
 def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {lehrer_name},
@@ -80,14 +91,16 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
                     fach = Fach.objects.get(kuerzel=elements[0].upper()).name
                     datum = transform_date(elements[1])
                     lehrer = Lehrer.objects.get(email=anfrage.email).name
-                    unterrichte_info.append(f"{fach} ({datum}) bei {lehrer}")
+                    zeit_von = convert_time(elements[2])
+                    zeit_bis = convert_time(elements[3])
+                    unterrichte_info.append(f"{fach} ({datum}) von {zeit_von} bis {zeit_bis} bei {lehrer}")
 
         if unterrichte_info:
             unterrichte_text = "\n\nBetroffene Unterrichtsstunden:\n" + "\n".join(unterrichte_info)
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für den nachfolgenden Zeitraum von der Schulleitung freistellen lassen:
     
-    {antrag.anfangsdatum}, {antrag.anfangszeit} Uhr bis {antrag.enddatum}, {antrag.endzeit} Uhr.
+    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
 
     {unterrichte_text}
     \nDer Grund dafür ist: "{grund}".

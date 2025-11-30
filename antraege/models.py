@@ -67,8 +67,8 @@ class Anfrage(models.Model):
     unterricht = models.TextField()
     zeit_von = models.TimeField(null=True, blank=True)
     zeit_bis = models.TimeField(null=True, blank=True)
-    gm = models.EmailField(null=True, blank=True)
-    im = models.EmailField(null=True, blank=True)
+    gm = models.BooleanField(null=True, blank=True)
+    im = models.BooleanField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     response = models.CharField(
         max_length=100,
