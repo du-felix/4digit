@@ -7,7 +7,7 @@ def get_gm_im(antrag_id):
     if not anfrage:
         return None, None
     
-    return anfrage.gm, anfrage.im
+    return anfrage.gm, anfrage.im 
 def convert_date(date_str) -> str:
     """Convert 'yyyy-mm-dd' to 'dd.mm.yyyy'."""
     y, m, d = date_str.split("-")
