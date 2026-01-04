@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from .models import CustomUser
 from django.contrib.auth.forms import SetPasswordForm
+from django.http import HttpResponse
 
 def login(request):
 
@@ -25,7 +26,7 @@ def login(request):
                 return redirect("adminview-home")  # Redirect to staff dashboard
             else:
                 lg(request, user)
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)  
+                return redirect("home")  # Redirect to user dashboard
         else:
             try:
                 user = CustomUser.objects.get(email=email)
