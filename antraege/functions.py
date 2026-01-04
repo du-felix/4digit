@@ -32,10 +32,11 @@ def convert_time(time_str: str) -> str:
     h, m, _ = time_str.split(":")
     return f"{h}:{m}"
 
-def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
+def send_email(email, lehrer_name, schueler_name, unterricht, token_url, antrag):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {lehrer_name},
-    ihr Schüler {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    ihr Schüler {schueler_name} hat einen Antrag auf Freistellung gestellt. Und zwar im folgenden Zeitraum:
+    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
     Folgende Stunden sind davon betroffen:
 
     {unterricht}
@@ -51,10 +52,12 @@ def send_email(email, lehrer_name, schueler_name, unterricht, token_url):
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
 
-def send_email_gm(email, gm_name, schueler_name, token_url):
+def send_email_gm(email, gm_name, schueler_name, token_url, antrag):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {gm_name},
-    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt. Und zwar im folgenden Zeitraum:
+    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
+
     Bitte bearbeiten Sie den Antrag in nächster Zeit über den folgenden Link:
 
     {token_url}
@@ -66,10 +69,12 @@ def send_email_gm(email, gm_name, schueler_name, token_url):
     empfaenger = [email]
     send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
 
-def send_email_im(email, im_name, schueler_name, token_url):
+def send_email_im(email, im_name, schueler_name, token_url, antrag):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
     body = f"""Guten Tag {im_name},
-    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt.
+    ihr Mentee {schueler_name} hat einen Antrag auf Freistellung gestellt. Und zwar im folgenden Zeitraum:
+    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
+    
     Bitte bearbeiten Sie den Antrag in nächster Zeit. Über folgenden Link können Sie den Antrag bearbeiten:
 
     {token_url}

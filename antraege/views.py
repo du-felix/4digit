@@ -166,7 +166,8 @@ def neuer_antrag(request):
                     lehrer.name,
                     request.user.first_name + " " + request.user.last_name,
                     unterricht_text,
-                    absolute_url
+                    absolute_url,
+                    antrag_instance
                 )
 
             # GM
@@ -188,7 +189,8 @@ def neuer_antrag(request):
                     gm.email,
                     gm.name,
                     request.user.first_name + " " + request.user.last_name,
-                    absolute_url
+                    absolute_url,
+                    antrag_instance
                 )
             except Exception as e:
                 print(f"Failed to send email to IM {im.email}: {str(e)}")
@@ -215,7 +217,8 @@ def neuer_antrag(request):
                 im.email,
                 im.name,
                 request.user.first_name + " " + request.user.last_name,
-                absolute_url
+                absolute_url,
+                antrag_instance
             )
 
             return redirect("home")
@@ -288,6 +291,10 @@ def antrag_bestaetigen(request, token):
         "schulleiter": anfrage.is_principle,
         "antrag": antrag,
         "fehlzeiten": Zaehler.objects.filter(schueler=antrag.user).aggregate(Sum("zaehler"))["zaehler__sum"] or 0,
+        "anfangsdatum": convert_date(str(antrag.anfangsdatum)),
+        "anfangszeit": convert_time(str(antrag.anfangszeit)),
+        "enddatum": convert_date(str(antrag.enddatum)),
+        "endzeit": convert_time(str(antrag.endzeit)),
 
     }
     
