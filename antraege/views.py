@@ -235,7 +235,7 @@ def neuer_antrag(request):
                 absolute_url
             )
 
-            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+            return redirect("home")
 
         else:
             # ------- Detaillierte Fehlermeldungen bei ungültigen Formularen -------

@@ -65,8 +65,7 @@ class Anfrage(models.Model):
         local_part = self.email.split('@')[0]
         return " ".join(word.capitalize() for word in local_part.split('.'))
     unterricht = models.TextField()
-    zeit_von = models.TimeField(null=True, blank=True)
-    zeit_bis = models.TimeField(null=True, blank=True)
+    ds_zeitraum = models.CharField(max_length=100, null=True, blank=True)
     gm = models.EmailField(null=True, blank=True)
     im = models.EmailField(null=True, blank=True)
     gm_boolean = models.BooleanField(default=False, blank=True)

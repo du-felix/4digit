@@ -196,7 +196,7 @@ def csv(request):
                                     message=f'Dein Account wurde erstellt. Dein Initialpasswort lautet: {password}\n Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.',
                                     from_email=settings.DEFAULT_FROM_EMAIL,
                                     recipient_list=[email],
-                                    fail_silently=False)
+                                    fail_silently=True)
                                 success_count += 1
                             else:
                                 errors.append(f"User with email {email} already exists")

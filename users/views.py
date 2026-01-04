@@ -163,7 +163,7 @@ def get_link(request):
                     'Initialpasswort für Freistellungen',
                     f'Hi {user.first_name}, mit diesem Initialpasswort kannst du dich einloggen: {password}\n Bitte ändere es nach dem ersten Login.',
                     settings.DEFAULT_FROM_EMAIL,
-                    [email], fail_silently=False
+                    [email], fail_silently=True
                 )
                 messages.error(request, "Dein Konto wurde noch nicht aktiviert. Wir haben dir eine Mail mit deinem Initialpasswort geschickt. Damit kannst du dich einloggen und dir ein eigenes Passwort erstellen.")
                 return redirect('login')
