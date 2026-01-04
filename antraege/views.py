@@ -141,21 +141,13 @@ def neuer_antrag(request):
                         "ds_zeitraum": ds_zeit
                     })
 
-            ds_namen = {
-                "1. DS": "1. DS",
-                "2. DS": "2. DS",
-                "3. DS": "3. DS",
-                "4. DS": "4. DS",
-                "5. DS": "5. DS",
-                "6. DS": "6. DS",
-                "andere": "Von den normalen Unterrichtszeiten abweichend",
-            }
+
             # Process each teacher's entries
             for lehrer, unterricht_list in lehrer_dict.items():
                 # Create formatted string for email
                 unterricht_text = ""
                 for entry in unterricht_list:
-                    unterricht_text += f"{entry['fach']},{entry['datum']}, {ds_namen[entry["ds_zeitraum"]]};\n"
+                    unterricht_text += f"{entry['fach']},{entry['datum']}, {entry["ds_zeitraum"]};\n"
 
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
