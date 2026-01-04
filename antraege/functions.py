@@ -3,13 +3,19 @@ from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
 
 def get_gm_im(antrag_id):
-    anfrage = Anfrage.objects.filter(antrag_id=antrag_id).first()
-    if not anfrage:
-        return None, None
-    else:
-        return anfrage.gm, anfrage.im
-    
-    return anfrage.gm, anfrage.im 
+    anfragen = Anfrage.objects.filter(antrag_id=antrag_id)
+
+    gm_emails = set()
+    im_emails = set()
+
+    for a in anfragen:
+        if a.gm_boolean:
+            gm_emails.add(a.email)
+        if a.im_boolean and a.im:
+            im_emails.add(a.email)
+
+    return ", ".join(sorted(gm_emails)), ", ".join(sorted(im_emails))
+
 def convert_date(date_str) -> str:
     """Convert 'yyyy-mm-dd' to 'dd.mm.yyyy'."""
     y, m, d = date_str.split("-")
