@@ -84,15 +84,7 @@ def send_email_schulleiter(schueler, token_url):
 
 def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
-    ds_namen = {
-    "1. DS": "1. DS",
-    "2. DS": "2. DS",
-    "3. DS": "3. DS", 
-    "4. DS": "4. DS",
-    "5. DS": "5. DS",
-    "6. DS": "6. DS",
-    "andere": "Von den normalen Unterrichtszeiten abweichend",
-            }
+   
     if antrag:
         anfragen = Anfrage.objects.filter(antrag=antrag, is_principle=False, gm__isnull=True, im__isnull=True)
         unterrichte_info = []
@@ -105,7 +97,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
                     fach = Fach.objects.get(kuerzel=elements[0].upper()).name
                     datum = transform_date(elements[1])
                     lehrer = Lehrer.objects.get(email=anfrage.email).name
-                    ds = ds_namen[elements[2].strip(" ")]
+                    ds = elements[2].strip(" ")
                     if ds == "andere":
                         unterrichte_info.append(f"{fach} (am {datum}), abweichend der norm. Unterrichtszeiten bei {lehrer}")
                     else:
