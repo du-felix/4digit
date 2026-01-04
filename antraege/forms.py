@@ -34,7 +34,7 @@ class Unterricht(forms.Form):
     lehrer = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="Lehrer", widget=forms.Select(attrs={'style': 'width: 500px'}))
     fach = forms.ModelChoiceField(required=True,queryset=Fach.objects.all().order_by('name'), label="Fach", widget=forms.Select(attrs={'style': 'width: 500px'}))
     datum = forms.DateField(required=True,label="Datum", widget=forms.DateInput(attrs={'type': 'date'}))
-    ds_zeit = forms.ChoiceField(required=True, choices=DS_CHOICES, label="Fehlende Doppelstunde", widget=forms.Select(attrs={'style': 'width: 500px'}))
+    ds_zeit = forms.ModelChoiceField(required=True, choices=DS_CHOICES, label="Fehlende Doppelstunde", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 UnterrichtFormSet = formset_factory(Unterricht, extra=1)
 
