@@ -105,7 +105,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
                     fach = Fach.objects.get(kuerzel=elements[0].upper()).name
                     datum = transform_date(elements[1])
                     lehrer = Lehrer.objects.get(email=anfrage.email).name
-                    ds = ds_namen[elements[2].strip()]
+                    ds = ds_namen[elements[2].strip(" ")]
                     if ds == "andere":
                         unterrichte_info.append(f"{fach} (am {datum}), abweichend der norm. Unterrichtszeiten bei {lehrer}")
                     else:
