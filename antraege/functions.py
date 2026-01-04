@@ -6,6 +6,8 @@ def get_gm_im(antrag_id):
     anfrage = Anfrage.objects.filter(antrag_id=antrag_id).first()
     if not anfrage:
         return None, None
+    else:
+        return anfrage.gm, anfrage.im
     
     return anfrage.gm, anfrage.im 
 def convert_date(date_str) -> str:
@@ -108,9 +110,8 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     subject = f"Neuer Freistellungsantrag von {schueler}: {titel}"
     gm, im = get_gm_im(antrag.id)
     body = f"""Guten Tag, der Schüler / die Schülerin {schueler} aus der Klasse {klasse} hat sich für den nachfolgenden Zeitraum von der Schulleitung freistellen lassen:
-    
-    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
 
+    {convert_date(str(antrag.anfangsdatum))}, {convert_time(str(antrag.anfangszeit))} Uhr bis {convert_date(str(antrag.enddatum))}, {convert_time(str(antrag.endzeit))} Uhr.
     {unterrichte_text}
     \nDer Grund dafür ist: "{grund}".
 
