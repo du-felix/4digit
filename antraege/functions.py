@@ -85,12 +85,12 @@ def send_email_schulleiter(schueler, token_url):
 def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
     ds_namen = {
-    "ds1": "1. DS",
-    "ds2": "2. DS",
-    "ds3": "3. DS",
-    "ds4": "4. DS",
-    "ds5": "5. DS",
-    "ds6": "6. DS",
+    "1. DS": "1. DS",
+    "2. DS": "2. DS",
+    "3. DS": "3. DS",
+    "4. DS": "4. DS",
+    "5. DS": "5. DS",
+    "6. DS": "6. DS",
     "andere": "Von den normalen Unterrichtszeiten abweichend",
             }
     if antrag:

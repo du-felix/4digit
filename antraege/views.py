@@ -363,6 +363,7 @@ def antrag_bestaetigen(request, token):
                         continue
 
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+
                     lehrer = Lehrer.objects.get(email=bestaetigung.email)
                     for stunde in stunden:
                         kuerzel = stunde.split(",")[0].strip().upper()
@@ -392,12 +393,16 @@ def antrag_bestaetigen(request, token):
                 grund = request.POST.get("grund", '')
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                 for bestaetigung in bestaetigungen:
+                    if bestaetigung.email in sekretariat_emails:
+                        continue
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
                     for stunde in stunden:
+                        fach = Fach.objects.get(kuerzel=kuerzel)
                         obj = Zaehler.objects.get(
-                            schueler=antrag.user.id,
-                            lehrer=Lehrer.objects.get(email=bestaetigung.email).id,
-                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper()).id
+                            schueler=antrag.user,
+                            lehrer=lehrer,
+                            fach=fach
                         )
                         obj.temp = 0
                         obj.save()
