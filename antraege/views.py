@@ -79,7 +79,6 @@ def neuer_antrag(request):
                     continue
 
                 u_datum = to_date(form.cleaned_data.get("datum"))
-                ds = form.cleaned_data.get("ds_zeit")
 
                 # Beginn prüfen
                 if u_datum and start_dt and end_dt:
@@ -123,7 +122,7 @@ def neuer_antrag(request):
                     lehrer_id = form.cleaned_data.get("lehrer")
                     fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
-                    ds_zeit = form.cleaned_data.get("ds_zeitraum")
+                    ds_zeit = form.cleaned_data.get("ds_zeit")
                     if lehrer_id not in lehrer_dict:
                         lehrer_dict[lehrer_id] = []
 
