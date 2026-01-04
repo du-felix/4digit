@@ -84,7 +84,7 @@ def neuer_antrag(request):
                 # Beginn prüfen
                 if u_datum and start_dt and end_dt:
 
-                    if not (start_dt <= u_datum <= end_dt):
+                    if not (anfangsdatum_date <= u_datum <= enddatum_date):
                         messages.error(
                             request,
                             "Beginn des Unterrichts liegt außerhalb des Antragszeitraums."
