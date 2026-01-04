@@ -392,6 +392,9 @@ def antrag_bestaetigen(request, token):
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                sekretariat_emails = set(
+                    Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+                )
                 for bestaetigung in bestaetigungen:
                     if bestaetigung.email in sekretariat_emails:
                         continue
