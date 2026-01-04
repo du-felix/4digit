@@ -396,8 +396,8 @@ def antrag_bestaetigen(request, token):
                     for stunde in stunden:
                         obj = Zaehler.objects.get(
                             schueler=antrag.user,
-                            lehrer=Lehrer.objects.get(email=bestaetigung.email),
-                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper())
+                            lehrer=Lehrer.objects.get(email=bestaetigung.email).id,
+                            fach=Fach.objects.get(kuerzel=stunde.split(",")[0].upper()).id
                         )
                         obj.temp = 0
                         obj.save()
