@@ -2,6 +2,11 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
 
+def get_lehrer_name_by_email(email):
+    try:
+        return Lehrer.objects.get(email=email).name
+    except Lehrer.DoesNotExist:
+        return None
 def get_gm_im(antrag_id):
     anfragen = Anfrage.objects.filter(antrag_id=antrag_id)
 
@@ -13,6 +18,7 @@ def get_gm_im(antrag_id):
             gm_emails.add(a.email)
         if a.im_boolean and a.im:
             im_emails.add(a.email)
+
 
     return ", ".join(sorted(gm_emails)), ", ".join(sorted(im_emails))
 
@@ -122,8 +128,8 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     \nDer Grund dafür ist: "{grund}".
 
     Der betroffene Schüler hat folgende Mentoren:
-    GM: {gm}
-    IM: {im}   
+    GM: {get_lehrer_name_by_email(gm)}
+    IM: {get_lehrer_name_by_email(im)}   
          
     Vielen Dank!
     
