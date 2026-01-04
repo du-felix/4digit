@@ -142,12 +142,12 @@ def neuer_antrag(request):
                     })
 
             ds_namen = {
-                "ds1": "1. DS",
-                "ds2": "2. DS",
-                "ds3": "3. DS",
-                "ds4": "4. DS",
-                "ds5": "5. DS",
-                "ds6": "6. DS",
+                "1. DS": "1. DS",
+                "2. DS": "2. DS",
+                "3. DS": "3. DS",
+                "4. DS": "4. DS",
+                "5. DS": "5. DS",
+                "6. DS": "6. DS",
                 "andere": "Von den normalen Unterrichtszeiten abweichend",
             }
             # Process each teacher's entries
