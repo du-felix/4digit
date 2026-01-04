@@ -387,7 +387,7 @@ def antrag_bestaetigen(request, token):
                         antrag
                         )
                 schueler_benachrichtigung_antrag(antrag, True)
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
                 bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
@@ -408,7 +408,7 @@ def antrag_bestaetigen(request, token):
                 antrag.status = 'declined'
                 antrag.save()
                 schueler_benachrichtigung_antrag(antrag, False)
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             else:
                 messages.error(request, "Kein Feld ausgewählt")
         
@@ -447,7 +447,7 @@ def antrag_bestaetigen(request, token):
                             email
                         )  
 
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
                 
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
@@ -487,12 +487,12 @@ def antrag_bestaetigen(request, token):
                         )  
 
 
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             else:
                 messages.error(request, "Kein Feld ausgewählt")
         else:
             messages.error(request, "Anfrage bereits bearbeitet")
-            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+            return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
         anfragen = Anfrage.objects.filter(token=token)
         form = TwoStepForm(request.POST)
@@ -519,7 +519,7 @@ def antrag_bestaetigen(request, token):
             for anfrage in anfragen:
                 anfrage.response = Anfrage.ACCEPTED
                 anfrage.save()
-            return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+            return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
 
@@ -538,14 +538,14 @@ def antrag_bestaetigen(request, token):
                 antrag.save()
                 for anfrage in anfragen:
                     anfrage.response = Anfrage.ACCEPTED
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             else:
                 antrag.eltern_bestaetigung = False
                 schueler_benachrichtigung_eltern(antrag)
                 antrag.save()
                 for anfrage in anfragen:
                     anfrage.response = Anfrage.ACCEPTED
-                return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
@@ -694,4 +694,4 @@ def seki_anfordern(request):
             antrag.titel,
             email
         )  
-    return HttpResponse("Antrag erfolgreich bearbeitet", status=200)
+    return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
