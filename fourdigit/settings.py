@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 LOGIN_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
-    #'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,20 +59,19 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-#FORCE_SCRIPT_NAME = '/freistellung'
+FORCE_SCRIPT_NAME = '/freistellung'
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.lernsax.de'
+EMAIL_PORT = 465  # or 587, depending on your configuration
+EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
+EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
+EMAIL_HOST_PASSWORD = 'Freistellung123!'
+DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
 
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-#EMAIL_HOST = 'mail.lernsax.de'
-#EMAIL_PORT = 465  # or 587, depending on your configuration
-#EMAIL_USE_SSL = True  # or EMAIL_USE_TLS = True if using TLS
-#EMAIL_HOST_USER = 'freistellung@afra.lernsax.de'
-#EMAIL_HOST_PASSWORD = 'Freistellung123!'
-#DEFAULT_FROM_EMAIL = 'freistellung@afra.lernsax.de'
-
-EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
-sender = settings.DEFAULT_FROM_EMAIL
+#EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+#EMAIL_FILE_PATH = 'emails'  # Ensure this directory exists
+#sender = settings.DEFAULT_FROM_EMAIL
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -105,29 +104,24 @@ CSRF_TRUSTED_ORIGINS = [
     'https://mdm.sankt-afra.de',
 ]
 
-#Database
-#https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.mysql',
-#        'NAME': '4digit_db',
-#        'USER': 'user',
-#        'PASSWORD': '01871689@4Digit',
-#        'HOST': 'mysql',  # container name within the pod
-#        'PORT': '3306',
-#    }
-#}
 
 DATABASES = {
     'default': {
-       'ENGINE': 'django.db.backends.sqlite3',
-       'NAME': BASE_DIR / 'db.sqlite3',
-  }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': '4digit_db',
+        'USER': 'user',
+        'PASSWORD': '01871689@4Digit',
+        'HOST': 'mysql',  # container name within the pod
+        'PORT': '3306',
+    }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+#DATABASES = {
+#    'default': {
+#       'ENGINE': 'django.db.backends.sqlite3',
+#       'NAME': BASE_DIR / 'db.sqlite3',
+#  }
+#}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -145,9 +139,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -156,20 +147,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-#STATIC_URL = '/freistellung/static/'
-STATIC_URL = '/static/'
+STATIC_URL = '/freistellung/static/'
+#STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
-
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-#STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
