@@ -710,4 +710,4 @@ def seki_anfordern(request):
             antrag.titel,
             email
         )  
-    return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
+    return redirect("home")
