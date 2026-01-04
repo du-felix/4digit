@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach, AntragSubmission
-from .functions import send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki
+from .functions import convert_date, convert_time, send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -561,6 +561,10 @@ def antrag_bestaetigen(request, token):
     if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
         context["sekretariat"] = True
         context["form"] = TwoStepForm()
+        context["anfangsdatum"] = convert_date(str(antrag.anfangsdatum))
+        context["anfangszeit"]  = convert_time(str(antrag.anfangszeit))
+        context["enddatum"]     = convert_date(str(antrag.enddatum))
+        context["endzeit"]      = convert_time(str(antrag.endzeit))
     return render(request, "antraege/antrag_bearbeiten.html", context)
 
 @login_required
