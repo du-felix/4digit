@@ -401,6 +401,7 @@ def antrag_bestaetigen(request, token):
                     stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
                     lehrer = Lehrer.objects.get(email=bestaetigung.email)
                     for stunde in stunden:
+                        kuerzel = stunde.split(",")[0].strip().upper()
                         fach = Fach.objects.get(kuerzel=kuerzel)
                         obj = Zaehler.objects.get(
                             schueler=antrag.user,
