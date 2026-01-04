@@ -22,11 +22,19 @@ class AntragForm(forms.ModelForm):
     gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 class Unterricht(forms.Form):
+    DS_CHOICES = [
+        ("1. DS", "1. DS"),
+        ("2. DS", "2. DS"),
+        ("3. DS", "3. DS"),
+        ("4. DS", "4. DS"),
+        ("5. DS", "5. DS"),
+        ("6. DS", "6. DS"),
+        ("andere", "Andere (bitte im Grund angeben)"),
+    ]
     lehrer = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="Lehrer", widget=forms.Select(attrs={'style': 'width: 500px'}))
     fach = forms.ModelChoiceField(required=True,queryset=Fach.objects.all().order_by('name'), label="Fach", widget=forms.Select(attrs={'style': 'width: 500px'}))
     datum = forms.DateField(required=True,label="Datum", widget=forms.DateInput(attrs={'type': 'date'}))
-    zeit_von = forms.TimeField(required=True,label="Zeit von", widget=forms.TimeInput(attrs={'type': 'time'}))
-    zeit_bis = forms.TimeField(required=True,label="Zeit bis", widget=forms.TimeInput(attrs={'type': 'time'})) 
+    ds_zeit = forms.ChoiceField(required=True, choices=DS_CHOICES, label="Fehlende Doppelstunde", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 UnterrichtFormSet = formset_factory(Unterricht, extra=1)
 

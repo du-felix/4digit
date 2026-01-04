@@ -79,29 +79,15 @@ def neuer_antrag(request):
                     continue
 
                 u_datum = to_date(form.cleaned_data.get("datum"))
-                zeit_von = to_time(form.cleaned_data.get("zeit_von"))
-                zeit_bis = to_time(form.cleaned_data.get("zeit_bis"))
+                ds = form.cleaned_data.get("ds_zeit")
 
                 # Beginn prüfen
-                if u_datum and zeit_von and start_dt and end_dt:
-                    u_start_dt = datetime.combine(u_datum, zeit_von)
-                    if not (start_dt <= u_start_dt <= end_dt):
+                if u_datum and start_dt and end_dt:
+
+                    if not (start_dt <= u_datum <= end_dt):
                         messages.error(
                             request,
                             "Beginn des Unterrichts liegt außerhalb des Antragszeitraums."
-                        )
-                        return render(request, "antraege/neuer_antrag.html", {
-                            "antrag": antrag,
-                            "unterricht_formset": formset
-                        })
-
-                # Ende prüfen
-                if u_datum and zeit_bis and start_dt and end_dt:
-                    u_end_dt = datetime.combine(u_datum, zeit_bis)
-                    if not (start_dt <= u_end_dt <= end_dt):
-                        messages.error(
-                            request,
-                            "Ende des Unterrichts liegt außerhalb des Antragszeitraums."
                         )
                         return render(request, "antraege/neuer_antrag.html", {
                             "antrag": antrag,
@@ -137,8 +123,7 @@ def neuer_antrag(request):
                     lehrer_id = form.cleaned_data.get("lehrer")
                     fach_id = form.cleaned_data.get("fach")
                     datum = form.cleaned_data.get("datum")
-                    zeit_von = form.cleaned_data.get("zeit_von")
-                    zeit_bis = form.cleaned_data.get("zeit_bis")
+                    ds_zeit = form.cleaned_data.get("ds_zeitraum")
                     if lehrer_id not in lehrer_dict:
                         lehrer_dict[lehrer_id] = []
 
@@ -153,16 +138,24 @@ def neuer_antrag(request):
                     lehrer_dict[lehrer_id].append({
                         "fach": fach_id.kuerzel,
                         "datum": datum,
-                        "zeit_von": zeit_von,
-                        "zeit_bis": zeit_bis
+                        "ds_zeitraum": ds_zeit
                     })
 
+            ds_namen = {
+                "ds1": "1. DS",
+                "ds2": "2. DS",
+                "ds3": "3. DS",
+                "ds4": "4. DS",
+                "ds5": "5. DS",
+                "ds6": "6. DS",
+                "andere": "Von den normalen Unterrichtszeiten abweichend",
+            }
             # Process each teacher's entries
             for lehrer, unterricht_list in lehrer_dict.items():
                 # Create formatted string for email
                 unterricht_text = ""
                 for entry in unterricht_list:
-                    unterricht_text += f"{entry['fach']},{entry['datum']}, {entry['zeit_von']}-{entry['zeit_bis']};\n"
+                    unterricht_text += f"{entry['fach']},{entry['datum']}, {ds_namen[entry["ds_zeitraum"]]};\n"
 
                 token = str(uuid.uuid4())
                 relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
@@ -174,8 +167,7 @@ def neuer_antrag(request):
                     email=lehrer.email,
                     token=token,
                     unterricht=unterricht_text,
-                    zeit_von=entry['zeit_von'],
-                    zeit_bis=entry['zeit_bis']
+                    ds_zeitraum=entry['ds_zeitraum'],
                 )
 
                 send_email(
