@@ -12,6 +12,7 @@ from antraege.models import Lehrer
 from django.urls import reverse
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils.crypto import get_random_string
 
 
 User = get_user_model()
@@ -182,21 +183,28 @@ def csv(request):
                             
                             # Check if user already exists
                             if not CustomUser.objects.filter(email=email).exists():
-                                password = CustomUser.objects.make_random_password(length=10)
+                                password = get_random_string(10)
+
                                 user = CustomUser(
                                     email=email,
                                     first_name=first_name,
                                     last_name=last_name,
-                                    password=password,
-                                    is_active=False
+                                    is_active=False,
                                 )
+                                user.set_password(password)  # ✅ IMPORTANT
                                 user.save()
+
                                 send_mail(
                                     subject='Dein neuer Account für Freistellungen',
-                                    message=f'Dein Account wurde erstellt. Dein Initialpasswort lautet: {password}\n Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.',
+                                    message=(
+                                        f'Dein Account wurde erstellt.\n\n'
+                                        f'Dein Initialpasswort lautet: {password}\n\n'
+                                        f'Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.'
+                                    ),
                                     from_email=settings.DEFAULT_FROM_EMAIL,
                                     recipient_list=[email],
-                                    fail_silently=True)
+                                    fail_silently=True,
+                                )
                                 success_count += 1
                             else:
                                 errors.append(f"User with email {email} already exists")
