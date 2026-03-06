@@ -2,9 +2,9 @@
 {% block title %}Lehrer bearbeiten{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 480px;">
-  <div style="margin-bottom: 20px;">
-    <a href="{% url 'lehrer' %}" style="font-size:13px; color:var(--text-muted);">← Zurück</a>
+<div class="container" style="max-width:520px;">
+  <div class="mb-4">
+    <a href="{% url 'lehrer' %}" class="back-link">← Zurück</a>
   </div>
   {% if edit_lehrer %}
   <div class="form-card">
@@ -20,19 +20,17 @@
           {% endif %}
         </div>
       {% endfor %}
-      <div class="form-group" style="display:flex; gap:20px; align-items:center; margin-top:4px;">
-        <label style="display:flex; gap:8px; align-items:center; font-weight:400; cursor:pointer;">
+      <div class="form-group" style="display:flex; gap:20px; align-items:center;">
+        <div class="checkbox-row">
           <input type="checkbox" id="is_principal" name="is_principal"
-                 {% if edit_lehrer.principal %}checked{% endif %}
-                 style="width:16px; height:16px; accent-color:var(--primary);">
-          Schulleiter
-        </label>
-        <label style="display:flex; gap:8px; align-items:center; font-weight:400; cursor:pointer;">
+                 {% if edit_lehrer.principal %}checked{% endif %}>
+          <label for="is_principal">Schulleiter</label>
+        </div>
+        <div class="checkbox-row">
           <input type="checkbox" id="is_secretariat" name="is_secretariat"
-                 {% if edit_lehrer.secretariat %}checked{% endif %}
-                 style="width:16px; height:16px; accent-color:var(--primary);">
-          Sekretariat
-        </label>
+                 {% if edit_lehrer.secretariat %}checked{% endif %}>
+          <label for="is_secretariat">Sekretariat</label>
+        </div>
       </div>
       <div class="form-actions">
         <a href="{% url 'lehrer' %}" class="btn btn-outline">Abbrechen</a>

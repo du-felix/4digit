@@ -11,20 +11,19 @@
 </head>
 <body>
   <header>
-    <a href="{% url 'home' %}">
+    <a href="{% url 'home' %}" class="nav-brand">
       <img src="{% static 'images/logo.png' %}" alt="St. Afra">
     </a>
     <div class="nav-actions">
-      <a href="{% url 'neuer_antrag' %}" class="btn btn-sm">Neuer Antrag</a>
+      <a href="{% url 'neuer_antrag' %}" class="btn btn-sm">+ Neuer Antrag</a>
       <form action="{% url 'logout' %}" method="post" style="margin:0;">
         {% csrf_token %}
-        <button type="submit" class="btn btn-outline btn-sm">Abmelden</button>
+        <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
       </form>
     </div>
   </header>
 
   <main>
-    {% block content %}
     {% if messages %}
       <div class="page-container" style="padding-bottom:0;">
         {% for message in messages %}
@@ -32,7 +31,7 @@
         {% endfor %}
       </div>
     {% endif %}
-    {% endblock %}
+    {% block content %}{% endblock %}
   </main>
 
   <footer><p>&copy; 2025 4digit</p></footer>

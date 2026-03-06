@@ -5,17 +5,11 @@
 <div class="page-container">
   <div class="page-header-row">
     <div>
-      <h1>Meine Freistellungsanträge</h1>
+      <h1>Freistellungsanträge</h1>
       <p style="margin:0;">{{ user.first_name }} {{ user.last_name }}</p>
     </div>
     <a href="{% url 'neuer_antrag' %}" class="btn">+ Neuer Antrag</a>
   </div>
-
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
 
   {% if antraege %}
     <table class="user-table">
@@ -31,7 +25,7 @@
       <tbody>
         {% for antrag in antraege %}
         <tr>
-          <td style="font-weight:500;">{{ antrag.titel }}</td>
+          <td class="fw-500">{{ antrag.titel }}</td>
           <td>{{ antrag.anfangsdatum|date:"d.m.Y" }} – {{ antrag.enddatum|date:"d.m.Y" }}</td>
           <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
           <td>
@@ -51,9 +45,9 @@
       </tbody>
     </table>
   {% else %}
-    <div class="card" style="text-align:center; padding: 48px 24px;">
-      <p style="margin:0; font-size:15px;">Du hast noch keine Freistellungsanträge gestellt.</p>
-      <a href="{% url 'neuer_antrag' %}" class="btn" style="margin-top:16px; display:inline-flex;">Ersten Antrag stellen</a>
+    <div class="card" style="text-align:center; padding:48px 24px;">
+      <p style="margin:0 0 16px; font-size:15px; color:var(--text);">Du hast noch keine Freistellungsanträge gestellt.</p>
+      <a href="{% url 'neuer_antrag' %}" class="btn" style="display:inline-flex;">Ersten Antrag stellen</a>
     </div>
   {% endif %}
 </div>

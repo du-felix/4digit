@@ -5,7 +5,10 @@
 <div class="container">
   <div class="page-header-row">
     <h1>Lehrerliste</h1>
-    <a href="{% url 'add_lehrer' %}" class="btn">+ Neuer Lehrer</a>
+    <div class="page-header-row-actions">
+      <a href="{% url 'lehrer_csv' %}" class="btn btn-outline btn-sm">CSV importieren</a>
+      <a href="{% url 'add_lehrer' %}" class="btn btn-sm">+ Neuer Lehrer</a>
+    </div>
   </div>
 
   {% if messages %}
@@ -44,7 +47,7 @@
         <tr>
           <td><input type="checkbox" name="selected_lehrers" value="{{ lehrer.id }}" form="main-form"></td>
           <td>{{ lehrer.email }}</td>
-          <td style="font-weight:500;">{{ lehrer.name }}</td>
+          <td class="fw-500">{{ lehrer.name }}</td>
           <td>
             {% if lehrer.principal %}
               <span class="badge badge-primary">Schulleiter</span>
@@ -103,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tr.innerHTML = `
           <td><input type="checkbox" name="selected_lehrers" value="${l.id}" form="main-form"></td>
           <td>${l.email}</td>
-          <td style="font-weight:500;">${l.name}</td>
+          <td class="fw-500">${l.name}</td>
           <td></td>
           <td style="display:flex;gap:8px;align-items:center;">
             <a href="/adminview/lehrer/${l.id}/" class="btn btn-warning btn-sm">Bearbeiten</a>

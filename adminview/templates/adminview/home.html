@@ -5,7 +5,10 @@
 <div class="container">
   <div class="page-header-row">
     <h1>Benutzerverwaltung</h1>
-    <a href="{% url 'add_user' %}" class="btn">+ Neuer Benutzer</a>
+    <div class="page-header-row-actions">
+      <a href="{% url 'adminview-csv' %}" class="btn btn-outline btn-sm">CSV importieren</a>
+      <a href="{% url 'add_user' %}" class="btn btn-sm">+ Neuer Benutzer</a>
+    </div>
   </div>
 
   {% if messages %}
@@ -41,10 +44,10 @@
       </thead>
       <tbody id="users-table-body">
         {% for user in users %}
-        <tr {% if edit_user and edit_user.id == user.id %}style="background:#eff4ff;"{% endif %}>
+        <tr {% if edit_user and edit_user.id == user.id %}style="background:var(--accent-light);"{% endif %}>
           <td><input type="checkbox" name="selected_users" value="{{ user.id }}" form="main-form"></td>
           <td>{{ user.email }}</td>
-          <td>{{ user.first_name }} {{ user.last_name }}</td>
+          <td class="fw-500">{{ user.first_name }} {{ user.last_name }}</td>
           <td>
             {% if user.is_staff %}
               <span class="badge badge-primary">Administrator</span>
@@ -61,19 +64,16 @@
         </tr>
         {% empty %}
         <tr id="no-results-row">
-          <td colspan="5" style="text-align:center; color:var(--text-muted); padding: 32px;">
+          <td colspan="5" style="text-align:center; color:var(--text-muted); padding:32px;">
             Keine Benutzer gefunden
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-
-    <!-- hidden batch-action fields mirror -->
     <input type="hidden" name="action" id="batch-action-input">
   </form>
 
-  <!-- Hidden form for single-user deletion -->
   <form id="delete-form" method="post" style="display:none;">
     {% csrf_token %}
     <input type="hidden" name="delete_user" id="delete-user-id">
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tr.innerHTML = `
           <td><input type="checkbox" name="selected_users" value="${user.id}" form="main-form"></td>
           <td>${user.email}</td>
-          <td>${user.name}</td>
+          <td class="fw-500">${user.name}</td>
           <td>${user.is_staff
             ? '<span class="badge badge-primary">Administrator</span>'
             : '<span class="badge badge-secondary">Schüler</span>'}</td>
@@ -139,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   setupDeleteButtons();
-
   let timer;
   searchInput.addEventListener('keyup', () => { clearTimeout(timer); timer = setTimeout(updateTable, 300); });
   searchInput.addEventListener('search', updateTable);

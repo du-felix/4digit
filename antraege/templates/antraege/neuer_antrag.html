@@ -1,18 +1,24 @@
 {% extends "antraege/base.html" %}
 {% block title %}Neuer Freistellungsantrag{% endblock %}
 
+{% block extra_head %}
+<style>
+  .unterricht-form {
+    padding: 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-container" style="max-width: 680px;">
+<div class="page-container" style="max-width:700px;">
   <div class="page-header">
     <h1>Neuer Freistellungsantrag</h1>
     <p>Bitte fülle alle Felder aus. Der Antrag muss mindestens 5 Tage vor dem Anfangsdatum gestellt werden.</p>
   </div>
-
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
 
   <div class="card">
     <form method="post">
@@ -32,13 +38,13 @@
 
       <div class="divider"></div>
       <h2>Verpasster Unterricht</h2>
-      <p style="margin-bottom:16px;">Füge alle Unterrichtsstunden hinzu, die du verpassen wirst.</p>
+      <p class="mb-4">Füge alle Unterrichtsstunden hinzu, die du verpassen wirst.</p>
 
       {{ unterricht_formset.management_form }}
 
       <div id="formset-container">
         {% for unterricht in unterricht_formset %}
-        <div class="unterricht-form" style="padding: 16px; background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;">
+        <div class="unterricht-form">
           <div class="form-group">{{ unterricht.fach.label_tag }}{{ unterricht.fach }}</div>
           <div class="form-group">{{ unterricht.lehrer.label_tag }}{{ unterricht.lehrer }}</div>
           <div class="form-group">{{ unterricht.datum.label_tag }}{{ unterricht.datum }}</div>
@@ -48,19 +54,19 @@
       </div>
 
       <div id="empty-form" style="display:none;">
-        <div class="unterricht-form" style="padding: 16px; background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;">
+        <div class="unterricht-form">
           <div class="form-group">{{ unterricht_formset.empty_form.fach.label_tag }}{{ unterricht_formset.empty_form.fach }}</div>
           <div class="form-group">{{ unterricht_formset.empty_form.lehrer.label_tag }}{{ unterricht_formset.empty_form.lehrer }}</div>
           <div class="form-group">{{ unterricht_formset.empty_form.datum.label_tag }}{{ unterricht_formset.empty_form.datum }}</div>
           <div class="form-group">{{ unterricht_formset.empty_form.ds_zeit.label_tag }}{{ unterricht_formset.empty_form.ds_zeit }}</div>
-          <button type="button" class="remove-form-btn btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;">Entfernen</button>
+          <button type="button" class="remove-form-btn btn btn-outline btn-sm" style="color:var(--danger);border-color:#FECACA;">Entfernen</button>
         </div>
       </div>
 
-      <button type="button" id="addButton" class="btn btn-outline btn-sm" style="margin-bottom: 20px;">+ Stunde hinzufügen</button>
+      <button type="button" id="addButton" class="btn btn-outline btn-sm mb-4">+ Stunde hinzufügen</button>
 
       <div class="divider"></div>
-      <div style="margin-top: 16px;">
+      <div class="mt-4">
         <button type="submit">Antrag einreichen</button>
       </div>
     </form>

@@ -2,22 +2,16 @@
 {% block title %}Antrag bearbeiten{% endblock %}
 
 {% block content %}
-<div style="max-width: 720px; margin: 0 auto; padding: 32px 24px;">
+<div class="page-container" style="max-width: 760px;">
 
 {% if trigger %}
   <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
-  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <h2 class="mt-2 mb-2">"{{ titel }}"</h2>
   <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
   <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <div class="card" style="margin-top: 20px;">
-    <h3 style="margin-bottom:16px;">Liegt eine Elternbestätigung vor?</h3>
+  <div class="card mt-4">
+    <h3 class="mb-4">Liegt eine Elternbestätigung vor?</h3>
     <form method="post" action="{% url 'antrag_bestaetigen' token %}">
       {% csrf_token %}
       <div class="form-group">
@@ -29,31 +23,19 @@
   </div>
 
 {% elif sekretariat %}
-  <style>
-    .radio-option { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .radio-option input[type="radio"] { width:16px; height:16px; accent-color: var(--primary); }
-    .radio-option label { font-weight: 400; margin: 0; cursor: pointer; }
-  </style>
-
   <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
-  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <h2 class="mt-2 mb-2">"{{ titel }}"</h2>
   <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
   <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
 
-  <div class="card" style="margin-top: 20px;">
+  <div class="card mt-4">
     <h3>Grund des Schülers:</h3>
-    <p style="color: var(--text);">{{ schueler_grund }}</p>
+    <p style="color:var(--text);">{{ schueler_grund }}</p>
   </div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <div class="card" style="margin-top: 16px;">
-    <h3 style="margin-bottom: 6px;">Ist eine Elternbestätigung notwendig?</h3>
-    <form method="post" id="two-step-form" style="margin-top: 12px;">
+  <div class="card">
+    <h3 class="mb-4">Ist eine Elternbestätigung notwendig?</h3>
+    <form method="post" id="two-step-form">
       {% csrf_token %}
       <div class="form-group">
         {{ form.first_question }}
@@ -62,7 +44,7 @@
         {{ form.second_question.label_tag }}
         {{ form.second_question }}
       </div>
-      <button type="submit" name="btn" value="eltern" style="margin-top: 8px;">Absenden</button>
+      <button type="submit" name="btn" value="eltern">Absenden</button>
     </form>
   </div>
 
@@ -82,19 +64,19 @@
 
 {% else %}
   <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
-  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <h2 class="mt-2 mb-2">"{{ titel }}"</h2>
   <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
   <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
 
-  <div class="card" style="margin-top: 20px;">
+  <div class="card mt-4">
     <h3>Grund des Schülers:</h3>
-    <p style="color: var(--text);">{{ schueler_grund }}</p>
+    <p style="color:var(--text);">{{ schueler_grund }}</p>
   </div>
 
   {% if schulleiter %}
-  <div class="card" style="margin-top: 16px;">
-    <h3 style="margin-bottom: 12px;">Rückmeldungen der Lehrer</h3>
-    <table class="user-table" style="margin-top: 0;">
+  <div class="card">
+    <h3 class="mb-4">Rückmeldungen der Lehrer</h3>
+    <table class="user-table" style="margin-top:0;">
       <thead>
         <tr>
           <th>Lehrer / Funktion</th>
@@ -105,7 +87,7 @@
       <tbody>
         {% for b in bestaetigungen %}
         <tr>
-          <td style="font-weight:500;">{{ b.name }}</td>
+          <td class="fw-500">{{ b.name }}</td>
           <td>
             {% if b.response == 'declined' %}
               <span class="badge badge-danger">Abgelehnt</span>
@@ -115,7 +97,7 @@
               <span class="badge badge-secondary">Ausstehend</span>
             {% endif %}
           </td>
-          <td style="color: var(--text-muted); font-size: 13px; max-width: 280px; word-break: break-word;">
+          <td class="text-muted text-sm" style="max-width:280px; word-break:break-word;">
             {{ b.reason|default:"–" }}
           </td>
         </tr>
@@ -124,23 +106,17 @@
     </table>
   </div>
   {% else %}
-  <div class="card" style="margin-top: 16px;">
+  <div class="card">
     <h3>Ausfallender Unterricht:</h3>
-    <p style="color: var(--text); white-space: pre-line;">{{ unterricht }}</p>
+    <p style="color:var(--text); white-space:pre-line;">{{ unterricht }}</p>
   </div>
   {% endif %}
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}" style="margin-top: 12px;">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <div class="card" style="margin-top: 16px;">
-    <h3 style="margin-bottom: 16px;">Entscheidung</h3>
+  <div class="card">
+    <h3 class="mb-4">Entscheidung</h3>
     <form method="post">
       {% csrf_token %}
-      <div class="radio-group" style="margin-bottom: 16px;">
+      <div class="radio-group mb-4">
         <label>
           <input type="radio" name="answer" value="annehmen" required>
           <span>Genehmigen</span>

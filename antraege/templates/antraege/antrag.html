@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="page-container">
-  <div style="margin-bottom: 20px;">
-    <a href="{% url 'home' %}" style="font-size:13px; color:var(--text-muted);">← Zurück zur Übersicht</a>
+  <div class="mb-4">
+    <a href="{% url 'home' %}" class="back-link">← Zurück zur Übersicht</a>
   </div>
 
   <div class="page-header-row">
@@ -17,12 +17,6 @@
       <span class="badge badge-danger">Abgelehnt</span>
     {% endif %}
   </div>
-
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
 
   <div class="card">
     <div class="card-body">
@@ -42,12 +36,14 @@
       <input type="hidden" name="antrag_id" value="{{ antrag.id }}">
       <button type="submit" class="btn btn-danger btn-sm">Sekretariat informieren</button>
     </form>
-    <p style="font-size:12.5px; margin:0;">Falls das Sekretariat abgelehnt hat, fordere deine Eltern auf, ihre E-Mail zu senden, und gehe dann persönlich ins Sekretariat.</p>
+    <p class="text-sm">Falls das Sekretariat abgelehnt hat, fordere deine Eltern auf, ihre E-Mail zu senden, und gehe dann persönlich ins Sekretariat.</p>
   </div>
   {% endif %}
 
-  <h2 style="margin-top: 8px; margin-bottom: 4px;">Anfragen</h2>
-  <p style="margin-bottom: 12px;">Ausstehend: <strong>{{ anfragen_status.not_responded }}</strong> / {{ anfragen_status.total }}</p>
+  <div class="page-header-row mt-4" style="margin-bottom:12px;">
+    <h2>Anfragen</h2>
+    <span class="text-muted text-sm">Ausstehend: <strong>{{ anfragen_status.not_responded }}</strong> / {{ anfragen_status.total }}</span>
+  </div>
 
   {% if anfragen %}
   <table class="user-table">
@@ -63,7 +59,7 @@
     <tbody>
       {% for lehrer, unterricht, datum, status, grund in rows %}
       <tr>
-        <td style="font-weight:500;">{% if lehrer %}{{ lehrer }}{% endif %}</td>
+        <td class="fw-500">{% if lehrer %}{{ lehrer }}{% endif %}</td>
         <td>{% if unterricht %}{{ unterricht }}{% endif %}</td>
         <td>{% if datum %}{{ datum }}{% endif %}</td>
         <td>
@@ -75,7 +71,7 @@
             <span class="badge badge-danger">Abgelehnt</span>
           {% endif %}
         </td>
-        <td style="max-width: 280px; word-break: break-word; color: var(--text-muted); font-size: 13px;">
+        <td class="text-muted text-sm" style="max-width:280px; word-break:break-word;">
           {% if grund %}{{ grund }}{% else %}–{% endif %}
         </td>
       </tr>
