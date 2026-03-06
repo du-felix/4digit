@@ -15,7 +15,11 @@
       <img src="{% static 'images/logo.png' %}" alt="St. Afra">
     </a>
     <div class="nav-actions">
-      <a href="{% url 'lehrer' %}" class="btn btn-outline btn-sm">Lehrerliste</a>
+      {% if request.resolver_match.url_name == 'lehrer' or request.resolver_match.url_name == 'add_lehrer' or request.resolver_match.url_name == 'lehrer_edit' or request.resolver_match.url_name == 'lehrer_csv' %}
+        <a href="{% url 'adminview-home' %}" class="btn btn-outline btn-sm">Benutzerverwaltung</a>
+      {% else %}
+        <a href="{% url 'lehrer' %}" class="btn btn-outline btn-sm">Lehrerliste</a>
+      {% endif %}
       <a href="{{ button_url }}" class="btn btn-outline btn-sm">CSV hochladen</a>
       <form action="{% url 'logout' %}" method="post" style="margin:0;">
         {% csrf_token %}

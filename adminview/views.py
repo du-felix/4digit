@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -17,17 +17,18 @@ from django.utils.crypto import get_random_string
 
 User = get_user_model()
 
-# All admin-area views require the user to be active staff.
-# user_passes_test redirects non-authenticated users to LOGIN_URL,
-# and raises PermissionDenied (403) for authenticated non-staff users.
-staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url='login')
-
+def staff_required(view_func):
+    @login_required
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_staff:
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 def validate_afra_email(email):
     if not email.endswith('@afra.lernsax.de'):
         raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
     return email
-
 
 @staff_required
 def adminview(request, user_id=None):
@@ -85,7 +86,6 @@ def adminview(request, user_id=None):
 
     return render(request, 'adminview/home.html', context)
 
-
 @staff_required
 def adding(request):
     if request.method == 'POST':
@@ -101,7 +101,6 @@ def adding(request):
         form = Sign_Up_Form()
 
     return render(request, 'adminview/add_user.html', {'form': form})
-
 
 @staff_required
 def edit_user(request, user_id=None):
@@ -123,7 +122,6 @@ def edit_user(request, user_id=None):
         edit_user = None
         form = Sign_Up_Form()
     return render(request, 'adminview/edit_user.html', {'form': form, 'edit_user': edit_user})
-
 
 @staff_required
 def csv(request):
@@ -213,7 +211,6 @@ def csv(request):
 
     return render(request, 'adminview/csv.html')
 
-
 @staff_required
 def lehrer(request, lehrer_id=None):
     search_query = request.GET.get('q', '')
@@ -266,7 +263,6 @@ def lehrer(request, lehrer_id=None):
 
     return render(request, 'adminview/lehrer.html', context)
 
-
 @staff_required
 def add_lehrer(request):
     if request.method == 'POST':
@@ -278,7 +274,6 @@ def add_lehrer(request):
         form = add_lehrer_Form()
 
     return render(request, 'adminview/add_lehrer.html', {'form': form})
-
 
 @staff_required
 def edit_lehrer(request, lehrer_id=None):
@@ -300,8 +295,6 @@ def edit_lehrer(request, lehrer_id=None):
         form = add_lehrer_Form()
 
     return render(request, 'adminview/edit_lehrer.html', {'form': form, 'edit_lehrer': edit_lehrer_obj})
-
-
 @staff_required
 def lehrer_csv(request):
     if request.method == 'POST':

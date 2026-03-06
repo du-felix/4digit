@@ -18,10 +18,12 @@
 
   <div class="table-toolbar">
     <input type="text" class="search-input" id="live-search" placeholder="Lehrer suchen …" value="{{ search_query }}">
-    <form method="post" id="batch-form" style="margin:0;">
+    <form method="post" id="batch-form" style="margin:0; display:contents;">
       {% csrf_token %}
-      <button name="action" type="submit" value="delete" class="btn btn-danger btn-sm"
-              onclick="return confirmDeleteLehrer()">Ausgewählte löschen</button>
+      <div class="toolbar-actions">
+        <button name="action" type="submit" value="delete" class="btn btn-danger btn-sm"
+                onclick="return confirmDeleteLehrer()">Ausgewählte löschen</button>
+      </div>
     </form>
   </div>
 
