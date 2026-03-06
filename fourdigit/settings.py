@@ -191,3 +191,6 @@ LOGGING = {
         },
     },
 }
+
+# Approval links for request processing expire after 7 days by default.
+ANFRAGE_TOKEN_MAX_AGE_SECONDS = int(os.environ.get("ANFRAGE_TOKEN_MAX_AGE_SECONDS", 7 * 24 * 60 * 60))

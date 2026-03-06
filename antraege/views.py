@@ -1,4 +1,3 @@
-import uuid
 from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -7,20 +6,22 @@ from django.core.exceptions import PermissionDenied
 from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach, AntragSubmission
 from .functions import convert_date, convert_time, send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki, transform_date, transform_datetime
+from .tokens import make_token_pair, resolve_anfrage_from_public_token, TokenValidationError
+from .workflow import (
+    transition_anfrage,
+    transition_antrag,
+    ensure_pending,
+    all_requests_responded,
+    WorkflowTransitionError,
+)
 from django.utils import timezone
-from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Sum
 from django.utils.timezone import now
 from django.http import HttpResponse
 from datetime import timedelta
 from datetime import datetime, time as dtime
 from django.views.decorators.http import require_POST
-
-# Create your views here.
-def validate_afra_email(email):
-    if not email.endswith('@afra.lernsax.de'):
-        raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
-    return email
 
 @login_required(login_url="login")
 def home(request):
@@ -109,117 +110,112 @@ def neuer_antrag(request):
                     "unterricht_formset": formset
                 })
 
-            # ---- Antrag speichern ----
-            antrag_instance = antrag.save(commit=False)
-            antrag_instance.user = request.user
-            antrag_instance.save()
-            gm = antrag.cleaned_data.get("gm")
-            im = antrag.cleaned_data.get("im")
+            def _build_absolute_url(public_token):
+                relative_url = reverse("antrag_bestaetigen", kwargs={"token": public_token})
+                absolute_url = request.build_absolute_uri(relative_url)
+                return absolute_url[:4] + "s" + absolute_url[4:]
 
-            # ---- Unterricht/E-Mails vorbereiten ----
-            lehrer_dict = {}
-            for form in formset:
-                if form.cleaned_data:  # Check if form has data
-                    lehrer_id = form.cleaned_data.get("lehrer")
-                    fach_id = form.cleaned_data.get("fach")
-                    datum = form.cleaned_data.get("datum")
-                    ds_zeit = form.cleaned_data.get("ds_zeit")
-                    if lehrer_id not in lehrer_dict:
-                        lehrer_dict[lehrer_id] = []
+            with transaction.atomic():
+                # ---- Antrag speichern ----
+                antrag_instance = antrag.save(commit=False)
+                antrag_instance.user = request.user
+                antrag_instance.save()
+                gm = antrag.cleaned_data.get("gm")
+                im = antrag.cleaned_data.get("im")
 
-                    zaehler, _ = Zaehler.objects.get_or_create(
-                        schueler=request.user,
-                        lehrer=lehrer_id,
-                        fach=fach_id
+                # ---- Unterricht/E-Mails vorbereiten ----
+                lehrer_dict = {}
+                for form in formset:
+                    if form.cleaned_data:
+                        lehrer_id = form.cleaned_data.get("lehrer")
+                        fach_id = form.cleaned_data.get("fach")
+                        datum = form.cleaned_data.get("datum")
+                        ds_zeit = form.cleaned_data.get("ds_zeit")
+                        if lehrer_id not in lehrer_dict:
+                            lehrer_dict[lehrer_id] = []
+
+                        zaehler, _ = Zaehler.objects.get_or_create(
+                            schueler=request.user,
+                            lehrer=lehrer_id,
+                            fach=fach_id,
+                        )
+                        zaehler.temp += 1
+                        zaehler.save(update_fields=["temp"])
+
+                        lehrer_dict[lehrer_id].append(
+                            {
+                                "fach": fach_id.kuerzel,
+                                "datum": datum,
+                                "ds_zeitraum": ds_zeit,
+                            }
+                        )
+
+                last_unterricht_text = ""
+                for lehrer, unterricht_list in lehrer_dict.items():
+                    unterricht_text = ""
+                    for entry in unterricht_list:
+                        unterricht_text += f"{entry['fach']},{entry['datum']}, {entry['ds_zeitraum']};\n"
+                    last_unterricht_text = unterricht_text
+
+                    raw_token, public_token = make_token_pair()
+                    Anfrage.objects.create(
+                        antrag=antrag_instance,
+                        email=lehrer.email,
+                        token=raw_token,
+                        unterricht=unterricht_text,
+                        ds_zeitraum=unterricht_list[-1]["ds_zeitraum"],
                     )
-                    zaehler.temp += 1
-                    zaehler.save()
+                    transaction.on_commit(
+                        lambda lehrer_email=lehrer.email, lehrer_name=lehrer.name, unterricht=unterricht_text, public=public_token: send_email(
+                            lehrer_email,
+                            lehrer_name,
+                            request.user.first_name + " " + request.user.last_name,
+                            unterricht,
+                            _build_absolute_url(public),
+                            antrag_instance,
+                        )
+                    )
 
-                    lehrer_dict[lehrer_id].append({
-                        "fach": fach_id.kuerzel,
-                        "datum": datum,
-                        "ds_zeitraum": ds_zeit
-                    })
+                try:
+                    raw_token, public_token = make_token_pair()
+                    Anfrage.objects.create(
+                        antrag=antrag_instance,
+                        email=gm.email,
+                        token=raw_token,
+                        gm=gm.email,
+                        gm_boolean=True,
+                        unterricht=last_unterricht_text,
+                    )
+                    transaction.on_commit(
+                        lambda gm_email=gm.email, gm_name=gm.name, public=public_token: send_email_gm(
+                            gm_email,
+                            gm_name,
+                            request.user.first_name + " " + request.user.last_name,
+                            _build_absolute_url(public),
+                            antrag_instance,
+                        )
+                    )
+                except Exception:
+                    messages.warning(request, f"Fehler beim Senden der E-Mail an GM ({gm.email}).")
 
-
-            # Process each teacher's entries
-            for lehrer, unterricht_list in lehrer_dict.items():
-                # Create formatted string for email
-                unterricht_text = ""
-                for entry in unterricht_list:
-                    unterricht_text += f"{entry['fach']},{entry['datum']}, {entry["ds_zeitraum"]};\n"
-
-                token = str(uuid.uuid4())
-                relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                absolute_url = request.build_absolute_uri(relative_url)
-                absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-
+                raw_token, public_token = make_token_pair()
                 Anfrage.objects.create(
                     antrag=antrag_instance,
-                    email=lehrer.email,
-                    token=token,
-                    unterricht=unterricht_text,
-                    ds_zeitraum=entry['ds_zeitraum'],
+                    email=im.email,
+                    token=raw_token,
+                    im=im.email,
+                    im_boolean=True,
+                    unterricht=last_unterricht_text,
                 )
-
-                send_email(
-                    lehrer.email,
-                    lehrer.name,
-                    request.user.first_name + " " + request.user.last_name,
-                    unterricht_text,
-                    absolute_url,
-                    antrag_instance
+                transaction.on_commit(
+                    lambda im_email=im.email, im_name=im.name, public=public_token: send_email_im(
+                        im_email,
+                        im_name,
+                        request.user.first_name + " " + request.user.last_name,
+                        _build_absolute_url(public),
+                        antrag_instance,
+                    )
                 )
-
-            # GM
-            try:
-                token = str(uuid.uuid4())
-                relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                absolute_url = request.build_absolute_uri(relative_url)
-                absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-
-                Anfrage.objects.create(
-                    antrag=antrag_instance,
-                    email=gm.email,
-                    token=token,
-                    gm=gm.email,
-                    gm_boolean=True,
-                    unterricht=unterricht_text
-                )
-                send_email_gm(
-                    gm.email,
-                    gm.name,
-                    request.user.first_name + " " + request.user.last_name,
-                    absolute_url,
-                    antrag_instance
-                )
-            except Exception:
-                messages.warning(
-                    request,
-                    f"Fehler beim Senden der E-Mail an GM ({gm.email})."
-                )
-
-            # IM
-            token = str(uuid.uuid4())
-            relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-            absolute_url = request.build_absolute_uri(relative_url)
-            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-
-            Anfrage.objects.create(
-                antrag=antrag_instance,
-                email=im.email,
-                token=token,
-                im=im.email,
-                im_boolean=True,
-                unterricht=unterricht_text
-            )
-            send_email_im(
-                im.email,
-                im.name,
-                request.user.first_name + " " + request.user.last_name,
-                absolute_url,
-                antrag_instance
-            )
 
             return redirect("home")
 
@@ -269,32 +265,35 @@ def user_antraege(request):
     return render(request, "antraege/user_antraege.html")
 
 def antrag_bestaetigen(request, token):
-    anfrage = Anfrage.objects.filter(token=token).order_by('-id').first()
-    if anfrage is None:
+    try:
+        anfrage = resolve_anfrage_from_public_token(token)
+    except TokenValidationError:
         return HttpResponse("Ungültiger oder abgelaufener Link.", status=404)
     antrag = anfrage.antrag
     sekretariat_emails = set(Lehrer.objects.filter(secretariat=True).values_list('email', flat=True))
 
-    def _build_absolute_url(local_token):
-        relative_url = reverse('antrag_bestaetigen', kwargs={'token': local_token})
+    def _build_absolute_url(public_token):
+        relative_url = reverse('antrag_bestaetigen', kwargs={'token': public_token})
         absolute_url = request.build_absolute_uri(relative_url)
         return absolute_url[:4] + "s" + absolute_url[4:]
 
     def _create_sekretariat_requests(trigger=False):
         for email in sekretariat_emails:
-            seki_token = str(uuid.uuid4())
+            raw_token, public_token = make_token_pair()
             Anfrage.objects.create(
                 antrag=antrag,
                 email=email,
-                token=seki_token,
+                token=raw_token,
                 trigger=trigger,
             )
-            send_eltern_bestaetigung(
-                antrag.user.first_name + " " + antrag.user.last_name,
-                _build_absolute_url(seki_token),
-                antrag.klasse,
-                antrag.titel,
-                email,
+            transaction.on_commit(
+                lambda recipient=email, public=public_token: send_eltern_bestaetigung(
+                    antrag.user.first_name + " " + antrag.user.last_name,
+                    _build_absolute_url(public),
+                    antrag.klasse,
+                    antrag.titel,
+                    recipient,
+                )
             )
 
     def _create_schulleiter(antrag):
@@ -302,9 +301,14 @@ def antrag_bestaetigen(request, token):
         principal_email = Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()
         if not principal_email:
             return
-        principal_token = str(uuid.uuid4())
-        Anfrage.objects.create(antrag=antrag, email=principal_email, token=principal_token, is_principle=True)
-        send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, _build_absolute_url(principal_token))
+        raw_token, public_token = make_token_pair()
+        Anfrage.objects.create(antrag=antrag, email=principal_email, token=raw_token, is_principle=True)
+        transaction.on_commit(
+            lambda public=public_token: send_email_schulleiter(
+                antrag.user.first_name + " " + antrag.user.last_name,
+                _build_absolute_url(public),
+            )
+        )
 
     # Create the initial context
     context = {
@@ -374,78 +378,76 @@ def antrag_bestaetigen(request, token):
         # Principal handling
         if anfrage.is_principle:
             if answer == "annehmen":
-                anfrage.response = Anfrage.ACCEPTED
-                anfrage.responded_at = timezone.now()
-                anfrage.save()
-                antrag.status = 'accepted'
-                antrag.save()
-                bestaetigungen = Anfrage.objects.filter(
-                    antrag=antrag,
-                    is_principle=False,
-                    gm__isnull=True,
-                    im__isnull=True,
-                )
-
-                for bestaetigung in bestaetigungen:
-                    # Sekretariat explizit überspringen
-                    if bestaetigung.email in sekretariat_emails:
-                        continue
-
-                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
-
-                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
-                    for stunde in stunden:
-                        kuerzel = stunde.split(",")[0].strip().upper()
-                        fach = Fach.objects.get(kuerzel=kuerzel)
-
-                        obj = Zaehler.objects.get(
-                            schueler=antrag.user,
-                            lehrer=lehrer,
-                            fach=fach,
+                try:
+                    with transaction.atomic():
+                        ensure_pending(anfrage)
+                        transition_anfrage(anfrage, Anfrage.ACCEPTED)
+                        transition_antrag(antrag, Antrag.STATUS_ACCEPTED)
+                        bestaetigungen = Anfrage.objects.filter(
+                            antrag=antrag,
+                            is_principle=False,
+                            gm__isnull=True,
+                            im__isnull=True,
                         )
-                        obj.zaehler += obj.temp
-                        obj.temp = 0
-                        obj.save()
-                seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-                for email in seki_mails:
-                    send_email_sekretariat(
-                        antrag.user.first_name + " " + antrag.user.last_name, 
-                        antrag.klasse,
-                        antrag.titel,
-                        antrag.grund,
-                        email,
-                        antrag
-                        )
-                schueler_benachrichtigung_antrag(antrag, True)
+
+                        for bestaetigung in bestaetigungen:
+                            if bestaetigung.email in sekretariat_emails:
+                                continue
+                            stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                            lehrer = Lehrer.objects.get(email=bestaetigung.email)
+                            for stunde in stunden:
+                                kuerzel = stunde.split(",")[0].strip().upper()
+                                fach = Fach.objects.get(kuerzel=kuerzel)
+                                obj = Zaehler.objects.get(
+                                    schueler=antrag.user,
+                                    lehrer=lehrer,
+                                    fach=fach,
+                                )
+                                obj.zaehler += obj.temp
+                                obj.temp = 0
+                                obj.save(update_fields=["zaehler", "temp"])
+
+                        for email in Lehrer.objects.filter(secretariat=True).values_list('email', flat=True):
+                            transaction.on_commit(
+                                lambda recipient=email: send_email_sekretariat(
+                                    antrag.user.first_name + " " + antrag.user.last_name,
+                                    antrag.klasse,
+                                    antrag.titel,
+                                    antrag.grund,
+                                    recipient,
+                                    antrag,
+                                )
+                            )
+                        transaction.on_commit(lambda: schueler_benachrichtigung_antrag(antrag, True))
+                except WorkflowTransitionError:
+                    return HttpResponse("Anfrage bereits bearbeitet.", status=403)
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
-                bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
-                sekretariat_emails = set(
-                    Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-                )
-                for bestaetigung in bestaetigungen:
-                    if bestaetigung.email in sekretariat_emails:
-                        continue
-                    stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
-                    lehrer = Lehrer.objects.get(email=bestaetigung.email)
-                    for stunde in stunden:
-                        kuerzel = stunde.split(",")[0].strip().upper()
-                        fach = Fach.objects.get(kuerzel=kuerzel)
-                        obj = Zaehler.objects.get(
-                            schueler=antrag.user,
-                            lehrer=lehrer,
-                            fach=fach
-                        )
-                        obj.temp = 0
-                        obj.save()
-                anfrage.response = Anfrage.DECLINED
-                anfrage.responded_at = timezone.now()
-                anfrage.reason = grund
-                anfrage.save()
-                antrag.status = 'declined'
-                antrag.save()
-                schueler_benachrichtigung_antrag(antrag, False)
+                try:
+                    with transaction.atomic():
+                        ensure_pending(anfrage)
+                        bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
+                        for bestaetigung in bestaetigungen:
+                            if bestaetigung.email in sekretariat_emails:
+                                continue
+                            stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
+                            lehrer = Lehrer.objects.get(email=bestaetigung.email)
+                            for stunde in stunden:
+                                kuerzel = stunde.split(",")[0].strip().upper()
+                                fach = Fach.objects.get(kuerzel=kuerzel)
+                                obj = Zaehler.objects.get(
+                                    schueler=antrag.user,
+                                    lehrer=lehrer,
+                                    fach=fach,
+                                )
+                                obj.temp = 0
+                                obj.save(update_fields=["temp"])
+                        transition_anfrage(anfrage, Anfrage.DECLINED, reason=grund)
+                        transition_antrag(antrag, Antrag.STATUS_DECLINED)
+                        transaction.on_commit(lambda: schueler_benachrichtigung_antrag(antrag, False))
+                except WorkflowTransitionError:
+                    return HttpResponse("Anfrage bereits bearbeitet.", status=403)
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             else:
                 messages.error(request, "Kein Feld ausgewählt")
@@ -453,42 +455,29 @@ def antrag_bestaetigen(request, token):
         # Teacher handling        
         elif anfrage.response == Anfrage.NOT_RESPONDED:
             if answer == "annehmen":
-                anfrage.response = Anfrage.ACCEPTED
-                anfrage.responded_at = timezone.now()
-                anfrage.save()
-                
-                # Check if all responses received to notify principal
-                mail_bool = True
-                anfragen = Anfrage.objects.filter(antrag=antrag)
-                for af in anfragen:
-                    if af.response == Anfrage.NOT_RESPONDED:
-                        mail_bool = False
-                        break
-                
-                if mail_bool:
-                    _create_sekretariat_requests(trigger=False)
+                try:
+                    with transaction.atomic():
+                        ensure_pending(anfrage)
+                        transition_anfrage(anfrage, Anfrage.ACCEPTED)
+                        if all_requests_responded(antrag):
+                            _create_sekretariat_requests(trigger=False)
+                except WorkflowTransitionError:
+                    return HttpResponse("Anfrage bereits bearbeitet.", status=403)
 
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
                 
             elif answer == "ablehnen":
                 grund = request.POST.get("grund", '')
-                anfrage.response = Anfrage.DECLINED
-                anfrage.responded_at = timezone.now()
-                anfrage.reason = grund
-                anfrage.save()
-                
-                # Check if all responses received to notify principal
-                mail_bool = True
-                anfragen = Anfrage.objects.filter(antrag=antrag)
-                for af in anfragen:
-                    if af.response == Anfrage.NOT_RESPONDED:
-                        mail_bool = False
-                        break
-                
-                if mail_bool and antrag.eltern_bestaetigung:
-                    _create_schulleiter(antrag)
-                elif mail_bool:
-                    _create_sekretariat_requests(trigger=False)
+                try:
+                    with transaction.atomic():
+                        ensure_pending(anfrage)
+                        transition_anfrage(anfrage, Anfrage.DECLINED, reason=grund)
+                        if all_requests_responded(antrag) and antrag.eltern_bestaetigung:
+                            _create_schulleiter(antrag)
+                        elif all_requests_responded(antrag):
+                            _create_sekretariat_requests(trigger=False)
+                except WorkflowTransitionError:
+                    return HttpResponse("Anfrage bereits bearbeitet.", status=403)
 
 
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
@@ -498,59 +487,54 @@ def antrag_bestaetigen(request, token):
             messages.error(request, "Anfrage bereits bearbeitet")
             return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
-        anfragen = Anfrage.objects.filter(token=token)
+        anfragen = Anfrage.objects.filter(token=anfrage.token)
         form = TwoStepForm(request.POST)
-        if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
+        if anfragen.first().response != Anfrage.NOT_RESPONDED:
             return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
             first = form.cleaned_data.get("first_question")
             second = form.cleaned_data.get("second_question")
-            if first == "ja":
-                antrag.eltern_notwendig = True
-                if second == "ja":
-                    antrag.eltern_bestaetigung = True
-                    _create_schulleiter(antrag)
-                    schueler_benachrichtigung_seki(antrag)
+            with transaction.atomic():
+                if first == "ja":
+                    antrag.eltern_notwendig = True
+                    if second == "ja":
+                        antrag.eltern_bestaetigung = True
+                        _create_schulleiter(antrag)
+                        transaction.on_commit(lambda: schueler_benachrichtigung_seki(antrag))
+                    else:
+                        antrag.eltern_bestaetigung = False
+                        transaction.on_commit(lambda: schueler_benachrichtigung_eltern(antrag))
                 else:
-                    antrag.eltern_bestaetigung = False
-                    schueler_benachrichtigung_eltern(antrag)
-            else:
-                antrag.eltern_notwendig = False
-                _create_schulleiter(antrag)
-                schueler_benachrichtigung_seki(antrag)
-            antrag.save()
-            for anfrage in anfragen:
-                anfrage.response = Anfrage.ACCEPTED
-                anfrage.save()
+                    antrag.eltern_notwendig = False
+                    _create_schulleiter(antrag)
+                    transaction.on_commit(lambda: schueler_benachrichtigung_seki(antrag))
+                antrag.save(update_fields=["eltern_notwendig", "eltern_bestaetigung"])
+                for af in anfragen:
+                    transition_anfrage(af, Anfrage.ACCEPTED)
             return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
 
     elif request.method == "POST" and request.POST.get("btn") == "eltern2":
         form = YesNoForm(request.POST)
-        anfragen = Anfrage.objects.filter(token=token)
-        if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
+        anfragen = Anfrage.objects.filter(token=anfrage.token)
+        if anfragen.first().response != Anfrage.NOT_RESPONDED:
             return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
             answer = form.cleaned_data.get("agree")
-            antrag.eltern_notwendig = True
-            if answer:
-                antrag.eltern_bestaetigung = True
-                _create_schulleiter(antrag)
-                schueler_benachrichtigung_seki(antrag)
-                antrag.save()
-                for anfrage in anfragen:
-                    anfrage.response = Anfrage.ACCEPTED
-                    anfrage.save(update_fields=["response"])
-                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
-            else:
-                antrag.eltern_bestaetigung = False
-                schueler_benachrichtigung_eltern(antrag)
-                antrag.save()
-                for anfrage in anfragen:
-                    anfrage.response = Anfrage.ACCEPTED
-                    anfrage.save(update_fields=["response"])
-                return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
+            with transaction.atomic():
+                antrag.eltern_notwendig = True
+                if answer:
+                    antrag.eltern_bestaetigung = True
+                    _create_schulleiter(antrag)
+                    transaction.on_commit(lambda: schueler_benachrichtigung_seki(antrag))
+                else:
+                    antrag.eltern_bestaetigung = False
+                    transaction.on_commit(lambda: schueler_benachrichtigung_eltern(antrag))
+                antrag.save(update_fields=["eltern_notwendig", "eltern_bestaetigung"])
+                for af in anfragen:
+                    transition_anfrage(af, Anfrage.ACCEPTED)
+            return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
@@ -673,24 +657,27 @@ def seki_anfordern(request):
         messages.error(request, "Du kannst dieses Formular nur einmal pro Stunde absenden.")
         return HttpResponse("Du kannst nur einmal pro Stunde eine neue Prüfung anfordern", status=403)
     
-    AntragSubmission.objects.create(user=request.user, antrag=antrag)
-    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-    for email in seki_mails:
-        token = str(uuid.uuid4())
-        relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-        absolute_url = request.build_absolute_uri(relative_url)
-        absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-        Anfrage.objects.create(
-            antrag=antrag,
-            email=email,
-            token=token,
-            trigger=True
-        )
-        send_eltern_bestaetigung(
-            antrag.user.first_name + " " + antrag.user.last_name,
-            absolute_url,
-            antrag.klasse,
-            antrag.titel,
-            email
-        )  
+    with transaction.atomic():
+        AntragSubmission.objects.create(user=request.user, antrag=antrag)
+        seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
+        for email in seki_mails:
+            raw_token, public_token = make_token_pair()
+            relative_url = reverse('antrag_bestaetigen', kwargs={'token': public_token})
+            absolute_url = request.build_absolute_uri(relative_url)
+            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+            Anfrage.objects.create(
+                antrag=antrag,
+                email=email,
+                token=raw_token,
+                trigger=True
+            )
+            transaction.on_commit(
+                lambda recipient=email, absolute=absolute_url: send_eltern_bestaetigung(
+                    antrag.user.first_name + " " + antrag.user.last_name,
+                    absolute,
+                    antrag.klasse,
+                    antrag.titel,
+                    recipient
+                )
+            )
     return redirect("home")

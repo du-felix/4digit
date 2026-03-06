@@ -2,7 +2,6 @@
 from django import forms
 from .models import Antrag, Anfrage, Lehrer, Fach
 from django.forms import formset_factory
-from adminview.views import validate_afra_email
 
 
 class AntragForm(forms.ModelForm):

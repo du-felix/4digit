@@ -3,9 +3,11 @@ from datetime import date, time
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.test.utils import override_settings
 
 from antraege.forms import TwoStepForm
 from antraege.models import Antrag, Anfrage, Lehrer
+from antraege.tokens import sign_existing_raw_token
 
 
 User = get_user_model()
@@ -65,7 +67,7 @@ class WorkflowRegressionTests(TestCase):
         Lehrer.objects.create(email="seki2@afra.lernsax.de", name="Seki 2", secretariat=True)
 
         response = self.client.post(
-            reverse("antrag_bestaetigen", kwargs={"token": token}),
+            reverse("antrag_bestaetigen", kwargs={"token": sign_existing_raw_token(token)}),
             {"btn": "bestaetigung", "answer": "annehmen"},
         )
         self.assertEqual(response.status_code, 200)
@@ -94,7 +96,7 @@ class WorkflowRegressionTests(TestCase):
         )
 
         response = self.client.post(
-            reverse("antrag_bestaetigen", kwargs={"token": anfrage.token}),
+            reverse("antrag_bestaetigen", kwargs={"token": sign_existing_raw_token(anfrage.token)}),
             {"btn": "eltern2", "agree": "on"},
         )
         self.assertEqual(response.status_code, 200)
@@ -117,9 +119,25 @@ class WorkflowRegressionTests(TestCase):
             unterricht="MA,2026-03-20, 1. DS;\n",
         )
 
-        response = self.client.get(reverse("antrag_bestaetigen", kwargs={"token": anfrage.token}))
+        response = self.client.get(
+            reverse("antrag_bestaetigen", kwargs={"token": sign_existing_raw_token(anfrage.token)})
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ist eine Elternbestätigung notwendig?")
+
+    @override_settings(ANFRAGE_TOKEN_MAX_AGE_SECONDS=0)
+    def test_expired_signed_token_is_rejected(self):
+        antrag = self._create_antrag()
+        anfrage = Anfrage.objects.create(
+            antrag=antrag,
+            email="lehrer@afra.lernsax.de",
+            token="expiring-token",
+        )
+
+        response = self.client.get(
+            reverse("antrag_bestaetigen", kwargs={"token": sign_existing_raw_token(anfrage.token)})
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_antrag_detail_handles_missing_gm_im_and_teacher_records(self):
         self.client.login(username=self.user.email, password=self.password)

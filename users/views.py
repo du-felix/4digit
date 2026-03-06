@@ -5,10 +5,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.conf import settings
-from django.core.mail import send_mail
 from .models import CustomUser
 from django.contrib.auth.forms import SetPasswordForm
 from django.http import HttpResponse
+from antraege.mailer import send_mail_logged
 
 
 def login(request):
@@ -135,18 +135,17 @@ def get_link(request):
                 activation_url = request.build_absolute_uri(
                     reverse('activate', kwargs={'uid': user.pk, 'token': token})
                 )
-                send_mail(
-                    'Account aktivieren – Freistellungen',
-                    (
+                send_mail_logged(
+                    subject='Account aktivieren – Freistellungen',
+                    body=(
                         f'Hi {user.first_name},\n\n'
                         f'Dein Account wurde noch nicht aktiviert. '
                         f'Klicke auf folgenden Link um ein Passwort festzulegen:\n\n'
                         f'{activation_url}\n\n'
                         f'Der Link ist für eine begrenzte Zeit gültig.'
                     ),
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=True,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipients=[email],
                 )
                 messages.info(request, "Wir haben dir einen Aktivierungslink geschickt.")
                 return redirect('login')
@@ -155,16 +154,15 @@ def get_link(request):
                 reset_url = request.build_absolute_uri(
                     reverse('edit_password', kwargs={'uid': user.pk, 'token': token})
                 )
-                send_mail(
-                    'Passwort zurücksetzen',
-                    (
+                send_mail_logged(
+                    subject='Passwort zurücksetzen',
+                    body=(
                         f'Hi {user.first_name},\n\n'
                         f'Klicke auf folgenden Link um dein Passwort zurückzusetzen:\n\n'
                         f'{reset_url}'
                     ),
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=True,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipients=[email],
                 )
                 messages.success(request, "Wir haben dir einen Link zum Zurücksetzen des Passworts geschickt.")
                 return redirect('login')

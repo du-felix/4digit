@@ -13,8 +13,9 @@ from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 import io
 from antraege.models import Lehrer, Antrag, Anfrage
+from antraege.validators import validate_afra_email
+from antraege.mailer import send_mail_logged
 from django.urls import reverse
-from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
 from django.utils import timezone
@@ -30,11 +31,6 @@ def staff_required(view_func):
             return redirect('home')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
-
-def validate_afra_email(email):
-    if not email.endswith('@afra.lernsax.de'):
-        raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
-    return email
 
 @staff_required
 def adminview(request, user_id=None):
@@ -97,12 +93,9 @@ def adding(request):
     if request.method == 'POST':
         form = Sign_Up_Form(request.POST)
         if form.is_valid():
-            try:
-                validate_afra_email(form.cleaned_data['email'])
-                form.save()
-                return redirect('adminview-home')
-            except ValidationError as e:
-                form.add_error('email', e)
+            validate_afra_email(form.cleaned_data['email'])
+            form.save()
+            return redirect('adminview-home')
     else:
         form = Sign_Up_Form()
 
@@ -115,13 +108,10 @@ def edit_user(request, user_id=None):
         if request.method == 'POST':
             form = UserEditForm(request.POST, instance=edit_user)
             if form.is_valid():
-                try:
-                    validate_afra_email(form.cleaned_data['email'])
-                    form.save()
-                    messages.success(request, f"User {edit_user.email} updated successfully")
-                    return redirect('adminview-home')
-                except ValidationError as e:
-                    form.add_error('email', e)
+                validate_afra_email(form.cleaned_data['email'])
+                form.save()
+                messages.success(request, f"User {edit_user.email} updated successfully")
+                return redirect('adminview-home')
         else:
             form = UserEditForm(instance=edit_user)
     else:
@@ -178,16 +168,15 @@ def csv(request):
                                 user.set_password(password)
                                 user.save()
 
-                                send_mail(
+                                send_mail_logged(
                                     subject='Dein neuer Account für Freistellungen',
-                                    message=(
+                                    body=(
                                         f'Dein Account wurde erstellt.\n\n'
                                         f'Dein Initialpasswort lautet: {password}\n\n'
                                         f'Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.'
                                     ),
                                     from_email=settings.DEFAULT_FROM_EMAIL,
-                                    recipient_list=[email],
-                                    fail_silently=True,
+                                    recipients=[email],
                                 )
                                 success_count += 1
                             else:

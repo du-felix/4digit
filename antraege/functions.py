@@ -1,6 +1,6 @@
-from django.core.mail import send_mail
 from django.conf import settings
 from .models import Anfrage, Lehrer, Fach
+from .mailer import send_mail_logged
 
 def get_lehrer_name_by_email(email):
     try:
@@ -50,7 +50,7 @@ def send_email(email, lehrer_name, schueler_name, unterricht, token_url, antrag)
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def send_email_gm(email, gm_name, schueler_name, token_url, antrag):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
@@ -67,7 +67,7 @@ def send_email_gm(email, gm_name, schueler_name, token_url, antrag):
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def send_email_im(email, im_name, schueler_name, token_url, antrag):
     subject = f"Neuer Freistellungsantrag von {schueler_name}"
@@ -84,7 +84,7 @@ def send_email_im(email, im_name, schueler_name, token_url, antrag):
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def send_email_schulleiter(schueler, token_url):
     subject = f"Neuer Freistellungsantrag von {schueler}"
@@ -99,7 +99,7 @@ def send_email_schulleiter(schueler, token_url):
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!
     """
     empfaenger = [Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
@@ -140,7 +140,7 @@ def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def send_eltern_bestaetigung(schueler, token_url, klasse, titel, email):
     subject = f"Elternbestätigung prüfen von {schueler}: {titel}"
@@ -153,7 +153,7 @@ def send_eltern_bestaetigung(schueler, token_url, klasse, titel, email):
     
     BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!"""
     empfaenger = [email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def schueler_benachrichtigung_eltern(antrag):
     subject = f"Update für Freistellungsantrag: {antrag.titel}"
@@ -163,7 +163,7 @@ def schueler_benachrichtigung_eltern(antrag):
     
     Danke! LG febriel"""
     empfaenger = [antrag.user.email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def schueler_benachrichtigung_antrag(antrag, bool):
     if bool:
@@ -173,7 +173,7 @@ def schueler_benachrichtigung_antrag(antrag, bool):
         
         LG FGH"""
         empfaenger = [antrag.user.email]
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+        send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
     else:
         subject = f"Dein Antrag: '{antrag.titel}' wurde abgelehnt"
         body = f"""Hallo,
@@ -181,7 +181,7 @@ def schueler_benachrichtigung_antrag(antrag, bool):
         
         LG febriel"""
         empfaenger =[antrag.user.email]
-        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+        send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def schueler_benachrichtigung_seki(antrag):
     subject = f"Dein Antrag: '{antrag.titel}' wurde an den Schulleiter übermittelt"
@@ -190,7 +190,7 @@ def schueler_benachrichtigung_seki(antrag):
     
     LG febriel"""
     empfaenger = [antrag.user.email]
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger, fail_silently=True)
+    send_mail_logged(subject, body, settings.DEFAULT_FROM_EMAIL, empfaenger)
 
 def transform_date(date):
     elements = date.strip("\n").split("-")
