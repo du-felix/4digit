@@ -1,20 +1,32 @@
 {% extends "adminview/base.html" %}
-{% load static %}
-{% block title %}Adminview{% endblock %}
+{% block title %}Neuer Benutzer{% endblock %}
 
 {% block content %}
-<h2>Neuen Benutzer hinzufügen</h2>
+<div class="container" style="max-width: 580px;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'adminview-home' %}" style="font-size:13px; color:var(--text-muted);">← Zurück</a>
+  </div>
+  <div class="form-card">
+    <h2>Neuen Benutzer hinzufügen</h2>
     <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
+      {% csrf_token %}
+      {% for field in form %}
         <div class="form-group">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-                <div class="text-danger">{{ field.errors }}</div>
-            {% endif %}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger">{{ field.errors }}</div>
+          {% endif %}
+          {% if field.help_text %}
+            <small style="color:var(--text-muted); font-size:12px;">{{ field.help_text|safe }}</small>
+          {% endif %}
         </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Benutzer hinzufügen</button>
+      {% endfor %}
+      <div class="form-actions">
+        <a href="{% url 'adminview-home' %}" class="btn btn-outline">Abbrechen</a>
+        <button type="submit">Benutzer anlegen</button>
+      </div>
     </form>
+  </div>
+</div>
 {% endblock %}

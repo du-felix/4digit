@@ -1,35 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Site{% endblock %}</title>
-    <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    {% block extra_head %}
-    <!-- Additional head elements can go here -->
-    {% endblock %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Freistellungen{% endblock %} – St. Afra</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header style="display: flex; justify-content: center; width: 100%; padding: 16px, 32px;">
-        <div>
-            <a href="{% url 'login' %}">
-                <img src="{% static 'images/logo.png' %}" alt="4digit">
-            </a>
-        </div>
-    </header>
-    <main style="min-height: 88vh; display: flex; flex-direction: column;">
-        {% block content %}
-        <!-- Default content can be placed here if needed -->
-        {% endblock %}
-    </main>
-    <footer>
-        <p>&copy; 2025 4digit</p>
-    </footer>
-    <!-- Optional JavaScript files -->
-    {% block extra_scripts %}
-    <!-- Additional scripts can be added by child templates -->
-    {% endblock %}
+  <header>
+    <a href="{% url 'login' %}">
+      <img src="{% static 'images/logo.png' %}" alt="St. Afra">
+    </a>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer><p>&copy; 2025 4digit</p></footer>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

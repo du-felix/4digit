@@ -1,111 +1,96 @@
 {% extends "antraege/base.html" %}
-
 {% block title %}Neuer Freistellungsantrag{% endblock %}
 
 {% block content %}
-<h1>Neuer Freistellungsantrag</h1>
-<div>
+<div class="page-container" style="max-width: 680px;">
+  <div class="page-header">
+    <h1>Neuer Freistellungsantrag</h1>
+    <p>Bitte fülle alle Felder aus. Der Antrag muss mindestens 5 Tage vor dem Anfangsdatum gestellt werden.</p>
+  </div>
+
   {% if messages %}
-  {% for message in messages %}
+    {% for message in messages %}
       <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-  {% endfor %}
-{% endif %}
-</div>
-<div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
     <form method="post">
-        {% csrf_token %}
-        {% if form.errors %}
-            <ul>
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+      {% csrf_token %}
 
-
-        {{ antrag.as_p }}
-        <h2>Verpasster Unterricht:</h2>
-        {{ unterricht_formset.management_form }}
-        <div id="formset-container">
-            {% for unterricht in unterricht_formset %}
-            <div style="display: flex; flex-direction: column; flex-wrap: wrap; gap: 8px">
-                {{ unterricht.fach.label_tag }} {{ unterricht.fach }}
-                {{ unterricht.lehrer.label_tag }} {{ unterricht.lehrer }}
-                {{ unterricht.datum.label_tag }} {{ unterricht.datum }}
-                {{ unterricht.ds_zeit.label_tag }} {{ unterricht.ds_zeit }}
-            </div>
+      {% for field in antrag %}
+        <div class="form-group">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}
+            {% for error in field.errors %}
+              <span class="text-danger">{{ error }}</span>
             {% endfor %}
+          {% endif %}
         </div>
-        <div id="empty-form" style="display: none;">
-          <div style="margin-top: 12px;margin-bottom: 12px; display: flex; flex-direction: column; flex-wrap: wrap; gap: 8px;">
-            <div style="margin-bottom: 8px; border: 0.5px solid rgb(173, 173, 173); border-radius: 8px; width: 100%; height: 1px;"></div>
-              {{ unterricht_formset.empty_form.fach.label_tag }} {{ unterricht_formset.empty_form.fach }}
-              {{ unterricht_formset.empty_form.lehrer.label_tag }} {{ unterricht_formset.empty_form.lehrer }}
-              {{ unterricht_formset.empty_form.datum.label_tag }} {{ unterricht_formset.empty_form.datum }}
-              {{ unterricht_formset.empty_form.ds_zeitraum.label_tag }} {{unterricht_formset.empty_form.ds_zeitraum}}
-              <button type="button" class="remove-form-btn" style="width: 250px;">Stunde entfernen</button>
-          </div>
+      {% endfor %}
+
+      <div class="divider"></div>
+      <h2>Verpasster Unterricht</h2>
+      <p style="margin-bottom:16px;">Füge alle Unterrichtsstunden hinzu, die du verpassen wirst.</p>
+
+      {{ unterricht_formset.management_form }}
+
+      <div id="formset-container">
+        {% for unterricht in unterricht_formset %}
+        <div class="unterricht-form" style="padding: 16px; background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;">
+          <div class="form-group">{{ unterricht.fach.label_tag }}{{ unterricht.fach }}</div>
+          <div class="form-group">{{ unterricht.lehrer.label_tag }}{{ unterricht.lehrer }}</div>
+          <div class="form-group">{{ unterricht.datum.label_tag }}{{ unterricht.datum }}</div>
+          <div class="form-group">{{ unterricht.ds_zeit.label_tag }}{{ unterricht.ds_zeit }}</div>
+        </div>
+        {% endfor %}
       </div>
-        <button type="button" id="addButton" style="margin-bottom: 12px;">Stunde hinzufügen</button>
-        <div style="margin-bottom: 24px; border: 0.5px solid rgb(173, 173, 173); border-radius: 8px; width: 100%; height: 1px;"></div>
-        <button type="submit">Antrag stellen</button>
+
+      <div id="empty-form" style="display:none;">
+        <div class="unterricht-form" style="padding: 16px; background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;">
+          <div class="form-group">{{ unterricht_formset.empty_form.fach.label_tag }}{{ unterricht_formset.empty_form.fach }}</div>
+          <div class="form-group">{{ unterricht_formset.empty_form.lehrer.label_tag }}{{ unterricht_formset.empty_form.lehrer }}</div>
+          <div class="form-group">{{ unterricht_formset.empty_form.datum.label_tag }}{{ unterricht_formset.empty_form.datum }}</div>
+          <div class="form-group">{{ unterricht_formset.empty_form.ds_zeit.label_tag }}{{ unterricht_formset.empty_form.ds_zeit }}</div>
+          <button type="button" class="remove-form-btn btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;">Entfernen</button>
+        </div>
+      </div>
+
+      <button type="button" id="addButton" class="btn btn-outline btn-sm" style="margin-bottom: 20px;">+ Stunde hinzufügen</button>
+
+      <div class="divider"></div>
+      <div style="margin-top: 16px;">
+        <button type="submit">Antrag einreichen</button>
+      </div>
     </form>
-
+  </div>
 </div>
- <script>
-   document.addEventListener('DOMContentLoaded', function() {
-      const addFormBtn = document.getElementById('addButton');
-      const formsetContainer = document.getElementById('formset-container');
-      const emptyFormDiv = document.getElementById('empty-form');
-      const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS'); // from {{ formset.management_form }}
 
-      addFormBtn.addEventListener('click', function() {
-        // Current total forms in formset
-        let formIndex = parseInt(totalFormsInput.value);
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const addBtn = document.getElementById('addButton');
+  const container = document.getElementById('formset-container');
+  const emptyForm = document.getElementById('empty-form');
+  const totalForms = document.getElementById('id_form-TOTAL_FORMS');
 
-        // Copy the empty form's HTML
-        let newFormHtml = emptyFormDiv.innerHTML;
-        // Replace __prefix__ with the form index
-        newFormHtml = newFormHtml.replace(/__prefix__/g, formIndex);
+  addBtn.addEventListener('click', function () {
+    const idx = parseInt(totalForms.value);
+    const html = emptyForm.innerHTML.replace(/__prefix__/g, idx);
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    container.appendChild(div);
+    totalForms.value = idx + 1;
+    attachRemove(div);
+  });
 
-        // Create a new div and fill it with the updated form HTML
-        const newFormElem = document.createElement('div');
-        newFormElem.innerHTML = newFormHtml;
-
-        // Add the new form to the container
-        formsetContainer.appendChild(newFormElem);
-
-        // Increment the TOTAL_FORMS count so Django recognizes the new form
-        totalFormsInput.value = formIndex + 1;
-
-        // Attach remove functionality for the newly added form
-        attachRemoveButton(newFormElem);
-      });
-
-      // Function to attach the remove event to the newly created form's button
-      function attachRemoveButton(formElem) {
-        const removeBtn = formElem.querySelector('.remove-form-btn');
-        if (removeBtn) {
-          removeBtn.addEventListener('click', function() {
-            // Remove this entire form row
-            formElem.remove();
-
-            // Decrement TOTAL_FORMS so Django doesn't expect this form
-            let totalForms = parseInt(totalFormsInput.value);
-            totalFormsInput.value = totalForms - 1;
-          });
-        }
-      }
-
-      // Optional: If you want to allow removing *existing* forms,
-      // you'd have to include a "remove" button in each initial form
-      // and call attachRemoveButton() on them too.
+  function attachRemove(el) {
+    const btn = el.querySelector('.remove-form-btn');
+    if (btn) btn.addEventListener('click', function () {
+      el.remove();
+      totalForms.value = parseInt(totalForms.value) - 1;
     });
-  </script>
-
+  }
+});
+</script>
 {% endblock %}

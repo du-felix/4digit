@@ -150,7 +150,7 @@ def activate_account(request):
             return redirect('login')
         else:
             messages.error(request, "Passwörter stimmen nicht überein.")
-            render(request, "users/activate.html", {"uid": request.user.pk})
+            return render(request, "users/activate.html", {"uid": request.user.pk})
 
 def get_link(request):
     if request.method == "POST":

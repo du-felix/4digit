@@ -66,14 +66,13 @@ def adminview(request, user_id=None):
         users = CustomUser.objects.filter(id__in=selected_users)
 
         if action == 'delete':
-            emails = [user.email for user in users]
             users.delete()
             messages.success(request, f'{len(selected_users)} Benutzer wurden gelöscht')
         return redirect('adminview-home')
     
     context = {
         'users': users,
-        'edit_user': edit_user,
+        'edit_user': None,
         'search_query': search_query,
         'button_url': reverse('adminview-csv'),
     }
@@ -131,14 +130,13 @@ def csv(request):
                 
             # Process CSV file
             try:
-                csv_data = csv_file.read().decode('utf-8')
                 import io
                 import csv
-                from datetime import datetime
-                
+
+                csv_data = csv_file.read().decode('utf-8')
                 io_string = io.StringIO(csv_data)
                 reader = csv.reader(io_string, delimiter=';')
-                
+
                 success_count = 0
                 error_count = 0
                 errors = []
@@ -147,11 +145,10 @@ def csv(request):
                     try:
                         if len(row) >= 3:
                             email = row[1].strip()
-                            name_parts = row[2].strip().split (' ', 1)
+                            name_parts = row[2].strip().split(' ', 1)
                             first_name = name_parts[0]
                             last_name = name_parts[1] if len(name_parts) > 1 else ''
-                            
-                            # Validate email format
+
                             try:
                                 validate_afra_email(email)
                             except ValidationError as e:
@@ -159,28 +156,6 @@ def csv(request):
                                 error_count += 1
                                 continue
 
-                            #birth_date = None
-                            #if birth_date_str:
-                                #date_formats = [
-                                    #'%Y-%m-%d',  # YYYY-MM-DD
-                                    #'%d.%m.%Y',  # DD.MM.YYYY
-                                    #'%d.%m.%y',  # DD.MM.YY (Excel default)
-                                    #'%m/%d/%Y',  # MM/DD/YYYY
-                                    #'%m/%d/%y',  # MM/DD/YY
-                                #]
-                                
-                                #for date_format in date_formats:
-                                    #try:
-                                        #birth_date = datetime.strptime(birth_date_str, date_format).date()
-                                        #break  # Exit the loop if successful
-                                    #except ValueError:
-                                        #continue
-                                
-                                #if birth_date is None:
-                                    #errors.append(f"Invalid date format for {email}: {birth_date_str}")
-                                    #error_count += 1
-                                    #continue
-                            
                             # Check if user already exists
                             if not CustomUser.objects.filter(email=email).exists():
                                 password = get_random_string(10)
@@ -272,7 +247,6 @@ def lehrer(request, lehrer_id=None):
 
 
         if action == 'delete':
-            emails = [lehrer.email for lehrer in lehrers]
             lehrer.delete()
             messages.success(request, f'{len(selected_lehrers)} Lehrer wurden gelöscht')
         return redirect('lehrer')
@@ -334,11 +308,10 @@ def lehrer_csv(request):
                 
             # Process CSV file
             try:
-                csv_data = csv_file.read().decode('utf-8')
                 import io
                 import csv
-                from datetime import datetime
-                
+
+                csv_data = csv_file.read().decode('utf-8')
                 io_string = io.StringIO(csv_data)
                 reader = csv.reader(io_string, delimiter=';')
 
@@ -351,31 +324,7 @@ def lehrer_csv(request):
                         if len(row) >= 3:
                             email = row[1].strip()
                             name = row[2].strip()
-                        
-                        
-                            #birth_date = None
-                            #if birth_date_str:
-                                #date_formats = [
-                                    #'%Y-%m-%d',  # YYYY-MM-DD
-                                    #'%d.%m.%Y',  # DD.MM.YYYY
-                                    #'%d.%m.%y',  # DD.MM.YY (Excel default)
-                                    #'%m/%d/%Y',  # MM/DD/YYYY
-                                    #'%m/%d/%y',  # MM/DD/YY
-                                #]
-                                
-                                #for date_format in date_formats:
-                                    #try:
-                                        #birth_date = datetime.strptime(birth_date_str, date_format).date()
-                                        #break  # Exit the loop if successful
-                                    #except ValueError:
-                                        #continue
-                                
-                                #if birth_date is None:
-                                    #errors.append(f"Invalid date format for {email}: {birth_date_str}")
-                                    #error_count += 1
-                                    #continue
-                            
-                            # Check if user already exists
+
                             if not Lehrer.objects.filter(email=email).exists():
                                 lehrer = Lehrer(
                                     email=email,

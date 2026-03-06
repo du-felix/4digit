@@ -2,36 +2,29 @@
 {% block title %}Passwort zurücksetzen{% endblock %}
 
 {% block content %}
-<h1>Link zum Zurücksetzen des Passworts</h1>
-<p>Gebe die Email deines Accounts ein. Wir senden dir einen Link, mit dem du dein Passwort zurücksetzen kannst.</p>
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-        {{ message }}
-        </div>
-    {% endfor %}
-    {% endif %}
-    
-    {% if form.non_field_errors %}
-    <ul class="errorlist">
-        {% for error in form.non_field_errors %}
-        <li>{{ error }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-<form method="post">
-    {% csrf_token %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h1>Passwort zurücksetzen</h1>
+    <p class="subtitle">Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen.</p>
 
-    <label for="id_email">E-Mail-Adresse:</label><br>
-    <input type="email" name="email" id="id_email" required>
-
-    {% if form.email.errors %}
-      <ul class="errorlist">
-        {% for error in form.email.errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
     {% endif %}
-    <button type="submit">Link anfordern</button>
-</form>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_email">E-Mail-Adresse</label>
+        <input type="email" name="email" id="id_email" required>
+      </div>
+      <button type="submit">Link anfordern</button>
+    </form>
+
+    <div class="auth-footer">
+      <a href="{% url 'login' %}">← Zurück zur Anmeldung</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

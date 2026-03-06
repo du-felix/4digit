@@ -1,188 +1,163 @@
 {% extends "antraege/base.html" %}
-
 {% block title %}Antrag bearbeiten{% endblock %}
 
 {% block content %}
+<div style="max-width: 720px; margin: 0 auto; padding: 32px 24px;">
 
 {% if trigger %}
-<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
-    <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
+  <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
+  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
+  <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
 
-    <h2>"{{ titel }}"</h2>
-    <p><b>{{ anfangsdatum }}, {{ anfangszeit }} Uhr bis {{ enddatum }}, {{ endzeit }} Uhr</b></p>
-    <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
-    <h3>Grund:</h3>
-    <p>{{ schueler_grund }}</p>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    <form method="post" action="{% url 'antrag_bestaetigen' %}">
-        {% csrf_token %}
-        <div class="form-check form-switch mb-3">
-          {{ form.agree }}
-          {{ form.agree.label_tag }}
-        </div>
-      
-        <button type="submit" class="btn btn-primary" name="btn" value="eltern2">Absenden</button>
+  <div class="card" style="margin-top: 20px;">
+    <h3 style="margin-bottom:16px;">Liegt eine Elternbestätigung vor?</h3>
+    <form method="post" action="{% url 'antrag_bestaetigen' token %}">
+      {% csrf_token %}
+      <div class="form-group">
+        {{ form.agree }}
+        {{ form.agree.label_tag }}
+      </div>
+      <button type="submit" name="btn" value="eltern2">Absenden</button>
     </form>
-</div>
+  </div>
+
 {% elif sekretariat %}
-<style>
-    /* ─────────────────────────────────────────────────────────
-       Style every <input type="radio"> in your two-step form
-       ───────────────────────────────────────────────────────── */
-    #two-step-form {
-      /* optional: limit the width, center it, etc. */
-      max-width: 480px;
-      margin: 0 auto;
-    }
-  
-    /* make the whole label-click area bigger & bolder */
-    #two-step-form label {
-      display: inline-flex;
-      align-items: center;
-      font-size: 1.1rem;
-      margin-right: 1.5rem;
-      cursor: pointer;
-      user-select: none;
-    }
-  
-    /* scale up the actual circle, add a bit of breathing room */
-    #two-step-form input[type="radio"] {
-      transform: scale(1.4);
-      margin-right: 0.5rem;
-      cursor: pointer;
-    }
-  
-    /* add a little more vertical spacing between options */
-    #two-step-form .mb-3 {
-      margin-bottom: 1.25rem;
-    }
-</style>
-<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
-    <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
+  <style>
+    .radio-option { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .radio-option input[type="radio"] { width:16px; height:16px; accent-color: var(--primary); }
+    .radio-option label { font-weight: 400; margin: 0; cursor: pointer; }
+  </style>
 
-    <h2>"{{ titel }}"</h2>
-    <p><b>{{ anfangsdatum }}, {{ anfangszeit }} Uhr bis {{ enddatum }}, {{ endzeit }} Uhr</b></p>
-    <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
-    <h3 style="margin-bottom: 0px;">Grund:</h3>
-    <p>{{ schueler_grund }}</p>
-    <label style="margin-bottom: 0px;">Ist eine Bestätigung der Eltern notwendig?</label>
+  <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
+  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
+  <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    <form style="margin-top: 8px;" method="post" id="two-step-form">
-        {% csrf_token %}
-        
-        <!-- first yes/no -->
-        <div class="mb-3" style="margin-bottom: 8px;">
-          {{ form.first_question }}
-        </div>
+  <div class="card" style="margin-top: 20px;">
+    <h3>Grund des Schülers:</h3>
+    <p style="color: var(--text);">{{ schueler_grund }}</p>
+  </div>
 
-        <!-- second yes/no, hidden by default -->
-        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;" id="second-wrapper" class="mb-3" style="display:none;">
-          {{ form.second_question.label_tag }}
-          {{ form.second_question }}
-        </div>
-      
-        <button style="margin-bottom: 16px;" type="submit" name="btn" value="eltern">Absenden</button>
-      </form>
-</div>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const firstRadios    = document.querySelectorAll('input[name="first_question"]');
-      const secondWrapper  = document.getElementById("second-wrapper");
-    
-      const toggleSecond = () => {
-        const yesSelected = [...firstRadios].some(r => r.checked && r.value === "ja");
-        secondWrapper.style.display = yesSelected ? "" : "none";
-    
-        // optional: clear 2nd answer if the block just disappeared
-        if (!yesSelected) {
-          secondWrapper.querySelectorAll('input[name="second_question"]')
-                       .forEach(r => r.checked = false);
-        }
-      };
-    
-      firstRadios.forEach(r => r.addEventListener("change", toggleSecond));
-      toggleSecond();   // run once on load – needed after validation errors
-    });
-</script>
-{% else %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
 
-<div style="display: flex; flex-direction: column; max-width: 960px; margin: 0 auto; padding: 20px;">
-    <h1>Neuer Antrag von <em><u>{{antragsteller}}, Klasse {{ antrag.klasse }}</u></em></h1>
-
-    <h2>"{{ titel }}"</h2>
-    <p><b>{{ anfangsdatum }}, {{ anfangszeit }} Uhr bis {{ enddatum }}, {{ endzeit }} Uhr</b></p>
-    <p><b>Anzahl bisheriger freigestellter Stunden: {{ fehlzeiten }}</b></p>
-    <h3>Grund:</h3>
-    <p>{{ schueler_grund }}</p>
-
-    {% if schulleiter %}
-    <h3>Bestätigungen der Lehrer</h3>
-    <table>
-        <thead style="text-align: left;">
-            <tr>
-                <th>Lehrer</th>
-                <th>Status</th>
-                <th>Grund</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for b in bestaetigungen %}
-            <tr>
-                <td style="padding-top: 10px; padding-bottom: 10px;">{{ b.name }}</td>
-                <td style="padding-top: 10px; padding-bottom: 10px;">
-                    {% if b.response == 'declined' %}
-                        <span class="badge badge-danger">Abgelehnt</span>
-                    {% elif b.response == 'accepted' %}
-                        <span class="badge badge-success">Genehmigt</span>
-                    {% endif %}
-                </td>
-                <td style="max-width: 320px; overflow: hidden; word-wrap: break-word; padding-top: 10px; padding-bottom: 10px;">
-                    {{ b.reason|default:"Keine" }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <ul>
-        {% for article in articles %}
-            <li>{{ article.title }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <h3>Ausfallender Unterricht:</h3>
-    <p>{{ unterricht }}</p>
-    {% endif %}
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <label>
-            <input type="radio" name="answer" value="annehmen" required> Annehmen
-        </label>
-        
-        <label>
-            <input type="radio" name="answer" value="ablehnen" required> Ablehnen
-        </label>
-        <label>Gründe einer Ablehnung:</label>
-        <textarea name="grund" id="" placeholder="Gründe für die Ablehnung des Antrags..."></textarea>
-        
-        <button style="margin-bottom: 16px;" type="submit" name="btn" value="bestaetigung">Absenden</button>
+  <div class="card" style="margin-top: 16px;">
+    <h3 style="margin-bottom: 6px;">Ist eine Elternbestätigung notwendig?</h3>
+    <form method="post" id="two-step-form" style="margin-top: 12px;">
+      {% csrf_token %}
+      <div class="form-group">
+        {{ form.first_question }}
+      </div>
+      <div id="second-wrapper" style="display:none;" class="form-group">
+        {{ form.second_question.label_tag }}
+        {{ form.second_question }}
+      </div>
+      <button type="submit" name="btn" value="eltern" style="margin-top: 8px;">Absenden</button>
     </form>
-</div>
-{% endif %}
+  </div>
 
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const firstRadios = document.querySelectorAll('input[name="first_question"]');
+    const secondWrapper = document.getElementById("second-wrapper");
+    const toggle = () => {
+      const yes = [...firstRadios].some(r => r.checked && r.value === "ja");
+      secondWrapper.style.display = yes ? "" : "none";
+      if (!yes) secondWrapper.querySelectorAll('input[name="second_question"]').forEach(r => r.checked = false);
+    };
+    firstRadios.forEach(r => r.addEventListener("change", toggle));
+    toggle();
+  });
+  </script>
+
+{% else %}
+  <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
+  <h2 style="margin: 8px 0;">"{{ titel }}"</h2>
+  <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>
+  <p><strong>Bisherige Freistellungsstunden:</strong> {{ fehlzeiten }}</p>
+
+  <div class="card" style="margin-top: 20px;">
+    <h3>Grund des Schülers:</h3>
+    <p style="color: var(--text);">{{ schueler_grund }}</p>
+  </div>
+
+  {% if schulleiter %}
+  <div class="card" style="margin-top: 16px;">
+    <h3 style="margin-bottom: 12px;">Rückmeldungen der Lehrer</h3>
+    <table class="user-table" style="margin-top: 0;">
+      <thead>
+        <tr>
+          <th>Lehrer / Funktion</th>
+          <th>Status</th>
+          <th>Begründung</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bestaetigungen %}
+        <tr>
+          <td style="font-weight:500;">{{ b.name }}</td>
+          <td>
+            {% if b.response == 'declined' %}
+              <span class="badge badge-danger">Abgelehnt</span>
+            {% elif b.response == 'accepted' %}
+              <span class="badge badge-success">Genehmigt</span>
+            {% else %}
+              <span class="badge badge-secondary">Ausstehend</span>
+            {% endif %}
+          </td>
+          <td style="color: var(--text-muted); font-size: 13px; max-width: 280px; word-break: break-word;">
+            {{ b.reason|default:"–" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card" style="margin-top: 16px;">
+    <h3>Ausfallender Unterricht:</h3>
+    <p style="color: var(--text); white-space: pre-line;">{{ unterricht }}</p>
+  </div>
+  {% endif %}
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}" style="margin-top: 12px;">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card" style="margin-top: 16px;">
+    <h3 style="margin-bottom: 16px;">Entscheidung</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="radio-group" style="margin-bottom: 16px;">
+        <label>
+          <input type="radio" name="answer" value="annehmen" required>
+          <span>Genehmigen</span>
+        </label>
+        <label>
+          <input type="radio" name="answer" value="ablehnen" required>
+          <span>Ablehnen</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label for="id_grund">Begründung (optional, bei Ablehnung empfohlen)</label>
+        <textarea name="grund" id="id_grund" placeholder="Begründung für die Ablehnung..."></textarea>
+      </div>
+      <button type="submit" name="btn" value="bestaetigung">Absenden</button>
+    </form>
+  </div>
+
+{% endif %}
+</div>
 {% endblock %}

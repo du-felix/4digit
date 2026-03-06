@@ -1,46 +1,60 @@
 {% extends "antraege/base.html" %}
-
-{% block title %}Homepage{% endblock %}
+{% block title %}Meine Anträge{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Freistellungsanträge von {{user.first_name}} {{user.last_name}}</h1>
-    
-    {% if antraege %}
-        <table class="user-table">
-            <thead>
-                <tr>
-                    <th>Titel</th>
-                    <th>Zeitraum</th>
-                    <th>Erstellt am</th>
-                    <th>Status</th>
-                    <th>Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for antrag in antraege %}
-                <tr>
-                    <td>{{ antrag.titel }}</td>
-                    <td>{{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</td>
-                    <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
-                    <td>
-                        {% if antrag.status == 'in_progress' %}
-                            <span class="badge badge-warning">In Bearbeitung</span>
-                        {% elif antrag.status == 'accepted' %}
-                            <span class="badge badge-success">Genehmigt</span>
-                        {% else %}
-                            <span class="badge badge-danger">Abgelehnt</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'antrag_detail' antrag.id %}" class="btn btn-primary btn-sm">Details</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Sie haben keine Freistellungsanträge.</p>
-    {% endif %}
+<div class="page-container">
+  <div class="page-header-row">
+    <div>
+      <h1>Meine Freistellungsanträge</h1>
+      <p style="margin:0;">{{ user.first_name }} {{ user.last_name }}</p>
+    </div>
+    <a href="{% url 'neuer_antrag' %}" class="btn">+ Neuer Antrag</a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if antraege %}
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Titel</th>
+          <th>Zeitraum</th>
+          <th>Erstellt am</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for antrag in antraege %}
+        <tr>
+          <td style="font-weight:500;">{{ antrag.titel }}</td>
+          <td>{{ antrag.anfangsdatum|date:"d.m.Y" }} – {{ antrag.enddatum|date:"d.m.Y" }}</td>
+          <td>{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
+          <td>
+            {% if antrag.status == 'in_progress' %}
+              <span class="badge badge-warning">In Bearbeitung</span>
+            {% elif antrag.status == 'accepted' %}
+              <span class="badge badge-success">Genehmigt</span>
+            {% else %}
+              <span class="badge badge-danger">Abgelehnt</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'antrag_detail' antrag.id %}" class="btn btn-outline btn-sm">Details</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="card" style="text-align:center; padding: 48px 24px;">
+      <p style="margin:0; font-size:15px;">Du hast noch keine Freistellungsanträge gestellt.</p>
+      <a href="{% url 'neuer_antrag' %}" class="btn" style="margin-top:16px; display:inline-flex;">Ersten Antrag stellen</a>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

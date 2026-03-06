@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach, AntragSubmission
-from .functions import convert_date, convert_time, send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki
+from .functions import convert_date, convert_time, send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki, transform_date, transform_datetime
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
@@ -657,16 +657,6 @@ def antrag_detail(request, antrag_id):
     if not antrag.eltern_bestaetigung and antrag.eltern_notwendig:
         context["eltern"] = True
     return render(request, 'antraege/antrag.html', context)
-
-def transform_date(date):
-    elements = date.strip("\n").split("-")
-    return elements[2] + "." + elements[1] + "." + elements[0]
-def transform_datetime(datetime):
-    elements = str(datetime).split(" ")
-    date = elements[0]
-    time = elements[1]
-    date_elements = date.strip("\n").split("-")
-    return date_elements[2] + "." + date_elements[1] + "." + date_elements[0]
 
 def seki_anfordern(request):
 
