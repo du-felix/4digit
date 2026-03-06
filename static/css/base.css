@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* ════════════════════════════════════════
-   LIGHT MODE  –  warm violet on stone/cream
+   LIGHT MODE  –  azure on stone/cream
    ════════════════════════════════════════ */
 :root {
-  --accent:         #7C3AED;
-  --accent-dark:    #6D28D9;
-  --accent-light:   #F5F3FF;
-  --accent-rgb:     124,58,237;
+  --accent:         #2969AD;
+  --accent-dark:    #1F568F;
+  --accent-light:   #EAF3FB;
+  --accent-rgb:     41,105,173;
 
   --success:        #16A34A;
   --success-light:  #F0FDF4;
@@ -31,14 +31,14 @@
 }
 
 /* ════════════════════════════════════════
-   DARK MODE  –  violet glow on deep navy
+   DARK MODE  –  azure glow on deep navy
    ════════════════════════════════════════ */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --accent:         #A78BFA;
-    --accent-dark:    #8B5CF6;
-    --accent-light:   #1E1040;
-    --accent-rgb:     167,139,250;
+    --accent:         #6EA7E1;
+    --accent-dark:    #4F8CCA;
+    --accent-light:   #0F2740;
+    --accent-rgb:     110,167,225;
 
     --success:        #4ADE80;
     --success-light:  #052E1C;
@@ -60,10 +60,10 @@
 }
 
 [data-theme="dark"] {
-  --accent:         #A78BFA;
-  --accent-dark:    #8B5CF6;
-  --accent-light:   #1E1040;
-  --accent-rgb:     167,139,250;
+  --accent:         #6EA7E1;
+  --accent-dark:    #4F8CCA;
+  --accent-light:   #0F2740;
+  --accent-rgb:     110,167,225;
 
   --success:        #4ADE80;
   --success-light:  #052E1C;
@@ -83,13 +83,13 @@
   --shadow:         0 4px 20px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.4);
 }
 
-/* Subtle violet ambient glow in dark mode */
+/* Subtle ambient glow in dark mode */
 [data-theme="dark"] body {
-  background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(124,58,237,.07) 0%, transparent 70%);
+  background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(41,105,173,.12) 0%, transparent 70%);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) body {
-    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(124,58,237,.07) 0%, transparent 70%);
+    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(41,105,173,.12) 0%, transparent 70%);
   }
 }
 
