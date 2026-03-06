@@ -1,194 +1,148 @@
 {% extends "adminview/base.html" %}
-{% load static %}
-{% block title %}Adminview{% endblock %}
-
-{% block extra_head %}
-{% endblock %}
+{% block title %}Benutzerverwaltung{% endblock %}
 
 {% block content %}
 <div class="container">
-    <h1>Adminview</h1>
-    
-    {% if messages %}
+  <div class="page-header-row">
+    <h1>Benutzerverwaltung</h1>
+    <a href="{% url 'add_user' %}" class="btn">+ Neuer Benutzer</a>
+  </div>
+
+  {% if messages %}
     <ul class="messages">
-        {% for message in messages %}
-        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
     </ul>
-    {% endif %}
+  {% endif %}
 
-    <div class="input-group mb-3">
-        <input type="text" class="form-control" id="live-search" name="q" placeholder="Benutzer suchen..." value="{{ search_query }}">
-    </div>
-
-    <!-- Main form that includes both batch actions and the user table -->
-    <form method="post" id="batch-form">
-        {% csrf_token %}
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="batch-actions">
-                <button name="action" type="submit" value="delete" 
-                      onclick="return confirmDeleteUsers()">Ausgewählte Benutzer löschen</button>
-            </div>
-            <a href="{% url 'add_user' %}"><input type="button" value="Neuen Benutzer hinzufügen"></a>
-        </div>
-
-        <script>
-        function confirmDeleteUsers() {
-            // Zähle ausgewählte Checkboxen
-            var selectedCount = document.querySelectorAll('input[type="checkbox"][name="selected_users"]:checked').length;
-            
-            if (selectedCount === 0) {
-                alert('Bitte wähle mindestens einen Benutzer aus.');
-                return false;
-            }
-            
-            return confirm('Sind Sie sicher, dass Sie ' + selectedCount + ' Benutzer löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');
-        }
-        </script>
-
-        <div class="flex-layout">
-            <div class="list-panel">
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Email</th>
-                            <th>Name</th>
-                            <!--<th>Geburtsdatum</th>-->
-                            <th>Rolle</th>
-                            <th>Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                        {% for user in users %}
-                        <tr {% if edit_user and edit_user.id == user.id %}style="background-color: #e0f7fa;"{% endif %}>
-                            <td><input type="checkbox" name="selected_users" value="{{ user.id }}"></td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.first_name }} {{ user.last_name }}</td>
-                            {% comment %} <td>{{ user.birth_date }}</td> {% endcomment %}
-                            <td>
-                                {% if user.is_staff %}
-                                    <span class="badge badge-primary">Administrator</span>
-                                {% else %}
-                                    <span class="badge badge-secondary">Schüler</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'user_edit' user.id %}" class="btn btn-warning">Bearbeiten</a>
-    
-                                <button type="button" class="btn delete-btn" 
-                                    style="background-color: #dc3545;"
-                                    data-user-id="{{ user.id }}" 
-                                    data-user-email="{{ user.email }}">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
-                                </button>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr id="no-results-row">
-                            <td colspan="6" style="text-align: center;">Keine Benutzer gefunden</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="table-toolbar">
+    <input type="text" class="search-input" id="live-search" placeholder="Benutzer suchen …" value="{{ search_query }}">
+    <form method="post" id="batch-form" style="margin:0; display:contents;">
+      {% csrf_token %}
+      <div class="toolbar-actions">
+        <button name="action" type="submit" value="delete" class="btn btn-danger btn-sm"
+                onclick="return confirmDeleteUsers()">Ausgewählte löschen</button>
+      </div>
     </form>
+  </div>
 
-    <!-- Hidden form for single user deletion -->
-    <form id="delete-form" method="post" style="display:none;">
-        {% csrf_token %}
-        <input type="hidden" name="delete_user" id="delete-user-id">
-    </form>
+  <form method="post" id="main-form">
+    {% csrf_token %}
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th style="width:36px;"></th>
+          <th>E-Mail</th>
+          <th>Name</th>
+          <th>Rolle</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="users-table-body">
+        {% for user in users %}
+        <tr {% if edit_user and edit_user.id == user.id %}style="background:#eff4ff;"{% endif %}>
+          <td><input type="checkbox" name="selected_users" value="{{ user.id }}" form="main-form"></td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.first_name }} {{ user.last_name }}</td>
+          <td>
+            {% if user.is_staff %}
+              <span class="badge badge-primary">Administrator</span>
+            {% else %}
+              <span class="badge badge-secondary">Schüler</span>
+            {% endif %}
+          </td>
+          <td style="display:flex; gap:8px; align-items:center;">
+            <a href="{% url 'user_edit' user.id %}" class="btn btn-warning btn-sm">Bearbeiten</a>
+            <button type="button" class="btn delete-btn btn-sm"
+                    data-user-id="{{ user.id }}"
+                    data-user-email="{{ user.email }}">Löschen</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr id="no-results-row">
+          <td colspan="5" style="text-align:center; color:var(--text-muted); padding: 32px;">
+            Keine Benutzer gefunden
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
+    <!-- hidden batch-action fields mirror -->
+    <input type="hidden" name="action" id="batch-action-input">
+  </form>
+
+  <!-- Hidden form for single-user deletion -->
+  <form id="delete-form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="delete_user" id="delete-user-id">
+  </form>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('live-search');
-        const tbody = document.getElementById('users-table-body');
-        
-        // Function to update the table based on search query
-        function updateTable() {
-            const query = searchInput.value.trim();
-            
-            // Create AJAX request
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `{% url 'adminview-home' %}?q=${query}`, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-            
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    
-                    // Clear current table content
-                    tbody.innerHTML = '';
-                    
-                    response.users.forEach(user => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td><input type="checkbox" name="selected_users" value="${user.id}"></td>
-                            <td>${user.email}</td>
-                            <td>${user.name}</td>
-                    {% comment %} <td>${user.birth_date || ''}</td> {% endcomment %}
-                            <td>${user.is_staff
-                                ? '<span class="badge badge-primary">Administrator</span>'
-                                : '<span class="badge badge-secondary">Schüler</span>'}
-                            </td>
-                            <td>
-                                <a href="/adminview/users/${user.id}/" class="btn btn-warning">Bearbeiten</a>
-                                <button type="button" class="btn delete-btn" style="background-color:#dc3545;"
-                                        data-user-id="${user.id}" data-user-email="${user.email}">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/1345/1345874.png" alt="Delete" width="15">
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                    
-                    // Add event listeners to the newly created delete buttons
-                    setupDeleteButtons();
-                    
-                    if (response.users.length === 0) {
-                        const noResultsRow = document.createElement('tr');
-                        noResultsRow.setAttribute('id', 'no-results-row');
-                        noResultsRow.innerHTML = `<td colspan="6" style="text-align: center;">No users found matching your search.</td>`;
-                        tbody.appendChild(noResultsRow);
-                    }
-                }
-            };
-            
-            xhr.send();
+function confirmDeleteUsers() {
+  const selected = document.querySelectorAll('input[name="selected_users"]:checked').length;
+  if (selected === 0) { alert('Bitte wähle mindestens einen Benutzer aus.'); return false; }
+  return confirm('Sicher? ' + selected + ' Benutzer werden unwiderruflich gelöscht.');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('live-search');
+  const tbody = document.getElementById('users-table-body');
+
+  function updateTable() {
+    const q = searchInput.value.trim();
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `{% url 'adminview-home' %}?q=${encodeURIComponent(q)}`, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function () {
+      if (xhr.status !== 200) return;
+      const data = JSON.parse(xhr.responseText);
+      tbody.innerHTML = '';
+      if (data.users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:32px;">Keine Benutzer gefunden</td></tr>`;
+        return;
+      }
+      data.users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="checkbox" name="selected_users" value="${user.id}" form="main-form"></td>
+          <td>${user.email}</td>
+          <td>${user.name}</td>
+          <td>${user.is_staff
+            ? '<span class="badge badge-primary">Administrator</span>'
+            : '<span class="badge badge-secondary">Schüler</span>'}</td>
+          <td style="display:flex;gap:8px;align-items:center;">
+            <a href="/adminview/users/${user.id}/" class="btn btn-warning btn-sm">Bearbeiten</a>
+            <button type="button" class="btn delete-btn btn-sm"
+                    data-user-id="${user.id}" data-user-email="${user.email}">Löschen</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      setupDeleteButtons();
+    };
+    xhr.send();
+  }
+
+  function setupDeleteButtons() {
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const id = this.dataset.userId;
+        const email = this.dataset.userEmail;
+        if (confirm(`Benutzer "${email}" wirklich löschen?`)) {
+          document.getElementById('delete-user-id').value = id;
+          document.getElementById('delete-form').submit();
         }
-        
-        // Function to set up delete button event listeners
-        function setupDeleteButtons() {
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-user-id');
-                    const userEmail = this.getAttribute('data-user-email');
-                    
-                    if (confirm(`Sind Sie sicher, dass Sie ${userEmail} löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`)) {
-                        const deleteForm = document.getElementById('delete-form');
-                        document.getElementById('delete-user-id').value = userId;
-                        deleteForm.submit();
-                    }
-                });
-            });
-        }
-        
-        // Set up initial delete buttons
-        setupDeleteButtons();
-        
-        // Add event listener for keyup in search input
-        let debounceTimer;
-        searchInput.addEventListener('keyup', function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(updateTable, 300); // 300ms debounce
-        });
-        
-        // Also trigger when clearing the field
-        searchInput.addEventListener('search', updateTable);
+      });
     });
+  }
+
+  setupDeleteButtons();
+
+  let timer;
+  searchInput.addEventListener('keyup', () => { clearTimeout(timer); timer = setTimeout(updateTable, 300); });
+  searchInput.addEventListener('search', updateTable);
+});
 </script>
 {% endblock %}

@@ -1,31 +1,32 @@
 {% extends "adminview/base.html" %}
-{% load static %}
+{% block title %}Benutzer bearbeiten{% endblock %}
 
-{% block title %}Benutzerprofil bearbeiten{% endblock %}
 {% block content %}
-{% if edit_user %}
-<div class="edit-panel">
-    <div class="form-card">
-        <h2>Benutzerprofil bearbeiten: {{ edit_user.email }}</h2>
-        <form method="post">
-            {% csrf_token %}
-            
-            {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="text-danger">{{ field.errors }}</div>
-                {% endif %}
-            </div>
-            {% endfor %}
-            
-            <div class="form-actions">
-                <a href="{% url 'adminview-home' %}" class="btn btn-secondary">Abbrechen</a>
-                <button type="submit" class="btn btn-primary">Änderungen speichern</button>
-            </div>
-        </form>
-    </div>
+<div class="container" style="max-width: 580px;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'adminview-home' %}" style="font-size:13px; color:var(--text-muted);">← Zurück</a>
+  </div>
+  {% if edit_user %}
+  <div class="form-card">
+    <h2>{{ edit_user.first_name }} {{ edit_user.last_name }} bearbeiten</h2>
+    <p style="font-size:13px; margin-bottom:20px;">{{ edit_user.email }}</p>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="form-actions">
+        <a href="{% url 'adminview-home' %}" class="btn btn-outline">Abbrechen</a>
+        <button type="submit">Änderungen speichern</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
 {% endblock %}

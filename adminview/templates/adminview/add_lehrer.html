@@ -1,18 +1,28 @@
 {% extends "adminview/base.html" %}
-{% load static %}
-{% block title %}Adminview{% endblock %}
+{% block title %}Neuer Lehrer{% endblock %}
 
 {% block content %}
-<h2>Neuen Lehrer hinzufügen</h2>
+<div class="container" style="max-width: 480px;">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'lehrer' %}" style="font-size:13px; color:var(--text-muted);">← Zurück</a>
+  </div>
+  <div class="form-card">
+    <h2>Neuen Lehrer hinzufügen</h2>
     <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="email" name="email" required>
-            <label for="name" class="form-label">Name</label>
-            <input type="name" class="form-control" id="name" name="name" required>
-        </div>
-        <p></p>
-        <button type="submit" class="btn btn-primary">Lehrer hinzufügen</button>
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="email">E-Mail-Adresse</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-actions">
+        <a href="{% url 'lehrer' %}" class="btn btn-outline">Abbrechen</a>
+        <button type="submit">Lehrer anlegen</button>
+      </div>
     </form>
+  </div>
+</div>
 {% endblock %}

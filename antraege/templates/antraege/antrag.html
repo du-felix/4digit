@@ -1,101 +1,89 @@
 {% extends "antraege/base.html" %}
-
-{% block title %}Antrag{% endblock %}
+{% block title %}{{ antrag.titel }}{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="page-container">
+  <div style="margin-bottom: 20px;">
+    <a href="{% url 'home' %}" style="font-size:13px; color:var(--text-muted);">← Zurück zur Übersicht</a>
+  </div>
+
+  <div class="page-header-row">
     <h1>{{ antrag.titel }}</h1>
-    
-    <h2>Antragdetails</h2>
-    <div class="card">
-        <div class="card-body">
-            <p><strong>Grund:</strong> {{ antrag.grund }}</p>
-            <p><strong>Klasse:</strong> {{ antrag.klasse }}</p>
-            <p><strong>Zeitraum:</strong> {{ antrag.anfangsdatum }} - {{ antrag.enddatum }}</p>
-            <p><strong>Erstellt am:</strong> {{ antrag.erstellt_am }}</p>
-            
-            <div class="antrag-status">
-                <strong>Antragsstatus:</strong> 
-                {% if antrag.status == 'in_progress' %}
-                    <span class="badge badge-warning">In Bearbeitung</span>
-                {% elif antrag.status == 'accepted' %}
-                    <span class="badge badge-success">Genehmigt</span>
-                {% else %}
-                    <span class="badge badge-danger">Abgelehnt</span>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% if eltern %}
-    <div style="margin-top: 12px; margin-bottom: 12px; padding: 12px; border: 1px solid #d24343; background-color: #fae7e7; display: flex; flex-direction: column; gap:8px;">
-        <h3>Achtung</h3>
-        <p>Dieser Antrag ist noch nicht von den Eltern genehmigt worden. Wenn deine Eltern eine Mail ans Seki geschrieben haben, benachrichtige das Seki:</p>
-        <form method="post" action="{% url 'seki_anfordern' %}">
-            {% csrf_token %}
-            <input type="hidden" name="antrag_id" value="{{ antrag.id }}">
-            <button type="submit">Informieren</button>
-        </form>
-        <p style="font-size: smaller;">Falls du deine Benachrichtigung abgesendet hast, aber das Seki abgelehnt hat, fordere deine Eltern auf ihre Mail abzusenden, und gehe dann persönlich ins Seki.</p>
-    </div>
-    {% endif %}
-    
-    <h2>Ausstehende Anfragen</h2>
-    {% if anfragen %}
-        <p>Ausstehend: {{ anfragen_status.not_responded }}</p>
-<div style=" max-width: 80vw;"></div>
-        <table class="user-table">
-            <thead>
-                <tr>
-                    <th>Lehrer</th>
-                    <th>Unterricht</th>
-                    <th>Datum</th>
-                    <th>Status</th>
-                    <th>Begründung</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lehrer, unterricht, datum, status, grund in rows %}
-                <tr>
-                    <td>
-                        {% if lehrer %}
-                            {{ lehrer }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if unterricht %}
-                            {{ unterricht }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if datum %}
-                            {{ datum }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if status == 'not_responded' %}
-                            <span class="badge badge-secondary">Ausstehend</span>
-                        {% elif status == 'accepted' %}
-                            <span class="badge badge-success">Genehmigt</span>
-                        {% else %}
-                            <span class="badge badge-danger">Abgelehnt</span>
-                        {% endif %}
-                    </td>
-                    <td style="max-width: 320px; overflow: hidden; word-wrap: break-word;">
-                        {% if grund %}
-                            {{ grund }}
-                        {% else %}
-                            Keine Begründung
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% if antrag.status == 'in_progress' %}
+      <span class="badge badge-warning">In Bearbeitung</span>
+    {% elif antrag.status == 'accepted' %}
+      <span class="badge badge-success">Genehmigt</span>
     {% else %}
-        <p>Keine Anfragen für diesen Antrag.</p>
+      <span class="badge badge-danger">Abgelehnt</span>
     {% endif %}
-</div>
-    
-    <a href="{% url 'home' %}" style="display: flex;"><input type="button" value="Zurück zur Liste"></a>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card">
+    <div class="card-body">
+      <p><strong>Grund:</strong> {{ antrag.grund }}</p>
+      <p><strong>Klasse:</strong> {{ antrag.klasse }}</p>
+      <p><strong>Zeitraum:</strong> {{ antrag.anfangsdatum|date:"d.m.Y" }} – {{ antrag.enddatum|date:"d.m.Y" }}</p>
+      <p><strong>Erstellt am:</strong> {{ antrag.erstellt_am|date:"d.m.Y, H:i" }} Uhr</p>
+    </div>
+  </div>
+
+  {% if eltern %}
+  <div class="danger-block">
+    <h3>Elternbestätigung ausstehend</h3>
+    <p>Dieser Antrag wartet auf eine Elternbestätigung. Falls deine Eltern bereits eine E-Mail an das Sekretariat geschickt haben, benachrichtige das Sekretariat:</p>
+    <form method="post" action="{% url 'seki_anfordern' %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="antrag_id" value="{{ antrag.id }}">
+      <button type="submit" class="btn btn-danger btn-sm">Sekretariat informieren</button>
+    </form>
+    <p style="font-size:12.5px; margin:0;">Falls das Sekretariat abgelehnt hat, fordere deine Eltern auf, ihre E-Mail zu senden, und gehe dann persönlich ins Sekretariat.</p>
+  </div>
+  {% endif %}
+
+  <h2 style="margin-top: 8px; margin-bottom: 4px;">Anfragen</h2>
+  <p style="margin-bottom: 12px;">Ausstehend: <strong>{{ anfragen_status.not_responded }}</strong> / {{ anfragen_status.total }}</p>
+
+  {% if anfragen %}
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Person</th>
+        <th>Unterricht</th>
+        <th>Datum</th>
+        <th>Status</th>
+        <th>Begründung</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lehrer, unterricht, datum, status, grund in rows %}
+      <tr>
+        <td style="font-weight:500;">{% if lehrer %}{{ lehrer }}{% endif %}</td>
+        <td>{% if unterricht %}{{ unterricht }}{% endif %}</td>
+        <td>{% if datum %}{{ datum }}{% endif %}</td>
+        <td>
+          {% if status == 'not_responded' %}
+            <span class="badge badge-secondary">Ausstehend</span>
+          {% elif status == 'accepted' %}
+            <span class="badge badge-success">Genehmigt</span>
+          {% else %}
+            <span class="badge badge-danger">Abgelehnt</span>
+          {% endif %}
+        </td>
+        <td style="max-width: 280px; word-break: break-word; color: var(--text-muted); font-size: 13px;">
+          {% if grund %}{{ grund }}{% else %}–{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>Keine Anfragen für diesen Antrag.</p>
+  {% endif %}
 </div>
 {% endblock %}

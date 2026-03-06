@@ -1,55 +1,35 @@
 {% extends "users/base.html" %}
-
-{% block title %}Login Page{% endblock %}
+{% block title %}Anmelden{% endblock %}
 
 {% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <h1>Anmelden</h1>
+    <p class="subtitle">Freistellungsportal St. Afra</p>
 
-<div style="display: flex; flex-direction: column; align-items: center;">
-    <h1>Login</h1>
     {% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}" style="width: 100%; text-wrap: break-word;">
-        {{ message }}
-        </div>
-    {% endfor %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
     {% endif %}
-    
-    {% if form.non_field_errors %}
-    <ul class="errorlist">
-        {% for error in form.non_field_errors %}
-        <li>{{ error }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        {% if form.errors %}
-        <ul>
-            {% for field in form %}
-                {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            {% endfor %}
-            {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        <div>
-            <label for="id_username">E-Mail:</label>
-            <input type="text" name="username" id="id_username" placeholder="vorname.nachname@afra.lernsax.de" style="width: 100%; width: 320px;" required>
-        </div>
-        <div>
-            <label for="id_password">Passwort:</label>
-            <input type="password" name="password" id="id_password" style="width: 100%;width: 320px;" required>
-        </div>
-        <button type="submit">Anmelden</button>
-    </form>
-    {% comment %}
-    <p>Du hast noch keinen Account?</p>
-    <a href="{% url 'signup' %}"><input type="button" value="Registrieren"></a>
-    {% endcomment %}
-</div>
-<a href="{% url 'get_link' %}" style="text-decoration: underline;">Passwort zurücksetzen</a>
 
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_username">E-Mail-Adresse</label>
+        <input type="text" name="username" id="id_username"
+               placeholder="vorname.nachname@afra.lernsax.de" required>
+      </div>
+      <div class="form-group">
+        <label for="id_password">Passwort</label>
+        <input type="password" name="password" id="id_password" required>
+      </div>
+      <button type="submit">Anmelden</button>
+    </form>
+
+    <div class="auth-footer">
+      <a href="{% url 'get_link' %}">Passwort vergessen?</a>
+    </div>
+  </div>
+</div>
 {% endblock %}
