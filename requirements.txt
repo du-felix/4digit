@@ -3,7 +3,7 @@
 # Lower-bound pins the minimum secure version; upper-bound blocks accidental
 # major-version upgrades that may contain breaking changes.
 # Bump the lower bound here whenever a security advisory requires it.
-Django>=5.2.12,<6
+Django>=5.2.12,<7
 
 # ── Database ─────────────────────────────────────────────────────────────────
 # mysqlclient 2.2+ is required for Django 5.x; no known CVEs in 2.2.x.
