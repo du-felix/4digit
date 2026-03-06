@@ -350,42 +350,78 @@ def lehrer_csv(request):
 
 @staff_required
 def dashboard(request):
+    q = request.GET.get('q', '').strip()
+    selected_filter = request.GET.get('filter', 'all').strip().lower()
+    sort = request.GET.get('sort', 'newest').strip().lower()
+
+    allowed_filters = {'all', 'antrag', 'user', 'response', 'decision'}
+    if selected_filter not in allowed_filters:
+        selected_filter = 'all'
+    if sort not in {'newest', 'oldest'}:
+        sort = 'newest'
+
     events = []
 
-    for a in Antrag.objects.select_related('user').order_by('-erstellt_am')[:200]:
+    for a in Antrag.objects.select_related('user').order_by('-erstellt_am'):
+        text = f'{a.user.get_full_name() or a.user.email} hat einen Freistellungsantrag eingereicht'
+        meta = f'"{a.titel}" · Klasse {a.klasse}'
         events.append({
             'type': 'antrag',
+            'filter_key': 'antrag',
             'dot': 'dot-antrag',
             'timestamp': a.erstellt_am,
             'text': f'<strong>{a.user.get_full_name() or a.user.email}</strong> hat einen Freistellungsantrag eingereicht',
-            'meta': f'"{a.titel}" · Klasse {a.klasse}',
+            'meta': meta,
+            'search_text': f'{text.lower()} {meta.lower()}',
         })
 
-    for r in Anfrage.objects.select_related('antrag').filter(responded_at__isnull=False).order_by('-responded_at')[:200]:
+    for r in Anfrage.objects.select_related('antrag').filter(responded_at__isnull=False).order_by('-responded_at'):
         label = 'genehmigt' if r.response == 'accepted' else 'abgelehnt'
         dot = 'dot-response' if r.response == 'accepted' else 'dot-decision'
+        filter_key = 'response' if r.response == 'accepted' else 'decision'
+        text = f'{r.name} hat eine Anfrage {label}'
+        meta = f'Antrag: "{r.antrag.titel}"'
         events.append({
             'type': 'response',
+            'filter_key': filter_key,
             'dot': dot,
             'timestamp': r.responded_at,
             'text': f'<strong>{r.name}</strong> hat eine Anfrage {label}',
-            'meta': f'Antrag: "{r.antrag.titel}"',
+            'meta': meta,
+            'search_text': f'{text.lower()} {meta.lower()}',
         })
 
-    for u in CustomUser.objects.order_by('-date_joined')[:100]:
+    for u in CustomUser.objects.order_by('-date_joined'):
+        text = f'Neuer Benutzer angelegt: {u.get_full_name() or u.email}'
         events.append({
             'type': 'user',
+            'filter_key': 'user',
             'dot': 'dot-user',
             'timestamp': u.date_joined,
             'text': f'Neuer Benutzer angelegt: <strong>{u.get_full_name() or u.email}</strong>',
             'meta': u.email,
+            'search_text': f'{text.lower()} {u.email.lower()}',
         })
 
-    events.sort(key=lambda x: x['timestamp'], reverse=True)
+    total_events_all = len(events)
 
-    paginator = Paginator(events, 20)
+    if selected_filter != 'all':
+        events = [event for event in events if event['filter_key'] == selected_filter]
+
+    if q:
+        q_lower = q.lower()
+        events = [event for event in events if q_lower in event['search_text']]
+
+    reverse = sort != 'oldest'
+    events.sort(key=lambda x: x['timestamp'], reverse=reverse)
+
+    paginator = Paginator(events, 50)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
+
+    params = request.GET.copy()
+    params.pop('page', None)
+    pagination_query = params.urlencode()
 
     stats = {
         'users': CustomUser.objects.count(),
@@ -398,6 +434,11 @@ def dashboard(request):
         'page_obj': page_obj,
         'stats': stats,
         'total_events': len(events),
+        'total_events_all': total_events_all,
+        'q': q,
+        'selected_filter': selected_filter,
+        'sort': sort,
+        'pagination_query': pagination_query,
     })
 
 

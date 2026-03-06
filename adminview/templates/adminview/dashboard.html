@@ -6,7 +6,7 @@
   <div class="page-header-row">
     <div>
       <h1>Aktivitätsprotokoll</h1>
-      <p style="margin:0;">{{ total_events }} Ereignisse gesamt</p>
+      <p style="margin:0;">{{ total_events_all }} Ereignisse gesamt</p>
     </div>
   </div>
 
@@ -34,23 +34,25 @@
 
   <div class="card" style="padding:0; margin-bottom:0;">
     <!-- Toolbar -->
-    <div class="log-toolbar">
-      <input type="text" class="log-search" id="log-search" placeholder="Aktivität suchen …">
+    <form method="get" class="log-toolbar">
+      <input type="hidden" name="filter" value="{{ selected_filter }}">
+      <input type="text" class="log-search" name="q" value="{{ q }}" placeholder="Aktivität suchen …">
       <div class="filter-group">
-        <button class="filter-btn active" data-filter="all">Alle</button>
-        <button class="filter-btn" data-filter="antrag">Anträge</button>
-        <button class="filter-btn" data-filter="user">Benutzer</button>
-        <button class="filter-btn" data-filter="response">Genehmigt</button>
-        <button class="filter-btn" data-filter="decision">Abgelehnt</button>
+        <a href="?filter=all{% if q %}&q={{ q|urlencode }}{% endif %}&sort={{ sort }}" class="filter-btn {% if selected_filter == 'all' %}active{% endif %}">Alle</a>
+        <a href="?filter=antrag{% if q %}&q={{ q|urlencode }}{% endif %}&sort={{ sort }}" class="filter-btn {% if selected_filter == 'antrag' %}active{% endif %}">Anträge</a>
+        <a href="?filter=user{% if q %}&q={{ q|urlencode }}{% endif %}&sort={{ sort }}" class="filter-btn {% if selected_filter == 'user' %}active{% endif %}">Benutzer</a>
+        <a href="?filter=response{% if q %}&q={{ q|urlencode }}{% endif %}&sort={{ sort }}" class="filter-btn {% if selected_filter == 'response' %}active{% endif %}">Genehmigt</a>
+        <a href="?filter=decision{% if q %}&q={{ q|urlencode }}{% endif %}&sort={{ sort }}" class="filter-btn {% if selected_filter == 'decision' %}active{% endif %}">Abgelehnt</a>
       </div>
       <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
-        <select id="log-sort" style="width:auto; padding:5px 10px; font-size:12.5px;">
-          <option value="newest">Neueste zuerst</option>
-          <option value="oldest">Älteste zuerst</option>
+        <select name="sort" style="width:auto; padding:5px 10px; font-size:12.5px;" onchange="this.form.submit()">
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Neueste zuerst</option>
+          <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Älteste zuerst</option>
         </select>
-        <span class="log-count" id="log-count"></span>
+        <button type="submit" class="btn btn-outline btn-sm">Anwenden</button>
+        <span class="log-count">{{ total_events }} Treffer</span>
       </div>
-    </div>
+    </form>
 
     <!-- Legend -->
     <div style="padding:10px 24px; border-bottom:1px solid var(--border); display:flex; gap:20px; flex-wrap:wrap;">
@@ -70,14 +72,10 @@
 
     <!-- Feed -->
     <div style="padding:0 24px;" id="activity-feed-wrap">
-      {% if page_obj %}
+      {% if page_obj.object_list %}
         <div class="activity-feed" id="activity-feed">
           {% for event in page_obj %}
-          <div class="activity-item"
-               data-type="{{ event.type }}"
-               data-dot="{{ event.dot }}"
-               data-text="{{ event.text|striptags|lower }} {{ event.meta|lower }}"
-               data-ts="{{ event.timestamp|date:'U' }}">
+          <div class="activity-item">
             <div class="activity-dot {{ event.dot }}"></div>
             <div class="activity-body">
               <p class="activity-text">{{ event.text|safe }}</p>
@@ -96,84 +94,19 @@
           </span>
           <div style="display:flex; gap:6px;">
             {% if page_obj.has_previous %}
-              <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">← Zurück</a>
+              <a href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.previous_page_number }}" class="btn btn-outline btn-sm">← Zurück</a>
             {% endif %}
             {% if page_obj.has_next %}
-              <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Weiter →</a>
+              <a href="?{% if pagination_query %}{{ pagination_query }}&{% endif %}page={{ page_obj.next_page_number }}" class="btn btn-outline btn-sm">Weiter →</a>
             {% endif %}
           </div>
         </div>
       {% else %}
-        <p style="text-align:center; padding:40px 0; color:var(--text-muted);">Noch keine Aktivitäten vorhanden.</p>
+        <p style="text-align:center; padding:40px 0; color:var(--text-muted);">
+          {% if q or selected_filter != 'all' %}Keine Treffer für die gewählten Filter.{% else %}Noch keine Aktivitäten vorhanden.{% endif %}
+        </p>
       {% endif %}
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-(function () {
-  const feed      = document.getElementById('activity-feed');
-  const searchEl  = document.getElementById('log-search');
-  const sortEl    = document.getElementById('log-sort');
-  const countEl   = document.getElementById('log-count');
-  const pagRow    = document.getElementById('pagination-row');
-  const filterBtns = document.querySelectorAll('.filter-btn');
-
-  if (!feed) return;
-
-  const allItems = Array.from(feed.querySelectorAll('.activity-item'));
-  let activeFilter = 'all';
-
-  function applyFilters() {
-    const q    = searchEl.value.toLowerCase().trim();
-    const asc  = sortEl.value === 'oldest';
-    const dot  = activeFilter === 'all' ? null
-               : activeFilter === 'response' ? 'dot-response'
-               : activeFilter === 'decision' ? 'dot-decision'
-               : 'dot-' + activeFilter;
-
-    let visible = allItems.filter(el => {
-      if (dot && el.dataset.dot !== dot) return false;
-      if (q && !el.dataset.text.includes(q)) return false;
-      return true;
-    });
-
-    visible.sort((a, b) => {
-      const diff = parseInt(a.dataset.ts) - parseInt(b.dataset.ts);
-      return asc ? diff : -diff;
-    });
-
-    allItems.forEach(el => feed.removeChild(el));
-    visible.forEach(el => feed.appendChild(el));
-    allItems.forEach(el => el.classList.remove('hidden'));
-
-    // Hide non-visible
-    allItems.forEach(el => {
-      if (!visible.includes(el)) el.classList.add('hidden');
-    });
-
-    countEl.textContent = visible.length + ' Ereignisse';
-
-    // Hide pagination when filtering/searching
-    if (pagRow) pagRow.style.display = (q || activeFilter !== 'all') ? 'none' : '';
-  }
-
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', function () {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      activeFilter = this.dataset.filter;
-      applyFilters();
-    });
-  });
-
-  let timer;
-  searchEl.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(applyFilters, 200); });
-  sortEl.addEventListener('change', applyFilters);
-
-  applyFilters();
-})();
-</script>
 {% endblock %}
