@@ -8,10 +8,7 @@
       <h1>Alle Freistellungsanträge</h1>
       <p style="margin:0;">{{ total }} Anträge gefunden</p>
     </div>
-    <div class="page-header-row-actions">
-      <a href="?q={{ q }}&status={{ status }}&klasse={{ klasse }}&sort={{ sort }}&pdf=1"
-         class="btn btn-outline btn-sm" target="_blank">Als PDF öffnen</a>
-    </div>
+    <div class="page-header-row-actions"></div>
   </div>
 
   <!-- Filters -->
@@ -60,6 +57,7 @@
         <th>Eingereicht</th>
         <th>Status</th>
         <th>Anfragen</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -82,10 +80,13 @@
           {% endif %}
         </td>
         <td class="text-muted text-sm">{{ antrag.anfrage_set.count }}</td>
+        <td>
+          <a href="{% url 'antrag-pdf' antrag.id %}" class="btn btn-outline btn-sm">PDF</a>
+        </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="7" style="text-align:center; color:var(--text-muted); padding:36px;">
+        <td colspan="8" style="text-align:center; color:var(--text-muted); padding:36px;">
           Keine Anträge gefunden.
         </td>
       </tr>

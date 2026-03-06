@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4;
+      margin: 2cm 2.2cm 2cm 2.2cm;
+    }
+
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      color: #1C1917;
+      line-height: 1.4;
+    }
+
+    /* ── Header ── */
+    .doc-header {
+      border-bottom: 2.5pt solid #7C3AED;
+      padding-bottom: 10pt;
+      margin-bottom: 16pt;
+    }
+    .doc-header-title {
+      font-size: 18pt;
+      font-weight: bold;
+      color: #1C1917;
+    }
+    .doc-header-sub {
+      font-size: 9pt;
+      color: #78716C;
+      margin-top: 2pt;
+    }
+    .doc-header-meta {
+      font-size: 8.5pt;
+      color: #78716C;
+      text-align: right;
+    }
+
+    /* ── Section headings ── */
+    .section-title {
+      font-size: 8.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5pt;
+      color: #7C3AED;
+      border-bottom: 0.5pt solid #E7E3DE;
+      padding-bottom: 3pt;
+      margin-top: 14pt;
+      margin-bottom: 8pt;
+    }
+
+    /* ── Info grid ── */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .info-table td {
+      padding: 4pt 6pt;
+      vertical-align: top;
+      font-size: 10pt;
+    }
+    .info-table .label {
+      width: 35%;
+      color: #78716C;
+      font-size: 9pt;
+    }
+    .info-table .value {
+      font-weight: bold;
+    }
+
+    /* ── Status badge ── */
+    .status-badge {
+      display: inline-block;
+      padding: 2pt 8pt;
+      border-radius: 12pt;
+      font-size: 9pt;
+      font-weight: bold;
+    }
+    .badge-accepted  { background: #F0FDF4; color: #16A34A; border: 0.5pt solid #BBF7D0; }
+    .badge-declined  { background: #FEF2F2; color: #DC2626; border: 0.5pt solid #FECACA; }
+    .badge-progress  { background: #EFF6FF; color: #2563EB; border: 0.5pt solid #BFDBFE; }
+
+    /* ── Anfragen table ── */
+    .anfragen-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4pt;
+    }
+    .anfragen-table th {
+      background: #7C3AED;
+      color: #fff;
+      padding: 5pt 7pt;
+      font-size: 8.5pt;
+      text-align: left;
+    }
+    .anfragen-table td {
+      padding: 5pt 7pt;
+      border-bottom: 0.5pt solid #E7E3DE;
+      font-size: 9.5pt;
+      vertical-align: top;
+    }
+    .anfragen-table tr:nth-child(even) td {
+      background: #FAFAF8;
+    }
+
+    /* ── Grund box ── */
+    .grund-box {
+      background: #F9F8F6;
+      border: 0.5pt solid #E7E3DE;
+      border-radius: 4pt;
+      padding: 8pt 10pt;
+      font-size: 10pt;
+    }
+
+    /* ── Signature area ── */
+    .sig-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8pt;
+    }
+    .sig-table td {
+      width: 33%;
+      padding: 30pt 8pt 4pt 8pt;
+      border-top: 0.5pt solid #1C1917;
+      font-size: 8.5pt;
+      color: #78716C;
+      vertical-align: top;
+    }
+
+    /* ── Footer ── */
+    .doc-footer {
+      margin-top: 20pt;
+      border-top: 0.5pt solid #E7E3DE;
+      padding-top: 6pt;
+      font-size: 8pt;
+      color: #A8A29E;
+      text-align: center;
+    }
+
+    .two-col { width: 100%; border-collapse: collapse; }
+    .two-col td { width: 50%; vertical-align: top; padding-right: 12pt; }
+    .two-col td:last-child { padding-right: 0; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="doc-header">
+  <table style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td>
+        <div class="doc-header-title">Freistellungsantrag</div>
+        <div class="doc-header-sub">St. Afra Meißen – Freistellungsportal</div>
+      </td>
+      <td style="text-align:right; vertical-align:top;">
+        <div class="doc-header-meta">
+          Antrag-Nr. {{ antrag.id }}<br>
+          Generiert: {{ generated|date:"d.m.Y, H:i" }} Uhr
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Schüler & Antragsdaten -->
+<div class="section-title">Antragstellende Person</div>
+<table class="info-table">
+  <tr>
+    <td class="label">Name</td>
+    <td class="value">{{ antrag.user.get_full_name|default:antrag.user.email }}</td>
+    <td class="label">E-Mail</td>
+    <td class="value">{{ antrag.user.email }}</td>
+  </tr>
+  <tr>
+    <td class="label">Klasse</td>
+    <td class="value">{{ antrag.klasse }}</td>
+    <td class="label">Eingereicht am</td>
+    <td class="value">{{ antrag.erstellt_am|date:"d.m.Y, H:i" }} Uhr</td>
+  </tr>
+</table>
+
+<!-- Antrag Details -->
+<div class="section-title">Antragsdaten</div>
+<table class="info-table">
+  <tr>
+    <td class="label">Titel</td>
+    <td class="value" colspan="3">{{ antrag.titel }}</td>
+  </tr>
+  <tr>
+    <td class="label">Freistellungszeitraum</td>
+    <td class="value">
+      {{ antrag.anfangsdatum|date:"d.m.Y" }}
+      {% if antrag.anfangszeit %}, {{ antrag.anfangszeit|time:"H:i" }} Uhr{% endif %}
+      &nbsp;–&nbsp;
+      {{ antrag.enddatum|date:"d.m.Y" }}
+      {% if antrag.endzeit %}, {{ antrag.endzeit|time:"H:i" }} Uhr{% endif %}
+    </td>
+    <td class="label">Status</td>
+    <td class="value">
+      {% if antrag.status == 'accepted' %}
+        <span class="status-badge badge-accepted">Genehmigt</span>
+      {% elif antrag.status == 'declined' %}
+        <span class="status-badge badge-declined">Abgelehnt</span>
+      {% else %}
+        <span class="status-badge badge-progress">Ausstehend</span>
+      {% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td class="label">Elternbestätigung</td>
+    <td class="value">
+      {% if antrag.eltern_notwendig %}
+        {% if antrag.eltern_bestaetigung %}Ja, bestätigt{% else %}Erforderlich, noch ausstehend{% endif %}
+      {% else %}
+        Nicht erforderlich
+      {% endif %}
+    </td>
+    <td class="label"></td>
+    <td></td>
+  </tr>
+</table>
+
+<!-- Begründung -->
+<div class="section-title">Begründung</div>
+<div class="grund-box">{{ antrag.grund|default:"Keine Begründung angegeben." }}</div>
+
+<!-- Lehreranfragen -->
+<div class="section-title">Lehreranfragen &amp; Rückmeldungen</div>
+{% if anfragen %}
+<table class="anfragen-table">
+  <thead>
+    <tr>
+      <th>Lehrer / E-Mail</th>
+      <th>Unterricht / Zeitraum</th>
+      <th>Antwort</th>
+      <th>Kommentar</th>
+      <th>Datum</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in anfragen %}
+    <tr>
+      <td>
+        {{ a.name }}<br>
+        <span style="color:#78716C; font-size:8.5pt;">{{ a.email }}</span>
+      </td>
+      <td>
+        {{ a.unterricht|default:"–" }}<br>
+        {% if a.ds_zeitraum %}<span style="color:#78716C; font-size:8.5pt;">{{ a.ds_zeitraum }}</span>{% endif %}
+      </td>
+      <td>
+        {% if a.response == 'accepted' %}
+          <span class="status-badge badge-accepted">Genehmigt</span>
+        {% elif a.response == 'declined' %}
+          <span class="status-badge badge-declined">Abgelehnt</span>
+        {% else %}
+          <span class="status-badge badge-progress">Ausstehend</span>
+        {% endif %}
+      </td>
+      <td style="color:#78716C;">{{ a.reason|default:"–" }}</td>
+      <td style="white-space:nowrap; color:#78716C;">
+        {% if a.responded_at %}{{ a.responded_at|date:"d.m.Y" }}{% else %}–{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="color:#78716C;">Keine Lehreranfragen vorhanden.</p>
+{% endif %}
+
+<!-- Unterschriften -->
+<div class="section-title">Unterschriften</div>
+<table class="sig-table">
+  <tr>
+    <td>Schüler/in</td>
+    <td>Erziehungsberechtigte/r</td>
+    <td>Schulleitung</td>
+  </tr>
+</table>
+
+<!-- Footer -->
+<div class="doc-footer">
+  St. Afra Meißen &middot; Freistellungsportal &middot; Antrag Nr. {{ antrag.id }} &middot; {{ generated|date:"d.m.Y" }}
+</div>
+
+</body>
+</html>

@@ -10,6 +10,9 @@ from users.models import CustomUser
 from django.db.models import Count, Q, Case, When, IntegerField
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
+from xhtml2pdf import pisa
+import io
 from antraege.models import Lehrer, Antrag, Anfrage
 from django.urls import reverse
 from django.core.mail import send_mail
@@ -512,15 +515,6 @@ def antraege_list(request):
     }
     qs = qs.order_by(allowed_sorts.get(sort, '-erstellt_am'))
 
-    pdf = request.GET.get('pdf') == '1'
-    if pdf:
-        all_antraege = list(qs)
-        return render(request, 'adminview/antraege_pdf.html', {
-            'antraege': all_antraege,
-            'q': q, 'status': status, 'klasse': klasse,
-            'generated': timezone.now(),
-        }, content_type='text/html')
-
     paginator = Paginator(qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
@@ -532,3 +526,27 @@ def antraege_list(request):
         'klasse_choices': klasse_choices,
         'total': qs.count(),
     })
+
+
+@staff_required
+def antrag_pdf(request, antrag_id):
+    antrag = get_object_or_404(Antrag.objects.select_related('user').prefetch_related('anfrage_set'), id=antrag_id)
+    anfragen = antrag.anfrage_set.all().order_by('created')
+
+    html = render_to_string('adminview/antrag_pdf_template.html', {
+        'antrag': antrag,
+        'anfragen': anfragen,
+        'generated': timezone.now(),
+    })
+
+    buf = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=buf, encoding='utf-8')
+    if pisa_status.err:
+        return HttpResponse('Fehler beim Erstellen der PDF-Datei.', status=500)
+
+    buf.seek(0)
+    lastname = antrag.user.last_name or antrag.user.email.split('@')[0]
+    filename = f"Freistellungsantrag_{antrag.id}_{lastname}.pdf"
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
