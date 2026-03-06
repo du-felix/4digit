@@ -10,11 +10,11 @@ from .functions import convert_date, convert_time, send_email, send_email_schull
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
-from django.core import signing
 from django.utils.timezone import now
 from django.http import HttpResponse
 from datetime import timedelta
 from datetime import datetime, time as dtime
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 def validate_afra_email(email):
@@ -269,20 +269,42 @@ def user_antraege(request):
     return render(request, "antraege/user_antraege.html")
 
 def antrag_bestaetigen(request, token):
-    try:
-        anfrage = Anfrage.objects.get(token=token)
-    except Anfrage.DoesNotExist:
+    anfrage = Anfrage.objects.filter(token=token).order_by('-id').first()
+    if anfrage is None:
         return HttpResponse("Ungültiger oder abgelaufener Link.", status=404)
     antrag = anfrage.antrag
+    sekretariat_emails = set(Lehrer.objects.filter(secretariat=True).values_list('email', flat=True))
+
+    def _build_absolute_url(local_token):
+        relative_url = reverse('antrag_bestaetigen', kwargs={'token': local_token})
+        absolute_url = request.build_absolute_uri(relative_url)
+        return absolute_url[:4] + "s" + absolute_url[4:]
+
+    def _create_sekretariat_requests(trigger=False):
+        for email in sekretariat_emails:
+            seki_token = str(uuid.uuid4())
+            Anfrage.objects.create(
+                antrag=antrag,
+                email=email,
+                token=seki_token,
+                trigger=trigger,
+            )
+            send_eltern_bestaetigung(
+                antrag.user.first_name + " " + antrag.user.last_name,
+                _build_absolute_url(seki_token),
+                antrag.klasse,
+                antrag.titel,
+                email,
+            )
 
     def _create_schulleiter(antrag):
         context["sekretariat"] = False
-        token = str(uuid.uuid4())
-        relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-        Anfrage.objects.create(antrag=antrag, email=Lehrer.objects.filter(principal=True).values_list('email', flat=True).first(), token=token, is_principle=True)
-        absolute_url = request.build_absolute_uri(relative_url)
-        absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-        send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, absolute_url)
+        principal_email = Lehrer.objects.filter(principal=True).values_list('email', flat=True).first()
+        if not principal_email:
+            return
+        principal_token = str(uuid.uuid4())
+        Anfrage.objects.create(antrag=antrag, email=principal_email, token=principal_token, is_principle=True)
+        send_email_schulleiter(antrag.user.first_name + " " + antrag.user.last_name, _build_absolute_url(principal_token))
 
     # Create the initial context
     context = {
@@ -298,6 +320,7 @@ def antrag_bestaetigen(request, token):
         "anfangszeit": convert_time(str(antrag.anfangszeit)),
         "enddatum": convert_date(str(antrag.enddatum)),
         "endzeit": convert_time(str(antrag.endzeit)),
+        "trigger": anfrage.trigger,
 
     }
     
@@ -361,10 +384,6 @@ def antrag_bestaetigen(request, token):
                     is_principle=False,
                     gm__isnull=True,
                     im__isnull=True,
-                )
-
-                sekretariat_emails = set(
-                    Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
                 )
 
                 for bestaetigung in bestaetigungen:
@@ -447,24 +466,7 @@ def antrag_bestaetigen(request, token):
                         break
                 
                 if mail_bool:
-                    token = str(uuid.uuid4())
-                    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    absolute_url = request.build_absolute_uri(relative_url)
-                    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-                    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-                    for email in seki_mails:
-                        Anfrage.objects.create(
-                            antrag=antrag,
-                            email=email,
-                            token=token
-                        )
-                        send_eltern_bestaetigung(
-                            antrag.user.first_name + " " + antrag.user.last_name,
-                            absolute_url,
-                            antrag.klasse,
-                            antrag.titel,
-                            email
-                        )  
+                    _create_sekretariat_requests(trigger=False)
 
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
                 
@@ -486,24 +488,7 @@ def antrag_bestaetigen(request, token):
                 if mail_bool and antrag.eltern_bestaetigung:
                     _create_schulleiter(antrag)
                 elif mail_bool:
-                    token = str(uuid.uuid4())
-                    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-                    absolute_url = request.build_absolute_uri(relative_url)
-                    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
-                    seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-                    for email in seki_mails:
-                        Anfrage.objects.create(
-                            antrag=antrag,
-                            email=email,
-                            token=token
-                        )
-                        send_eltern_bestaetigung(
-                            antrag.user.first_name + " " + antrag.user.last_name,
-                            absolute_url,
-                            antrag.klasse,
-                            antrag.titel,
-                            email
-                        )  
+                    _create_sekretariat_requests(trigger=False)
 
 
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
@@ -544,11 +529,11 @@ def antrag_bestaetigen(request, token):
     elif request.method == "POST" and request.POST.get("btn") == "eltern2":
         form = YesNoForm(request.POST)
         anfragen = Anfrage.objects.filter(token=token)
-        form = TwoStepForm(request.POST)
         if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
             return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
             answer = form.cleaned_data.get("agree")
+            antrag.eltern_notwendig = True
             if answer:
                 antrag.eltern_bestaetigung = True
                 _create_schulleiter(antrag)
@@ -556,6 +541,7 @@ def antrag_bestaetigen(request, token):
                 antrag.save()
                 for anfrage in anfragen:
                     anfrage.response = Anfrage.ACCEPTED
+                    anfrage.save(update_fields=["response"])
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
             else:
                 antrag.eltern_bestaetigung = False
@@ -563,13 +549,14 @@ def antrag_bestaetigen(request, token):
                 antrag.save()
                 for anfrage in anfragen:
                     anfrage.response = Anfrage.ACCEPTED
+                    anfrage.save(update_fields=["response"])
                 return HttpResponse("Antrag erfolgreich bearbeitet. Sie können diesen Tab jetzt schließen, es kommt nämlich nix mehr...", status=200)
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
-    if anfrage.email == Lehrer.objects.filter(secretariat=True).values_list('email', flat=True).first():
+    if anfrage.email in sekretariat_emails:
         context["sekretariat"] = True
-        context["form"] = TwoStepForm()
+        context["form"] = YesNoForm() if anfrage.trigger else TwoStepForm()
         context["anfangsdatum"] = convert_date(str(antrag.anfangsdatum))
         context["anfangszeit"]  = convert_time(str(antrag.anfangszeit))
         context["enddatum"]     = convert_date(str(antrag.enddatum))
@@ -601,15 +588,16 @@ def antrag_detail(request, antrag_id):
     responses = []
     gruende = []
 
+    gm = im = gm_response = im_response = gm_grund = im_grund = None
+    schulleiter = schulleiter_response = schulleiter_grund = schulleiter_datum = None
+
     for anfrage in anfragen:
         if anfrage.gm:  # Wenn es ein GM ist
-            gm = anfrage.email
-            gm = Lehrer.objects.get(email=gm).name
+            gm = Lehrer.objects.filter(email=anfrage.email).values_list('name', flat=True).first() or anfrage.email
             gm_response = anfrage.response
             gm_grund = anfrage.reason
         elif anfrage.im:  # Wenn es ein IM ist
-            im = anfrage.email
-            im = Lehrer.objects.get(email=im).name
+            im = Lehrer.objects.filter(email=anfrage.email).values_list('name', flat=True).first() or anfrage.email
             im_response = anfrage.response
             im_grund = anfrage.reason
         elif anfrage.is_principle: 
@@ -622,29 +610,33 @@ def antrag_detail(request, antrag_id):
             stunden = anfrage.unterricht.strip("\n").split(";")[:-1]
             for stunde in stunden:
                 elements = stunde.strip("\n").split(",")
+                if len(elements) < 2:
+                    continue
                 daten.append(transform_date(elements[1]))
-                unterricht.append(Fach.objects.get(kuerzel=elements[0]).name)
-                lehrer.append(Lehrer.objects.get(email=anfrage.email).name)
+                fach = Fach.objects.filter(kuerzel=elements[0]).values_list("name", flat=True).first() or elements[0]
+                unterricht.append(fach)
+                lehrer_name = Lehrer.objects.filter(email=anfrage.email).values_list("name", flat=True).first() or anfrage.email
+                lehrer.append(lehrer_name)
                 gruende.append(anfrage.reason)
                 responses.append(anfrage.response)
-    lehrer.append(im)
-    lehrer.append(gm)
-    daten.append(" ")
-    daten.append(" ")
-    unterricht.append("IM")
-    unterricht.append("GM")
-    responses.append(im_response)
-    responses.append(gm_response)
-    gruende.append(im_grund)
-    gruende.append(gm_grund)
-    try:
+    if im:
+        lehrer.append(im)
+        daten.append(" ")
+        unterricht.append("IM")
+        responses.append(im_response)
+        gruende.append(im_grund)
+    if gm:
+        lehrer.append(gm)
+        daten.append(" ")
+        unterricht.append("GM")
+        responses.append(gm_response)
+        gruende.append(gm_grund)
+    if schulleiter:
         lehrer.append(schulleiter)
         responses.append(schulleiter_response)
         gruende.append(schulleiter_grund)
         daten.append(transform_datetime(schulleiter_datum))
         unterricht.append("Schulleiter")
-    except Exception as e:
-        pass
 
     rows = zip(lehrer, unterricht, daten, responses, gruende)
 
@@ -659,6 +651,7 @@ def antrag_detail(request, antrag_id):
     return render(request, 'antraege/antrag.html', context)
 
 @login_required(login_url="login")
+@require_POST
 def seki_anfordern(request):
     antrag_id = request.POST.get('antrag_id')
     antrag = get_object_or_404(Antrag, id=antrag_id)
@@ -681,16 +674,12 @@ def seki_anfordern(request):
         return HttpResponse("Du kannst nur einmal pro Stunde eine neue Prüfung anfordern", status=403)
     
     AntragSubmission.objects.create(user=request.user, antrag=antrag)
-    # Create a token with embedded antrag ID
-    token_data = {"anfordern": True}
-    token = signing.dumps(token_data)
-
-    relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
-    absolute_url = request.build_absolute_uri(relative_url)
-    absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
- 
     seki_mails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
     for email in seki_mails:
+        token = str(uuid.uuid4())
+        relative_url = reverse('antrag_bestaetigen', kwargs={'token': token})
+        absolute_url = request.build_absolute_uri(relative_url)
+        absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
         Anfrage.objects.create(
             antrag=antrag,
             email=email,
