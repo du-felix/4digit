@@ -12,6 +12,9 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
+# --- Security: LOGIN_URL must match the app's actual login route ---
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,11 +28,10 @@ INSTALLED_APPS = [
     'users',
 ]
 
-LOGIN_REDIRECT_URL = '/'
-
+# SecurityMiddleware MUST be first so all responses (including static via WhiteNoise) get headers
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -79,6 +81,23 @@ WSGI_APPLICATION = 'fourdigit.wsgi.application'
 
 CSRF_TRUSTED_ORIGINS = ['https://mdm.sankt-afra.de']
 
+# --- Clickjacking protection ---
+X_FRAME_OPTIONS = 'DENY'
+
+# --- Production security hardening (all off in DEBUG so local dev works normally) ---
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000        # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False  # Must stay False for standard CSRF JS access
+
 if DEBUG:
     DATABASES = {
         'default': {
@@ -115,3 +134,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- Limit uploaded file size (2 MB is ample for a CSV) ---
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024   # 2 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024   # 2 MB

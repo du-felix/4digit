@@ -1,8 +1,7 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login as lg
 from django.contrib import messages
-from django.shortcuts import redirect, render, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.conf import settings
@@ -11,8 +10,8 @@ from .models import CustomUser
 from django.contrib.auth.forms import SetPasswordForm
 from django.http import HttpResponse
 
-def login(request):
 
+def login(request):
     if request.method == "POST":
         email = request.POST.get("username")
         password = request.POST.get("password")
@@ -20,127 +19,96 @@ def login(request):
         user = authenticate(request, username=email, password=password)
 
         if user is not None:
+            lg(request, user)
             if user.is_staff:
-                lg(request, user)
-
-                return redirect("adminview-home")  # Redirect to staff dashboard
-            else:
-                lg(request, user)
-                return redirect("home")  # Redirect to user dashboard
+                return redirect("adminview-home")
+            return redirect("home")
         else:
+            # Single generic message to prevent user enumeration
+            messages.error(request, "Ungültige Anmeldedaten.")
+
+            # Special case: inactive account (not yet activated) – show activation flow
             try:
-                user = CustomUser.objects.get(email=email)
-                if user.password == password and not user.is_active:
-                    token = default_token_generator.make_token(user)
-                    return render(request, "users/activate.html", {"uid": user.pk, "token": token})
-                else:
-                    messages.error(request, "Invalid password.")
+                inactive_user = CustomUser.objects.get(email=email)
+                if not inactive_user.is_active:
+                    token = default_token_generator.make_token(inactive_user)
+                    return render(request, "users/activate.html", {"uid": inactive_user.pk, "token": token})
             except CustomUser.DoesNotExist:
-                messages.error(request, "Invalid email.")
+                pass
 
+    return render(request, "users/login.html")
 
-    return render(request, "users/login.html")  # Render the login page
-
-def signup(request):
-    if request.method == 'POST':
-        vorname = request.POST.get('vorname')
-        nachname = request.POST.get('nachname')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        geburtsdatum = request.POST.get('geburtsdatum')
-        
-        try:
-            existing_user = CustomUser.objects.get(email=email)
-            messages.error(request, "Email already exists.")
-            if not existing_user.is_active:
-                messages.info(request, "Du hast bereits ein Konto, aber es ist noch nicht aktiviert. Wir haben dir eine neue Email geschickt.")
-                # Optionally, resend the activation email
-                token = default_token_generator.make_token(existing_user)
-                activation_url = request.build_absolute_uri(
-                    reverse('activate', kwargs={'uid': existing_user.pk, 'token': token})
-                )
-                send_mail(
-                    'Activate your account',
-                    f'Hi {vorname}, bitte klicke auf diesen Link um deinen Account zu bestätigen: {activation_url}',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                )
-                return render(request, "users/signup_complete.html", {"activated": False})
-            else:
-                messages.info(request, "Du hast bereits ein Konto. Bitte logge dich ein.")
-                return redirect('login')
-        except CustomUser.DoesNotExist:
-            user = CustomUser.objects.create_user(
-                username=email,
-                first_name=vorname.capitalize(),
-                last_name=nachname.capitalize(),
-                email=email,
-                password=password,
-                #birth_date=geburtsdatum
-            )
-            user.is_active = False
-            user.save()
-            token = default_token_generator.make_token(user)
-            activation_url = request.build_absolute_uri(
-                reverse('activate', kwargs={'uid': user.pk, 'token': token})
-            )
-            send_mail(
-                'Activate your account',
-                f'Hi {vorname}, bitte klicke auf diesen Link um deinen Account zu bestätigen: {activation_url}',
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-            )
-            print("passed")
-            return render(request, "users/signup_complete.html", {"activated": False})
-    else:
-        return render(request, 'users/signup.html')
 
 def activate(request, uid, token):
-    user = get_object_or_404(CustomUser, pk=uid)
-    
-    if default_token_generator.check_token(user, token):
-        password = request.POST.get("password1")
-        password2 = request.POST.get("password2")
+    user = get_object_or_404_custom(CustomUser, pk=uid)
+    if user is None:
+        messages.error(request, "Ungültiger Aktivierungslink.")
+        return redirect('login')
 
-        if password == password2:
-            user.set_password(password)
-            user.is_active = True
-            user.save()
+    if not default_token_generator.check_token(user, token):
+        messages.error(request, "Der Aktivierungslink ist ungültig oder abgelaufen.")
+        return redirect('login')
 
-            return render(request, "users/signup_complete.html", {"activated": True})
-        else:
+    # Only process password on POST — prevents GET-request activation (None==None bug)
+    if request.method == 'POST':
+        password = request.POST.get("password1", "")
+        password2 = request.POST.get("password2", "")
+
+        if not password:
+            messages.error(request, "Passwort darf nicht leer sein.")
+            return render(request, "users/activate.html", {"uid": uid, "token": token})
+
+        if password != password2:
             messages.error(request, "Passwörter stimmen nicht überein.")
             return render(request, "users/activate.html", {"uid": uid, "token": token})
-    else:
-        messages.error(request, "Es ist ein Fehler aufgetreten.")
-        return redirect('login')
-    
+
+        user.set_password(password)
+        user.is_active = True
+        user.save()
+        return render(request, "users/signup_complete.html", {"activated": True})
+
+    # GET: just show the form
+    return render(request, "users/activate.html", {"uid": uid, "token": token})
+
+
+def get_object_or_404_custom(model, **kwargs):
+    """Returns None instead of raising Http404, for flows that need custom error handling."""
+    try:
+        return model.objects.get(**kwargs)
+    except model.DoesNotExist:
+        return None
+
+
 def edit_password(request, uid, token):
-    user = get_object_or_404(CustomUser, pk=uid)
-
-    if default_token_generator.check_token(user, token):
-        if request.method == "POST":
-            form = SetPasswordForm(user, request.POST)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Passwort erfolgreich geändert!")
-                return redirect('login')
-            else:
-                messages.error(request, "Passwort konnte nicht geändert werden.")
-                form = SetPasswordForm(user, request.POST)
-                return render(request, "users/reset_password.html", {"form": form})
-        else:
-            form = SetPasswordForm(user)
-        return render(request, "users/reset_password.html", {"form": form})
-    else:
-        messages.error(request, "Activation Link ist ungültig oder abgelaufen, fordere einen neuen an. ")
+    user = get_object_or_404_custom(CustomUser, pk=uid)
+    if user is None or not default_token_generator.check_token(user, token):
+        messages.error(request, "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.")
         return redirect('login')
 
+    if request.method == "POST":
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Passwort erfolgreich geändert!")
+            return redirect('login')
+        messages.error(request, "Passwort konnte nicht geändert werden.")
+        return render(request, "users/reset_password.html", {"form": form})
+
+    form = SetPasswordForm(user)
+    return render(request, "users/reset_password.html", {"form": form})
+
+
+@login_required(login_url='login')
 def activate_account(request):
+    """Password-change flow for already-authenticated inactive users."""
     if request.method == "POST":
         password = request.POST.get("password")
         password2 = request.POST.get("password2")
         user = request.user
+
+        if not password:
+            messages.error(request, "Passwort darf nicht leer sein.")
+            return render(request, "users/activate.html", {"uid": user.pk})
 
         if password == password2:
             user.set_password(password)
@@ -148,39 +116,67 @@ def activate_account(request):
             user.save()
             messages.success(request, "Passwort erfolgreich geändert!")
             return redirect('login')
-        else:
-            messages.error(request, "Passwörter stimmen nicht überein.")
-            return render(request, "users/activate.html", {"uid": request.user.pk})
+
+        messages.error(request, "Passwörter stimmen nicht überein.")
+        return render(request, "users/activate.html", {"uid": user.pk})
+
+    return render(request, "users/activate.html", {"uid": request.user.pk})
+
 
 def get_link(request):
     if request.method == "POST":
         email = request.POST.get("email")
         try:
             user = CustomUser.objects.get(email=email)
+
             if not user.is_active:
-                password = user.password
-                send_mail(
-                    'Initialpasswort für Freistellungen',
-                    f'Hi {user.first_name}, mit diesem Initialpasswort kannst du dich einloggen: {password}\n Bitte ändere es nach dem ersten Login.',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email], fail_silently=True
+                # Send a fresh activation link — NEVER send the stored password hash
+                token = default_token_generator.make_token(user)
+                activation_url = request.build_absolute_uri(
+                    reverse('activate', kwargs={'uid': user.pk, 'token': token})
                 )
-                messages.error(request, "Dein Konto wurde noch nicht aktiviert. Wir haben dir eine Mail mit deinem Initialpasswort geschickt. Damit kannst du dich einloggen und dir ein eigenes Passwort erstellen.")
+                send_mail(
+                    'Account aktivieren – Freistellungen',
+                    (
+                        f'Hi {user.first_name},\n\n'
+                        f'Dein Account wurde noch nicht aktiviert. '
+                        f'Klicke auf folgenden Link um ein Passwort festzulegen:\n\n'
+                        f'{activation_url}\n\n'
+                        f'Der Link ist für eine begrenzte Zeit gültig.'
+                    ),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=True,
+                )
+                messages.info(request, "Wir haben dir einen Aktivierungslink geschickt.")
                 return redirect('login')
             else:
                 token = default_token_generator.make_token(user)
-                activation_url = request.build_absolute_uri(
+                reset_url = request.build_absolute_uri(
                     reverse('edit_password', kwargs={'uid': user.pk, 'token': token})
                 )
                 send_mail(
                     'Passwort zurücksetzen',
-                    f'Hi {user.first_name}, bitte klicke auf diesen Link um dein Passwort zurückzusetzen: {activation_url}',
+                    (
+                        f'Hi {user.first_name},\n\n'
+                        f'Klicke auf folgenden Link um dein Passwort zurückzusetzen:\n\n'
+                        f'{reset_url}'
+                    ),
                     settings.DEFAULT_FROM_EMAIL,
                     [email],
+                    fail_silently=True,
                 )
-                messages.success(request, "Wir haben dir eine Email geschickt mit einem Link um dein Passwort zurückzusetzen.")
+                messages.success(request, "Wir haben dir einen Link zum Zurücksetzen des Passworts geschickt.")
                 return redirect('login')
+
         except CustomUser.DoesNotExist:
-            messages.error(request, "Es existiert kein Konto mit dieser Email")
-            return render(request, "users/get_link.html")
+            # Use the same message to prevent email enumeration
+            messages.success(request, "Wenn ein Konto mit dieser E-Mail existiert, wurde eine E-Mail verschickt.")
+            return redirect('login')
+
     return render(request, "users/get_link.html")
+
+
+# signup view intentionally left without URL registration (route is commented out in urls.py)
+def signup(request):
+    return redirect('login')

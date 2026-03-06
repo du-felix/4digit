@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -17,34 +17,40 @@ from django.utils.crypto import get_random_string
 
 User = get_user_model()
 
+# All admin-area views require the user to be active staff.
+# user_passes_test redirects non-authenticated users to LOGIN_URL,
+# and raises PermissionDenied (403) for authenticated non-staff users.
+staff_required = user_passes_test(lambda u: u.is_active and u.is_staff, login_url='login')
+
+
 def validate_afra_email(email):
     if not email.endswith('@afra.lernsax.de'):
         raise ValidationError('Nur E-Mail-Adressen, die mit "@afra.lernsax.de" enden, sind zulässig.')
     return email
 
-@login_required
+
+@staff_required
 def adminview(request, user_id=None):
     search_query = request.GET.get('q', '')
-    
+
     if search_query:
         users = User.objects.filter(
-            Q(email__icontains=search_query) | 
+            Q(email__icontains=search_query) |
             Q(username__icontains=search_query) |
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query)
         ).order_by('-is_staff', 'email')
     else:
         users = User.objects.all().order_by('-is_staff', 'email')
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         user_data = []
         for user in users:
             user_data.append({
                 'id': user.id,
                 'email': user.email,
-                'name':f"{user.first_name} {user.last_name}",
-                #'birth_date': user.birth_date.strftime('%Y-%m-%d') if user.birth_date else '',
+                'name': f"{user.first_name} {user.last_name}",
                 'is_staff': user.is_staff,
-
             })
         return JsonResponse({'users': user_data})
 
@@ -54,7 +60,7 @@ def adminview(request, user_id=None):
         user_to_delete.delete()
         messages.success(request, f'Benutzer {user_to_delete.email} erfolgreich gelöscht')
         return redirect('adminview-home')
-    
+
     if request.method == 'POST' and 'action' in request.POST:
         selected_users = request.POST.getlist('selected_users')
         action = request.POST.get('action')
@@ -62,29 +68,29 @@ def adminview(request, user_id=None):
         if not selected_users:
             messages.error(request, 'Keine Benutzer ausgewählt')
             return redirect('adminview-home')
-        
+
         users = CustomUser.objects.filter(id__in=selected_users)
 
         if action == 'delete':
             users.delete()
             messages.success(request, f'{len(selected_users)} Benutzer wurden gelöscht')
         return redirect('adminview-home')
-    
+
     context = {
         'users': users,
         'edit_user': None,
         'search_query': search_query,
         'button_url': reverse('adminview-csv'),
     }
-    
+
     return render(request, 'adminview/home.html', context)
 
-@login_required
+
+@staff_required
 def adding(request):
     if request.method == 'POST':
         form = Sign_Up_Form(request.POST)
         if form.is_valid():
-            # Validate email format before saving
             try:
                 validate_afra_email(form.cleaned_data['email'])
                 form.save()
@@ -93,10 +99,11 @@ def adding(request):
                 form.add_error('email', e)
     else:
         form = Sign_Up_Form()
-    
+
     return render(request, 'adminview/add_user.html', {'form': form})
 
-@login_required
+
+@staff_required
 def edit_user(request, user_id=None):
     if user_id:
         edit_user = get_object_or_404(User, id=user_id)
@@ -117,30 +124,29 @@ def edit_user(request, user_id=None):
         form = Sign_Up_Form()
     return render(request, 'adminview/edit_user.html', {'form': form, 'edit_user': edit_user})
 
-@login_required
+
+@staff_required
 def csv(request):
     if request.method == 'POST':
         if 'csv_file' in request.FILES:
             csv_file = request.FILES['csv_file']
-            
-            # Check if file is CSV
+
             if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'Please upload a CSV file')
+                messages.error(request, 'Bitte eine CSV-Datei hochladen.')
                 return redirect('adminview-csv')
-                
-            # Process CSV file
+
             try:
                 import io
-                import csv
+                import csv as csv_module
 
                 csv_data = csv_file.read().decode('utf-8')
                 io_string = io.StringIO(csv_data)
-                reader = csv.reader(io_string, delimiter=';')
+                reader = csv_module.reader(io_string, delimiter=';')
 
                 success_count = 0
                 error_count = 0
                 errors = []
-                
+
                 for row in reader:
                     try:
                         if len(row) >= 3:
@@ -152,11 +158,10 @@ def csv(request):
                             try:
                                 validate_afra_email(email)
                             except ValidationError as e:
-                                errors.append(f"Invalid email for row {email}: {str(e)}")
+                                errors.append(f"Ungültige E-Mail ({email}): {str(e)}")
                                 error_count += 1
                                 continue
 
-                            # Check if user already exists
                             if not CustomUser.objects.filter(email=email).exists():
                                 password = get_random_string(10)
 
@@ -166,7 +171,7 @@ def csv(request):
                                     last_name=last_name,
                                     is_active=False,
                                 )
-                                user.set_password(password)  # ✅ IMPORTANT
+                                user.set_password(password)
                                 user.save()
 
                                 send_mail(
@@ -182,49 +187,51 @@ def csv(request):
                                 )
                                 success_count += 1
                             else:
-                                errors.append(f"User with email {email} already exists")
+                                errors.append(f"Benutzer mit E-Mail {email} existiert bereits.")
                                 error_count += 1
                         else:
-                            errors.append(f"Row has insufficient data: {row}")
+                            # Do NOT include raw row data in user-facing messages
+                            errors.append("Eine Zeile hat zu wenige Spalten und wurde übersprungen.")
                             error_count += 1
-                    except Exception as e:
-                        errors.append(f"Error processing row: {row}. Error: {str(e)}")
+                    except Exception:
+                        errors.append("Eine Zeile konnte nicht verarbeitet werden.")
                         error_count += 1
-                
-                # Show results
+
                 if success_count > 0:
-                    messages.success(request, f'Successfully created {success_count} user(s)')
+                    messages.success(request, f'{success_count} Benutzer erfolgreich erstellt.')
                 if error_count > 0:
-                    messages.warning(request, f'Failed to create {error_count} user(s)')
-                    for error in errors[:10]:  # Show only first 10 errors
+                    messages.warning(request, f'{error_count} Zeilen konnten nicht verarbeitet werden.')
+                    for error in errors[:10]:
                         messages.error(request, error)
                     if len(errors) > 10:
-                        messages.error(request, f"... and {len(errors) - 10} more errors")
-                        
-            except Exception as e:
-                messages.error(request, f'Error processing file: {str(e)}')
-            
+                        messages.error(request, f"... und {len(errors) - 10} weitere Fehler.")
+
+            except Exception:
+                messages.error(request, 'Fehler beim Verarbeiten der Datei. Bitte Format prüfen.')
+
             return redirect('adminview-home')
-    
+
     return render(request, 'adminview/csv.html')
 
-@login_required
+
+@staff_required
 def lehrer(request, lehrer_id=None):
     search_query = request.GET.get('q', '')
     if search_query:
         lehrers = Lehrer.objects.filter(
-            Q(email__icontains=search_query) | 
+            Q(email__icontains=search_query) |
             Q(name__icontains=search_query)
         ).order_by('-secretariat', '-principal', 'email')
     else:
         lehrers = Lehrer.objects.all().order_by('-secretariat', '-principal', 'email')
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         lehrer_data = []
-        for lehrer in lehrers:
+        for l in lehrers:
             lehrer_data.append({
-                'id': lehrer.id,
-                'email': lehrer.email,
-                'name':f"{lehrer.name}",
+                'id': l.id,
+                'email': l.email,
+                'name': l.name,
             })
         return JsonResponse({'lehrers': lehrer_data})
 
@@ -234,7 +241,7 @@ def lehrer(request, lehrer_id=None):
         lehrer_to_delete.delete()
         messages.success(request, f'Lehrer {lehrer_to_delete.email} erfolgreich gelöscht')
         return redirect('lehrer')
-    
+
     if request.method == 'POST' and 'action' in request.POST:
         selected_lehrers = request.POST.getlist('selected_lehrers')
         action = request.POST.get('action')
@@ -242,25 +249,25 @@ def lehrer(request, lehrer_id=None):
         if not selected_lehrers:
             messages.error(request, 'Keine Lehrer ausgewählt')
             return redirect('lehrer')
-        
-        lehrer = Lehrer.objects.filter(id__in=selected_lehrers)
 
+        qs = Lehrer.objects.filter(id__in=selected_lehrers)
 
         if action == 'delete':
-            lehrer.delete()
+            qs.delete()
             messages.success(request, f'{len(selected_lehrers)} Lehrer wurden gelöscht')
         return redirect('lehrer')
-    
+
     context = {
         'lehrers': lehrers,
-        'edit_lehrer': edit_lehrer,
+        'edit_lehrer': None,
         'search_query': search_query,
         'button_url': reverse('lehrer_csv'),
     }
-    
+
     return render(request, 'adminview/lehrer.html', context)
 
-@login_required
+
+@staff_required
 def add_lehrer(request):
     if request.method == 'POST':
         form = add_lehrer_Form(request.POST)
@@ -272,53 +279,51 @@ def add_lehrer(request):
 
     return render(request, 'adminview/add_lehrer.html', {'form': form})
 
+
+@staff_required
 def edit_lehrer(request, lehrer_id=None):
-    if lehrer_id != None:
-        edit_lehrer = get_object_or_404(Lehrer, id=lehrer_id)
+    if lehrer_id is not None:
+        edit_lehrer_obj = get_object_or_404(Lehrer, id=lehrer_id)
         if request.method == 'POST':
-            form = add_lehrer_Form(request.POST, instance=edit_lehrer)
+            form = add_lehrer_Form(request.POST, instance=edit_lehrer_obj)
             if form.is_valid():
-                lehrer = form.save(commit=False)
-                
-                # Handle checkbox values - get directly from POST data
-                lehrer.principal = 'is_principal' in request.POST
-                lehrer.secretariat = 'is_secretariat' in request.POST
-                
-                lehrer.save()
-                messages.success(request, f"Lehrer {lehrer.email} erfolgreich aktualisiert")
+                lehrer_instance = form.save(commit=False)
+                lehrer_instance.principal = 'is_principal' in request.POST
+                lehrer_instance.secretariat = 'is_secretariat' in request.POST
+                lehrer_instance.save()
+                messages.success(request, f"Lehrer {lehrer_instance.email} erfolgreich aktualisiert")
                 return redirect('lehrer')
         else:
-            form = add_lehrer_Form(instance=edit_lehrer)
+            form = add_lehrer_Form(instance=edit_lehrer_obj)
     else:
-        edit_lehrer = None
+        edit_lehrer_obj = None
         form = add_lehrer_Form()
-    
-    return render(request, 'adminview/edit_lehrer.html', {'form': form, 'edit_lehrer': edit_lehrer})
 
-@login_required
+    return render(request, 'adminview/edit_lehrer.html', {'form': form, 'edit_lehrer': edit_lehrer_obj})
+
+
+@staff_required
 def lehrer_csv(request):
     if request.method == 'POST':
         if 'csv_file' in request.FILES:
             csv_file = request.FILES['csv_file']
-            
-            # Check if file is CSV
+
             if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'Please upload a CSV file')
+                messages.error(request, 'Bitte eine CSV-Datei hochladen.')
                 return redirect('lehrer_csv')
-                
-            # Process CSV file
+
             try:
                 import io
-                import csv
+                import csv as csv_module
 
                 csv_data = csv_file.read().decode('utf-8')
                 io_string = io.StringIO(csv_data)
-                reader = csv.reader(io_string, delimiter=';')
+                reader = csv_module.reader(io_string, delimiter=';')
 
                 success_count = 0
                 error_count = 0
                 errors = []
-                
+
                 for row in reader:
                     try:
                         if len(row) >= 3:
@@ -326,35 +331,30 @@ def lehrer_csv(request):
                             name = row[2].strip()
 
                             if not Lehrer.objects.filter(email=email).exists():
-                                lehrer = Lehrer(
-                                    email=email,
-                                    name=name
-                                )
-                                lehrer.save()
+                                Lehrer.objects.create(email=email, name=name)
                                 success_count += 1
                             else:
-                                errors.append(f"Es existiert bereits ein Lehrer mit der Email {email}")
+                                errors.append(f"Lehrer mit E-Mail {email} existiert bereits.")
                                 error_count += 1
                         else:
-                            errors.append(f"Zeile hat ungültige Daten: {row}")
+                            errors.append("Eine Zeile hat zu wenige Spalten und wurde übersprungen.")
                             error_count += 1
-                    except Exception as e:
-                        errors.append(f"Error processing row: {row}. Error: {str(e)}")
+                    except Exception:
+                        errors.append("Eine Zeile konnte nicht verarbeitet werden.")
                         error_count += 1
-                
-                # Show results
+
                 if success_count > 0:
-                    messages.success(request, f'Erfolgreich {success_count} Lehrer erstellt')
+                    messages.success(request, f'{success_count} Lehrer erfolgreich erstellt.')
                 if error_count > 0:
-                    messages.warning(request, f'{error_count} Lehrer konnten nicht erstellt werden')
-                    for error in errors[:10]:  # Show only first 10 errors
+                    messages.warning(request, f'{error_count} Zeilen konnten nicht verarbeitet werden.')
+                    for error in errors[:10]:
                         messages.error(request, error)
                     if len(errors) > 10:
-                        messages.error(request, f"... and {len(errors) - 10} more errors")
-                        
-            except Exception as e:
-                messages.error(request, f'Error processing file: {str(e)}')
-            
+                        messages.error(request, f"... und {len(errors) - 10} weitere Fehler.")
+
+            except Exception:
+                messages.error(request, 'Fehler beim Verarbeiten der Datei. Bitte Format prüfen.')
+
             return redirect('lehrer')
-    
+
     return render(request, 'adminview/lehrer_csv.html')

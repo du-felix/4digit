@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from .forms import AntragForm, UnterrichtFormSet, TwoStepForm, YesNoForm
 from .models import Anfrage, Antrag, Zaehler, Lehrer, Fach, AntragSubmission
 from .functions import convert_date, convert_time, send_email, send_email_schulleiter, send_email_gm, send_email_im, send_email_sekretariat, send_eltern_bestaetigung, schueler_benachrichtigung_eltern, schueler_benachrichtigung_antrag, schueler_benachrichtigung_seki, transform_date, transform_datetime
@@ -192,8 +193,7 @@ def neuer_antrag(request):
                     absolute_url,
                     antrag_instance
                 )
-            except Exception as e:
-                print(f"Failed to send email to IM {im.email}: {str(e)}")
+            except Exception:
                 messages.warning(
                     request,
                     f"Fehler beim Senden der E-Mail an GM ({gm.email})."
@@ -269,7 +269,10 @@ def user_antraege(request):
     return render(request, "antraege/user_antraege.html")
 
 def antrag_bestaetigen(request, token):
-    anfrage = Anfrage.objects.get(token=token)
+    try:
+        anfrage = Anfrage.objects.get(token=token)
+    except Anfrage.DoesNotExist:
+        return HttpResponse("Ungültiger oder abgelaufener Link.", status=404)
     antrag = anfrage.antrag
 
     def _create_schulleiter(antrag):
@@ -512,7 +515,6 @@ def antrag_bestaetigen(request, token):
     elif request.method == "POST" and request.POST.get("btn") == "eltern":
         anfragen = Anfrage.objects.filter(token=token)
         form = TwoStepForm(request.POST)
-        print(Anfrage.objects.filter(token=token).first().response)
         if Anfrage.objects.filter(token=token).first().response != Anfrage.NOT_RESPONDED:
             return HttpResponse("Anfrage bereits bearbeitet", status=403)
         if form.is_valid():
@@ -574,7 +576,7 @@ def antrag_bestaetigen(request, token):
         context["endzeit"]      = convert_time(str(antrag.endzeit))
     return render(request, "antraege/antrag_bearbeiten.html", context)
 
-@login_required
+@login_required(login_url="login")
 def antrag_detail(request, antrag_id):
     # Hole den spezifischen Antrag oder werfe 404
     antrag = get_object_or_404(Antrag, id=antrag_id, user=request.user)
@@ -600,7 +602,6 @@ def antrag_detail(request, antrag_id):
     gruende = []
 
     for anfrage in anfragen:
-        print(anfrage.response)
         if anfrage.gm:  # Wenn es ein GM ist
             gm = anfrage.email
             gm = Lehrer.objects.get(email=gm).name
@@ -622,7 +623,6 @@ def antrag_detail(request, antrag_id):
             for stunde in stunden:
                 elements = stunde.strip("\n").split(",")
                 daten.append(transform_date(elements[1]))
-                print(elements)
                 unterricht.append(Fach.objects.get(kuerzel=elements[0]).name)
                 lehrer.append(Lehrer.objects.get(email=anfrage.email).name)
                 gruende.append(anfrage.reason)
@@ -658,10 +658,14 @@ def antrag_detail(request, antrag_id):
         context["eltern"] = True
     return render(request, 'antraege/antrag.html', context)
 
+@login_required(login_url="login")
 def seki_anfordern(request):
-
     antrag_id = request.POST.get('antrag_id')
-    antrag = Antrag.objects.get(id=antrag_id)
+    antrag = get_object_or_404(Antrag, id=antrag_id)
+
+    # Ownership check: only the antrag's owner may trigger this
+    if antrag.user != request.user:
+        raise PermissionDenied
 
     one_hour_ago = now() - timedelta(hours=1)
 
