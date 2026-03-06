@@ -132,6 +132,10 @@
 .messages li.error   { background: var(--danger-light);  color: #991B1B; border-color: #FECACA; }
 .messages li.warning { background: var(--warning-light); color: #92400E; border-color: #FDE68A; }
 
+/* ── Filter bar ── */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+.filter-bar-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; }
+
 /* ── Misc helpers ── */
 .text-danger  { color: var(--danger); font-size: 12.5px; }
 .text-muted   { color: var(--text-muted); }
@@ -139,3 +143,62 @@
 .mt-4 { margin-top: 16px; }
 .mb-2 { margin-bottom: 8px; }
 .mb-4 { margin-bottom: 16px; }
+
+/* ════════════════════════════════════════
+   RESPONSIVE TABLE + LAYOUT
+   ════════════════════════════════════════ */
+
+/* ── md breakpoint (≤ 768px) ── */
+@media (max-width: 768px) {
+  .container { padding: 20px 16px; }
+
+  /* Tables: horizontal scroll so they never blow out the viewport */
+  .user-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Keep cells on one line so the table scrolls as a unit */
+  .user-table th,
+  .user-table td { white-space: nowrap; }
+
+  /* Table toolbar: stack vertically */
+  .table-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .search-input  { max-width: 100%; min-width: 0; }
+  .toolbar-actions { flex-wrap: wrap; }
+
+  /* Page header row: stack title + actions */
+  .page-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-header-row-actions { flex-wrap: wrap; width: 100%; }
+
+  /* Filter bar (e.g. antraege_list): full-width inputs */
+  .filter-bar { display: flex; flex-direction: column; gap: 8px; }
+  .filter-bar input,
+  .filter-bar select { width: 100% !important; margin: 0 !important; }
+  .filter-bar .filter-bar-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-bar .filter-bar-row input,
+  .filter-bar .filter-bar-row select { width: auto !important; flex: 1 1 140px; }
+
+  /* Form card: full width on mobile */
+  .form-card { max-width: 100%; padding: 20px 16px; }
+
+  /* Flex layout: panels stack */
+  .flex-layout { flex-direction: column; }
+
+  /* Pagination: allow wrapping */
+  .page-header-row > div[style*="display:flex"] { flex-wrap: wrap; gap: 6px; }
+}
+
+/* ── sm breakpoint (≤ 480px) ── */
+@media (max-width: 480px) {
+  .container { padding: 16px 12px; }
+
+  .user-table th,
+  .user-table td { padding: 10px 10px; font-size: 12.5px; }
+
+  .form-card { padding: 16px 14px; }
+}

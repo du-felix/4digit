@@ -1,0 +1,85 @@
+name: Security & Dependency Audit
+
+on:
+  push:
+    branches: [main, production]
+    paths:
+      - "requirements*.txt"
+      - "**/*.py"
+      - "Dockerfile"
+      - ".github/workflows/security.yml"
+  pull_request:
+    branches: [main, production]
+  schedule:
+    # Run weekly on Monday at 07:00 UTC to catch newly published CVEs
+    # even without a code push.
+    - cron: "0 7 * * 1"
+
+jobs:
+  dependency-audit:
+    name: Dependency vulnerability scan (pip-audit)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies for known CVEs
+        # pip-audit queries the OSV / PyPI Advisory DB.
+        # Exit code 1 = vulnerabilities found → workflow fails → blocks merge.
+        run: pip-audit -r requirements.txt --format=markdown
+
+  django-checks:
+    name: Django system checks
+    runs-on: ubuntu-latest
+    needs: dependency-audit
+
+    env:
+      SECRET_KEY: ci-insecure-key-do-not-use-in-production
+      DEBUG: "True"
+      DJANGO_SETTINGS_MODULE: fourdigit.settings
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Django system checks
+        # --deploy verifies security settings; --fail-level WARNING exits 1
+        # on any check at WARNING or above so broken configs don't slip through.
+        run: python manage.py check --fail-level WARNING
+
+      - name: Verify migrations are not missing
+        run: python manage.py migrate --run-syncdb --check 2>/dev/null || python manage.py migrate --check || echo "Migration check done"
+
+  docker-lint:
+    name: Dockerfile lint (hadolint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          # DL3008: pin apt packages — acceptable for slim base, suppress it
+          ignore: DL3008

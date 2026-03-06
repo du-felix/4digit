@@ -139,6 +139,55 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Limit uploaded file size (2 MB is ample for a CSV) ---
+# --- Resource limits (DoS / allocation hardening) ----------------------
+# Caps memory used for in-memory uploads (e.g. CSV).
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024   # 2 MB
+# Caps the total POST body size.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024   # 2 MB
+# Caps the number of GET/POST fields per request.  Django's default is
+# 1 000; reducing it closes the CWE-770 "resource exhaustion via field
+# flooding" vector that Dependabot flagged.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 200
+
+# --- Logging ---------------------------------------------------------------
+# Structured logging: write to stdout (captured by the process supervisor)
+# and avoid including raw request metadata (query strings, headers) at
+# WARNING+ level so that auth tokens in URLs are not written to logs.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Do not log full request details (query strings may contain tokens).
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}

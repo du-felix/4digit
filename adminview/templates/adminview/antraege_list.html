@@ -12,33 +12,34 @@
   </div>
 
   <!-- Filters -->
-  <form method="get" style="margin-bottom:16px; flex-direction:row; flex-wrap:wrap; gap:10px; align-items:flex-end;">
-    <input type="text" name="q" value="{{ q }}" placeholder="Name, Titel suchen …"
-           style="width:220px; margin:0;">
-    <select name="status" style="width:160px; margin:0;">
-      <option value="">Alle Status</option>
-      <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
-      <option value="accepted"    {% if status == 'accepted'    %}selected{% endif %}>Genehmigt</option>
-      <option value="declined"    {% if status == 'declined'    %}selected{% endif %}>Abgelehnt</option>
-    </select>
-    <select name="klasse" style="width:120px; margin:0;">
-      <option value="">Alle Klassen</option>
-      {% for val, label in klasse_choices %}
-        <option value="{{ val }}" {% if klasse == val %}selected{% endif %}>Kl. {{ label }}</option>
-      {% endfor %}
-    </select>
-    <select name="sort" style="width:180px; margin:0;">
-      <option value="-erstellt_am"  {% if sort == '-erstellt_am'  %}selected{% endif %}>Neueste zuerst</option>
-      <option value="erstellt_am"   {% if sort == 'erstellt_am'   %}selected{% endif %}>Älteste zuerst</option>
-      <option value="-anfangsdatum" {% if sort == '-anfangsdatum' %}selected{% endif %}>Datum ↓</option>
-      <option value="anfangsdatum"  {% if sort == 'anfangsdatum'  %}selected{% endif %}>Datum ↑</option>
-      <option value="user"          {% if sort == 'user'          %}selected{% endif %}>Name A–Z</option>
-      <option value="status"        {% if sort == 'status'        %}selected{% endif %}>Status</option>
-    </select>
-    <button type="submit" class="btn btn-sm">Filtern</button>
-    {% if q or status or klasse %}
-      <a href="{% url 'admin-antraege' %}" class="btn btn-ghost btn-sm">Zurücksetzen</a>
-    {% endif %}
+  <form method="get" class="filter-bar">
+    <div class="filter-bar-row">
+      <input type="text" name="q" value="{{ q }}" placeholder="Name, Titel suchen …" style="min-width:200px; flex:2;">
+      <select name="status" style="flex:1; min-width:140px;">
+        <option value="">Alle Status</option>
+        <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+        <option value="accepted"    {% if status == 'accepted'    %}selected{% endif %}>Genehmigt</option>
+        <option value="declined"    {% if status == 'declined'    %}selected{% endif %}>Abgelehnt</option>
+      </select>
+      <select name="klasse" style="flex:1; min-width:120px;">
+        <option value="">Alle Klassen</option>
+        {% for val, label in klasse_choices %}
+          <option value="{{ val }}" {% if klasse == val %}selected{% endif %}>Kl. {{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="sort" style="flex:1; min-width:160px;">
+        <option value="-erstellt_am"  {% if sort == '-erstellt_am'  %}selected{% endif %}>Neueste zuerst</option>
+        <option value="erstellt_am"   {% if sort == 'erstellt_am'   %}selected{% endif %}>Älteste zuerst</option>
+        <option value="-anfangsdatum" {% if sort == '-anfangsdatum' %}selected{% endif %}>Datum ↓</option>
+        <option value="anfangsdatum"  {% if sort == 'anfangsdatum'  %}selected{% endif %}>Datum ↑</option>
+        <option value="user"          {% if sort == 'user'          %}selected{% endif %}>Name A–Z</option>
+        <option value="status"        {% if sort == 'status'        %}selected{% endif %}>Status</option>
+      </select>
+      <button type="submit" class="btn btn-sm">Filtern</button>
+      {% if q or status or klasse %}
+        <a href="{% url 'admin-antraege' %}" class="btn btn-ghost btn-sm">Zurücksetzen</a>
+      {% endif %}
+    </div>
   </form>
 
   {% if messages %}

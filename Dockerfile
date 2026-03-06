@@ -1,31 +1,41 @@
-# 1. Choose a Base Image: Use an official Python image (using the slim variant for a smaller image)
+# ── Base image ───────────────────────────────────────────────────────────────
+# Pin to a specific minor release so Dependabot can propose image upgrades.
 FROM python:3.12-slim
 
-# 2. Set environment variables to prevent Python from buffering output and writing .pyc files.
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+# ── Environment ──────────────────────────────────────────────────────────────
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    # Prevent pip from caching and reduce image size
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# 3. Set the working directory inside the container
-WORKDIR /app
-
-# 4. Install system dependencies that will be required for your project.
-#    For mysqlclient, you need to install gcc and the MySQL client libraries.
+# ── System dependencies ──────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+# ── Non-root user (security hardening) ───────────────────────────────────────
+RUN useradd --no-create-home --shell /bin/false appuser
 
-# 5. Copy the requirements.txt file into the container
+WORKDIR /app
+
+# ── Python dependencies ───────────────────────────────────────────────────────
+# Copy requirements first so this layer is cached unless deps change.
 COPY requirements.txt /app/
-
-# 6. Upgrade pip and install the Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# 7. Copy the rest of your Django project code into the container
+# ── Application code ─────────────────────────────────────────────────────────
 COPY . /app/
+
+# Drop root privileges before running the app.
+RUN chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 
-# Automatically run the development server on container start
+# NOTE: manage.py runserver is for development only.
+# For production, replace with gunicorn or uvicorn, e.g.:
+#   CMD ["gunicorn", "fourdigit.wsgi:application", "--bind", "0.0.0.0:8000"]
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

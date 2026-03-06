@@ -1,5 +1,22 @@
-Django==5.1.6
-mysqlclient>=2.0
-whitenoise>=6.0
-python-dotenv>=1.0
-xhtml2pdf>=0.2.16
+# ── Core framework ──────────────────────────────────────────────────────────
+# Django 5.2 is the current LTS branch (supported until April 2028).
+# Lower-bound pins the minimum secure version; upper-bound blocks accidental
+# major-version upgrades that may contain breaking changes.
+# Bump the lower bound here whenever a security advisory requires it.
+Django>=5.2.12,<6
+
+# ── Database ─────────────────────────────────────────────────────────────────
+# mysqlclient 2.2+ is required for Django 5.x; no known CVEs in 2.2.x.
+mysqlclient>=2.2,<3
+
+# ── Static files ─────────────────────────────────────────────────────────────
+# WhiteNoise 6.x; no CVEs. Range prevents surprise major-version jump.
+whitenoise>=6.7,<7
+
+# ── Environment / secrets ────────────────────────────────────────────────────
+python-dotenv>=1.0,<2
+
+# ── PDF generation ───────────────────────────────────────────────────────────
+# xhtml2pdf is imported lazily inside the view function, so a missing install
+# does not crash the server.  Pin within the 0.x series.
+xhtml2pdf>=0.2.17,<1

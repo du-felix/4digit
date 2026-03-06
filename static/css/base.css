@@ -735,3 +735,118 @@ footer {
 .mt-4 { margin-top: 16px; }
 .mb-2 { margin-bottom: 8px; }
 .mb-4 { margin-bottom: 16px; }
+
+/* ════════════════════════════════════════
+   RESPONSIVE SYSTEM
+   md = 768px (tablet)   sm = 480px (phone)
+   ════════════════════════════════════════ */
+
+/* ── Hamburger button (hidden on desktop) ── */
+.nav-hamburger {
+  display: none;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.nav-hamburger:hover { background: var(--surface-alt); color: var(--text); border-color: var(--text-muted); box-shadow: none; }
+.nav-hamburger svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; display: block; }
+
+/* Mobile-only nav extras (logout link inside dropdown) */
+.nav-mobile-only { display: none; }
+/* Desktop-only nav items (hidden inside mobile dropdown) */
+.nav-desktop-only { display: block; }
+
+/* ── md breakpoint: tablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* Header */
+  header { padding: 0 16px; gap: 6px; }
+
+  /* Show hamburger */
+  .nav-hamburger { display: inline-flex; }
+
+  /* Nav links → off-screen drawer that drops down */
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,.14);
+    flex-direction: column;
+    height: auto;
+    padding: 6px 0 12px;
+    z-index: 300;
+  }
+  .nav-links.is-open { display: flex; }
+
+  .nav-links a {
+    padding: 13px 20px;
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    height: auto;
+  }
+  .nav-links a:hover { border-bottom-color: transparent; border-left-color: var(--border); background: var(--surface-alt); }
+  .nav-links a.active { border-bottom-color: transparent; border-left-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+  /* Mobile extras inside dropdown */
+  .nav-mobile-only { display: block; border-top: 1px solid var(--border); margin-top: 6px; padding: 8px 16px 0; }
+  .nav-desktop-only { display: none; }
+
+  /* Page padding */
+  .page-container { padding: 20px 16px; }
+
+  /* Auth */
+  .auth-card { padding: 28px 20px; }
+
+  /* Stats: 2-col on tablet */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+
+  /* Analytics: single column */
+  .analytics-grid { grid-template-columns: 1fr; }
+
+  /* Log toolbar */
+  .log-toolbar { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .log-search { max-width: 100%; min-width: 0; flex: 1 1 160px; }
+  .filter-group { flex-wrap: wrap; }
+  .log-count { margin-left: 0; }
+
+  /* Activity time: move below on narrow */
+  .activity-item { gap: 10px; }
+  .activity-time { font-size: 11px; }
+}
+
+/* ── sm breakpoint: phone (≤ 480px) ── */
+@media (max-width: 480px) {
+  header { padding: 0 12px; }
+  .nav-brand img { height: 32px; }
+  .nav-actions { gap: 5px; }
+
+  .page-container { padding: 16px 12px; }
+  .auth-card { padding: 24px 16px; }
+
+  /* Stats: 1-col on phone */
+  .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* KPI ring wrap: stack vertically */
+  .kpi-ring-wrap { flex-direction: column; align-items: flex-start; gap: 12px; }
+
+  /* Bar chart label: narrower */
+  .bar-row-label { width: 50px; font-size: 11.5px; }
+  .bar-row-value { width: 24px; }
+
+  /* Card padding: reduce */
+  .card { padding: 16px; }
+
+  /* Danger block */
+  .danger-block { padding: 14px 16px; }
+}

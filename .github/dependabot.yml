@@ -1,0 +1,61 @@
+version: 2
+
+updates:
+  # ── Python / pip dependencies ─────────────────────────────────────────────
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    # Group minor + patch bumps into one PR to reduce noise;
+    # security advisories are always opened as individual PRs.
+    groups:
+      django-patch:
+        patterns:
+          - "Django"
+        update-types:
+          - "patch"
+      python-deps:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Limit open PRs to avoid review overload.
+    open-pull-requests-limit: 5
+
+  # ── Docker base image ─────────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "docker"
+    open-pull-requests-limit: 2
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+    open-pull-requests-limit: 2
