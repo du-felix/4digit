@@ -11,8 +11,6 @@ from django.db.models import Count, Q, Case, When, IntegerField
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa
-import io
 from antraege.models import Lehrer, Antrag, Anfrage
 from django.urls import reverse
 from django.core.mail import send_mail
@@ -532,6 +530,12 @@ def antraege_list(request):
 def antrag_pdf(request, antrag_id):
     antrag = get_object_or_404(Antrag.objects.select_related('user').prefetch_related('anfrage_set'), id=antrag_id)
     anfragen = antrag.anfrage_set.all().order_by('created')
+
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        return HttpResponse('xhtml2pdf ist nicht installiert. Bitte "pip install xhtml2pdf" ausführen.', status=501)
+    import io
 
     html = render_to_string('adminview/antrag_pdf_template.html', {
         'antrag': antrag,
