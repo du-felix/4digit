@@ -1,0 +1,64 @@
+{% extends "adminview/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header-row">
+    <h1>Dashboard</h1>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Benutzer</div>
+      <div class="stat-value">{{ stats.users }}</div>
+      <div class="stat-sub">Schüler & Admins</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Anträge gesamt</div>
+      <div class="stat-value">{{ stats.antraege }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">In Bearbeitung</div>
+      <div class="stat-value">{{ stats.pending }}</div>
+      <div class="stat-sub">Ausstehende Entscheidungen</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lehrer</div>
+      <div class="stat-value">{{ stats.lehrer }}</div>
+      <div class="stat-sub">Im System erfasst</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 0;">
+    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+      <h2 style="margin:0;">Aktivitätsprotokoll</h2>
+      <div style="display:flex; gap:16px; font-size:12px; color:var(--text-muted); align-items:center;">
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;"></span> Antrag</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;"></span> Benutzer</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--warning);display:inline-block;"></span> Genehmigt</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--danger);display:inline-block;"></span> Abgelehnt</span>
+      </div>
+    </div>
+    <div style="padding: 0 24px;">
+      {% if events %}
+        <div class="activity-feed">
+          {% for event in events %}
+          <div class="activity-item">
+            <div class="activity-dot {{ event.dot }}"></div>
+            <div class="activity-body">
+              <p class="activity-text">{{ event.text|safe }}</p>
+              {% if event.meta %}
+                <div class="activity-meta">{{ event.meta }}</div>
+              {% endif %}
+            </div>
+            <div class="activity-time">{{ event.timestamp|date:"d.m.Y, H:i" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="text-align:center; padding: 40px 0; color:var(--text-muted);">Noch keine Aktivitäten vorhanden.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

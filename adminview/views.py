@@ -8,7 +8,7 @@ from users.forms import Sign_Up_Form
 from users.models import CustomUser
 from django.db.models import Q
 from django.http import JsonResponse
-from antraege.models import Lehrer
+from antraege.models import Lehrer, Antrag, Anfrage
 from django.urls import reverse
 from django.core.mail import send_mail
 from django.conf import settings
@@ -351,3 +351,54 @@ def lehrer_csv(request):
             return redirect('lehrer')
 
     return render(request, 'adminview/lehrer_csv.html')
+
+
+@staff_required
+def dashboard(request):
+    events = []
+
+    # Antrag submissions
+    for a in Antrag.objects.select_related('user').order_by('-erstellt_am')[:100]:
+        events.append({
+            'type': 'antrag',
+            'dot': 'dot-antrag',
+            'timestamp': a.erstellt_am,
+            'text': f'<strong>{a.user.get_full_name() or a.user.email}</strong> hat einen Freistellungsantrag eingereicht',
+            'meta': f'"{a.titel}" · Klasse {a.klasse}',
+        })
+
+    # Teacher/principal responses
+    for r in Anfrage.objects.filter(responded_at__isnull=False).order_by('-responded_at')[:100]:
+        label = 'Genehmigt' if r.response == 'accepted' else 'Abgelehnt'
+        dot = 'dot-response' if r.response == 'accepted' else 'dot-decision'
+        events.append({
+            'type': 'response',
+            'dot': dot,
+            'timestamp': r.responded_at,
+            'text': f'<strong>{r.name}</strong> hat eine Anfrage {label.lower()}',
+            'meta': f'Antrag: "{r.antrag.titel}"',
+        })
+
+    # User account creations
+    for u in CustomUser.objects.order_by('-date_joined')[:50]:
+        events.append({
+            'type': 'user',
+            'dot': 'dot-user',
+            'timestamp': u.date_joined,
+            'text': f'Neuer Benutzer angelegt: <strong>{u.get_full_name() or u.email}</strong>',
+            'meta': u.email,
+        })
+
+    events.sort(key=lambda x: x['timestamp'], reverse=True)
+
+    stats = {
+        'users': CustomUser.objects.count(),
+        'antraege': Antrag.objects.count(),
+        'pending': Antrag.objects.filter(status=Antrag.STATUS_IN_PROGRESS).count(),
+        'lehrer': Lehrer.objects.count(),
+    }
+
+    return render(request, 'adminview/dashboard.html', {
+        'events': events[:60],
+        'stats': stats,
+    })
