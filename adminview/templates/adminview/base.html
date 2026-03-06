@@ -19,7 +19,11 @@
     </a>
     <nav class="nav-links">
       <a href="{% url 'admin-dashboard' %}"
-         class="{% if request.resolver_match.url_name == 'admin-dashboard' %}active{% endif %}">Dashboard</a>
+         class="{% if request.resolver_match.url_name == 'admin-dashboard' %}active{% endif %}">Log</a>
+      <a href="{% url 'admin-analytics' %}"
+         class="{% if request.resolver_match.url_name == 'admin-analytics' %}active{% endif %}">Analytik</a>
+      <a href="{% url 'admin-antraege' %}"
+         class="{% if request.resolver_match.url_name == 'admin-antraege' %}active{% endif %}">Anträge</a>
       <a href="{% url 'adminview-home' %}"
          class="{% if request.resolver_match.url_name == 'adminview-home' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'add_user' or request.resolver_match.url_name == 'adminview-csv' %}active{% endif %}">Benutzer</a>
       <a href="{% url 'lehrer' %}"

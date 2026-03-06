@@ -1,0 +1,115 @@
+{% extends "adminview/base.html" %}
+{% block title %}Alle Anträge{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1300px;">
+  <div class="page-header-row">
+    <div>
+      <h1>Alle Freistellungsanträge</h1>
+      <p style="margin:0;">{{ total }} Anträge gefunden</p>
+    </div>
+    <div class="page-header-row-actions">
+      <a href="?q={{ q }}&status={{ status }}&klasse={{ klasse }}&sort={{ sort }}&pdf=1"
+         class="btn btn-outline btn-sm" target="_blank">Als PDF öffnen</a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="get" style="margin-bottom:16px; flex-direction:row; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Name, Titel suchen …"
+           style="width:220px; margin:0;">
+    <select name="status" style="width:160px; margin:0;">
+      <option value="">Alle Status</option>
+      <option value="in_progress" {% if status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+      <option value="accepted"    {% if status == 'accepted'    %}selected{% endif %}>Genehmigt</option>
+      <option value="declined"    {% if status == 'declined'    %}selected{% endif %}>Abgelehnt</option>
+    </select>
+    <select name="klasse" style="width:120px; margin:0;">
+      <option value="">Alle Klassen</option>
+      {% for val, label in klasse_choices %}
+        <option value="{{ val }}" {% if klasse == val %}selected{% endif %}>Kl. {{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="sort" style="width:180px; margin:0;">
+      <option value="-erstellt_am"  {% if sort == '-erstellt_am'  %}selected{% endif %}>Neueste zuerst</option>
+      <option value="erstellt_am"   {% if sort == 'erstellt_am'   %}selected{% endif %}>Älteste zuerst</option>
+      <option value="-anfangsdatum" {% if sort == '-anfangsdatum' %}selected{% endif %}>Datum ↓</option>
+      <option value="anfangsdatum"  {% if sort == 'anfangsdatum'  %}selected{% endif %}>Datum ↑</option>
+      <option value="user"          {% if sort == 'user'          %}selected{% endif %}>Name A–Z</option>
+      <option value="status"        {% if sort == 'status'        %}selected{% endif %}>Status</option>
+    </select>
+    <button type="submit" class="btn btn-sm">Filtern</button>
+    {% if q or status or klasse %}
+      <a href="{% url 'admin-antraege' %}" class="btn btn-ghost btn-sm">Zurücksetzen</a>
+    {% endif %}
+  </form>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <table class="user-table">
+    <thead>
+      <tr>
+        <th>Schüler</th>
+        <th>Klasse</th>
+        <th>Titel</th>
+        <th>Zeitraum</th>
+        <th>Eingereicht</th>
+        <th>Status</th>
+        <th>Anfragen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for antrag in page_obj %}
+      <tr>
+        <td class="fw-500">{{ antrag.user.get_full_name|default:antrag.user.email }}</td>
+        <td>{{ antrag.klasse }}</td>
+        <td>{{ antrag.titel }}</td>
+        <td style="white-space:nowrap;">
+          {{ antrag.anfangsdatum|date:"d.m.Y" }} – {{ antrag.enddatum|date:"d.m.Y" }}
+        </td>
+        <td class="text-muted">{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
+        <td>
+          {% if antrag.status == 'in_progress' %}
+            <span class="badge badge-warning">Ausstehend</span>
+          {% elif antrag.status == 'accepted' %}
+            <span class="badge badge-success">Genehmigt</span>
+          {% else %}
+            <span class="badge badge-danger">Abgelehnt</span>
+          {% endif %}
+        </td>
+        <td class="text-muted text-sm">{{ antrag.anfrage_set.count }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" style="text-align:center; color:var(--text-muted); padding:36px;">
+          Keine Anträge gefunden.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;">
+    <span class="text-muted text-sm">
+      Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }} · {{ total }} Anträge
+    </span>
+    <div style="display:flex; gap:6px;">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status }}&klasse={{ klasse }}&sort={{ sort }}"
+           class="btn btn-outline btn-sm">← Zurück</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status }}&klasse={{ klasse }}&sort={{ sort }}"
+           class="btn btn-outline btn-sm">Weiter →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

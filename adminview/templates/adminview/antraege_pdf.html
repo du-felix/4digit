@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Freistellungsanträge – St. Afra</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #1C1917;
+      background: #fff;
+      padding: 32px 40px;
+    }
+
+    /* ── Header ── */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #7C3AED;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .doc-header h1 { font-size: 20px; font-weight: 700; color: #1C1917; }
+    .doc-header .doc-meta { font-size: 11px; color: #78716C; text-align: right; }
+
+    /* ── Filter summary ── */
+    .filter-summary {
+      font-size: 11.5px;
+      color: #78716C;
+      margin-bottom: 20px;
+      padding: 8px 12px;
+      background: #F9F8F6;
+      border-radius: 4px;
+      border: 1px solid #E7E3DE;
+    }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #7C3AED; color: #fff; }
+    th {
+      padding: 9px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      text-align: left;
+    }
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #E7E3DE;
+      font-size: 12.5px;
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) td { background: #FAFAF8; }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+    .badge-success { background: #F0FDF4; color: #16A34A; }
+    .badge-danger  { background: #FEF2F2; color: #DC2626; }
+    .badge-warning { background: #EFF6FF; color: #2563EB; }
+
+    /* ── Footer ── */
+    .doc-footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid #E7E3DE;
+      font-size: 11px;
+      color: #78716C;
+      text-align: center;
+    }
+
+    /* ── Print button (hidden on print) ── */
+    .print-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #7C3AED;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 24px;
+      font-size: 13px;
+      z-index: 999;
+      font-family: 'Inter', sans-serif;
+    }
+    .print-bar button {
+      background: rgba(255,255,255,.2);
+      border: 1.5px solid rgba(255,255,255,.4);
+      color: #fff;
+      padding: 6px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .print-bar button:hover { background: rgba(255,255,255,.3); }
+
+    @media print {
+      .print-bar { display: none; }
+      body { padding: 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="print-bar">
+  <span>Freistellungsanträge – St. Afra · {{ antraege|length }} Einträge</span>
+  <button onclick="window.print()">Als PDF speichern / Drucken</button>
+</div>
+
+<div style="margin-top: 52px;">
+  <div class="doc-header">
+    <div>
+      <h1>Freistellungsanträge</h1>
+      <p style="color:#78716C; margin-top:4px;">St. Afra Meißen – Freistellungsportal</p>
+    </div>
+    <div class="doc-meta">
+      <div>Generiert: {{ generated|date:"d.m.Y, H:i" }} Uhr</div>
+      <div>{{ antraege|length }} Anträge</div>
+    </div>
+  </div>
+
+  {% if q or status or klasse %}
+  <div class="filter-summary">
+    <strong>Aktive Filter:</strong>
+    {% if q %}Suche: „{{ q }}"{% endif %}
+    {% if status %}
+      &nbsp;·&nbsp;
+      {% if status == 'in_progress' %}Status: Ausstehend
+      {% elif status == 'accepted' %}Status: Genehmigt
+      {% elif status == 'declined' %}Status: Abgelehnt{% endif %}
+    {% endif %}
+    {% if klasse %}&nbsp;·&nbsp;Klasse: {{ klasse }}{% endif %}
+  </div>
+  {% endif %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Schüler</th>
+        <th>Kl.</th>
+        <th>Titel</th>
+        <th>Zeitraum</th>
+        <th>Eingereicht</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for antrag in antraege %}
+      <tr>
+        <td style="color:#78716C;">{{ forloop.counter }}</td>
+        <td><strong>{{ antrag.user.get_full_name|default:antrag.user.email }}</strong></td>
+        <td>{{ antrag.klasse }}</td>
+        <td>{{ antrag.titel }}</td>
+        <td style="white-space:nowrap;">
+          {{ antrag.anfangsdatum|date:"d.m.Y" }}<br>
+          <span style="color:#78716C; font-size:11.5px;">– {{ antrag.enddatum|date:"d.m.Y" }}</span>
+        </td>
+        <td style="color:#78716C;">{{ antrag.erstellt_am|date:"d.m.Y" }}</td>
+        <td>
+          {% if antrag.status == 'in_progress' %}
+            <span class="badge badge-warning">Ausstehend</span>
+          {% elif antrag.status == 'accepted' %}
+            <span class="badge badge-success">Genehmigt</span>
+          {% else %}
+            <span class="badge badge-danger">Abgelehnt</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center; color:#78716C; padding:24px;">Keine Anträge gefunden.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="doc-footer">
+    St. Afra Meißen · Freistellungsportal · {{ generated|date:"d.m.Y" }}
+  </div>
+</div>
+
+</body>
+</html>

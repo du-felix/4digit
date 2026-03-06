@@ -17,7 +17,7 @@
   margin-top: 12px;
 }
 
-.user-table thead tr { background: #F8FAFC; }
+.user-table thead tr { background: var(--surface-alt); }
 
 .user-table th {
   padding: 10px 16px;

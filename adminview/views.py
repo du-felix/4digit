@@ -3,16 +3,20 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from .forms import UserEditForm, add_lehrer_Form
 from users.forms import Sign_Up_Form
 from users.models import CustomUser
-from django.db.models import Q
-from django.http import JsonResponse
+from django.db.models import Count, Q, Case, When, IntegerField
+from django.db.models.functions import TruncMonth
+from django.http import JsonResponse, HttpResponse
 from antraege.models import Lehrer, Antrag, Anfrage
 from django.urls import reverse
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
 
 
 User = get_user_model()
@@ -357,8 +361,7 @@ def lehrer_csv(request):
 def dashboard(request):
     events = []
 
-    # Antrag submissions
-    for a in Antrag.objects.select_related('user').order_by('-erstellt_am')[:100]:
+    for a in Antrag.objects.select_related('user').order_by('-erstellt_am')[:200]:
         events.append({
             'type': 'antrag',
             'dot': 'dot-antrag',
@@ -367,20 +370,18 @@ def dashboard(request):
             'meta': f'"{a.titel}" · Klasse {a.klasse}',
         })
 
-    # Teacher/principal responses
-    for r in Anfrage.objects.filter(responded_at__isnull=False).order_by('-responded_at')[:100]:
-        label = 'Genehmigt' if r.response == 'accepted' else 'Abgelehnt'
+    for r in Anfrage.objects.select_related('antrag').filter(responded_at__isnull=False).order_by('-responded_at')[:200]:
+        label = 'genehmigt' if r.response == 'accepted' else 'abgelehnt'
         dot = 'dot-response' if r.response == 'accepted' else 'dot-decision'
         events.append({
             'type': 'response',
             'dot': dot,
             'timestamp': r.responded_at,
-            'text': f'<strong>{r.name}</strong> hat eine Anfrage {label.lower()}',
+            'text': f'<strong>{r.name}</strong> hat eine Anfrage {label}',
             'meta': f'Antrag: "{r.antrag.titel}"',
         })
 
-    # User account creations
-    for u in CustomUser.objects.order_by('-date_joined')[:50]:
+    for u in CustomUser.objects.order_by('-date_joined')[:100]:
         events.append({
             'type': 'user',
             'dot': 'dot-user',
@@ -391,6 +392,10 @@ def dashboard(request):
 
     events.sort(key=lambda x: x['timestamp'], reverse=True)
 
+    paginator = Paginator(events, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     stats = {
         'users': CustomUser.objects.count(),
         'antraege': Antrag.objects.count(),
@@ -399,6 +404,131 @@ def dashboard(request):
     }
 
     return render(request, 'adminview/dashboard.html', {
-        'events': events[:60],
+        'page_obj': page_obj,
         'stats': stats,
+        'total_events': len(events),
+    })
+
+
+@staff_required
+def analytics(request):
+    total_antraege = Antrag.objects.count()
+    accepted = Antrag.objects.filter(status=Antrag.STATUS_ACCEPTED).count()
+    declined = Antrag.objects.filter(status=Antrag.STATUS_DECLINED).count()
+    in_progress = Antrag.objects.filter(status=Antrag.STATUS_IN_PROGRESS).count()
+    total_responded = accepted + declined
+    acceptance_rate = round(accepted / total_responded * 100) if total_responded else 0
+
+    by_klasse = list(
+        Antrag.objects.values('klasse').annotate(count=Count('id')).order_by('-count')
+    )
+    max_klasse = max((x['count'] for x in by_klasse), default=1)
+
+    twelve_months_ago = timezone.now() - timedelta(days=365)
+    monthly = list(
+        Antrag.objects.filter(erstellt_am__gte=twelve_months_ago)
+        .annotate(month=TruncMonth('erstellt_am'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+    max_monthly = max((x['count'] for x in monthly), default=1)
+
+    teacher_stats = list(
+        Anfrage.objects.exclude(response=Anfrage.NOT_RESPONDED)
+        .values('email')
+        .annotate(
+            total=Count('id'),
+            accepted=Count(Case(When(response=Anfrage.ACCEPTED, then=1), output_field=IntegerField())),
+            declined=Count(Case(When(response=Anfrage.DECLINED, then=1), output_field=IntegerField())),
+        )
+        .order_by('-total')[:10]
+    )
+    for t in teacher_stats:
+        local = t['email'].split('@')[0]
+        t['name'] = ' '.join(w.capitalize() for w in local.split('.'))
+        t['rate'] = round(t['accepted'] / t['total'] * 100) if t['total'] else 0
+    max_teacher = max((t['total'] for t in teacher_stats), default=1)
+
+    top_students = list(
+        Antrag.objects.values('user__first_name', 'user__last_name', 'user__email')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:10]
+    )
+    max_student = max((s['count'] for s in top_students), default=1)
+
+    responded_anfragen = list(
+        Anfrage.objects.filter(responded_at__isnull=False).values('created', 'responded_at')
+    )
+    avg_days = None
+    if responded_anfragen:
+        total_sec = sum((r['responded_at'] - r['created']).total_seconds() for r in responded_anfragen)
+        avg_days = round(total_sec / len(responded_anfragen) / 86400, 1)
+
+    return render(request, 'adminview/analytics.html', {
+        'total_antraege': total_antraege,
+        'accepted': accepted,
+        'declined': declined,
+        'in_progress': in_progress,
+        'total_responded': total_responded,
+        'acceptance_rate': acceptance_rate,
+        'by_klasse': by_klasse,
+        'max_klasse': max_klasse,
+        'monthly': monthly,
+        'max_monthly': max_monthly,
+        'teacher_stats': teacher_stats,
+        'max_teacher': max_teacher,
+        'top_students': top_students,
+        'max_student': max_student,
+        'avg_days': avg_days,
+    })
+
+
+@staff_required
+def antraege_list(request):
+    qs = Antrag.objects.select_related('user').order_by('-erstellt_am')
+
+    q = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '')
+    klasse = request.GET.get('klasse', '')
+    sort = request.GET.get('sort', '-erstellt_am')
+
+    if q:
+        qs = qs.filter(
+            Q(titel__icontains=q) |
+            Q(user__first_name__icontains=q) |
+            Q(user__last_name__icontains=q) |
+            Q(user__email__icontains=q)
+        )
+    if status in (Antrag.STATUS_IN_PROGRESS, Antrag.STATUS_ACCEPTED, Antrag.STATUS_DECLINED):
+        qs = qs.filter(status=status)
+    if klasse:
+        qs = qs.filter(klasse=klasse)
+
+    allowed_sorts = {
+        'erstellt_am': 'erstellt_am', '-erstellt_am': '-erstellt_am',
+        'anfangsdatum': 'anfangsdatum', '-anfangsdatum': '-anfangsdatum',
+        'user': 'user__last_name', 'status': 'status',
+    }
+    qs = qs.order_by(allowed_sorts.get(sort, '-erstellt_am'))
+
+    pdf = request.GET.get('pdf') == '1'
+    if pdf:
+        all_antraege = list(qs)
+        return render(request, 'adminview/antraege_pdf.html', {
+            'antraege': all_antraege,
+            'q': q, 'status': status, 'klasse': klasse,
+            'generated': timezone.now(),
+        }, content_type='text/html')
+
+    paginator = Paginator(qs, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    klasse_choices = Antrag.KLASSE_CHOICES
+
+    return render(request, 'adminview/antraege_list.html', {
+        'page_obj': page_obj,
+        'q': q, 'status': status, 'klasse': klasse, 'sort': sort,
+        'klasse_choices': klasse_choices,
+        'total': qs.count(),
     })
