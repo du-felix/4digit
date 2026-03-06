@@ -12,7 +12,8 @@
   </div>
 
   {% if antraege %}
-    <table class="user-table">
+    <!-- Desktop table (hidden on mobile) -->
+    <table class="user-table table-to-cards">
       <thead>
         <tr>
           <th>Titel</th>
@@ -44,6 +45,29 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <!-- Mobile card list (hidden on desktop, shown on mobile) -->
+    <div class="app-card-list">
+      {% for antrag in antraege %}
+      <a href="{% url 'antrag_detail' antrag.id %}" class="app-card">
+        <div class="app-card-top">
+          <span class="app-card-name">{{ antrag.titel }}</span>
+          {% if antrag.status == 'in_progress' %}
+            <span class="badge badge-warning">In Bearbeitung</span>
+          {% elif antrag.status == 'accepted' %}
+            <span class="badge badge-success">Genehmigt</span>
+          {% else %}
+            <span class="badge badge-danger">Abgelehnt</span>
+          {% endif %}
+        </div>
+        <div class="app-card-meta">
+          {{ antrag.anfangsdatum|date:"d.m.Y" }} – {{ antrag.enddatum|date:"d.m.Y" }}
+          · Eingereicht am {{ antrag.erstellt_am|date:"d.m.Y" }}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
   {% else %}
     <div class="card" style="text-align:center; padding:48px 24px;">
       <p style="margin:0 0 16px; font-size:15px; color:var(--text);">Du hast noch keine Freistellungsanträge gestellt.</p>

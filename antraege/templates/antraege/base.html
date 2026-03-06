@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Freistellungen{% endblock %} – St. Afra</title>
-  <!-- Anti-flash: set theme before CSS renders -->
   <script>
     (function(){var s=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',s||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));})();
   </script>
@@ -20,11 +19,10 @@
       <img src="{% static 'images/logo_white.png' %}" alt="St. Afra" class="logo-light">
     </a>
 
-    <!-- Desktop + mobile nav links -->
+    <!-- Mobile dropdown (hidden on desktop via CSS) -->
     <nav class="nav-links" id="main-nav">
-      <!-- Mobile-only actions -->
-      <div class="nav-mobile-only" style="display:flex; flex-direction:column; gap:8px; padding:8px 20px 12px;">
-        <a href="{% url 'neuer_antrag' %}" class="btn btn-sm" style="width:100%; justify-content:center;">+ Neuer Antrag</a>
+      <div class="nav-mobile-only">
+        <a href="{% url 'neuer_antrag' %}" class="btn btn-sm" style="width:100%; justify-content:flex-start;">+ Neuer Antrag</a>
         <form action="{% url 'logout' %}" method="post" style="margin:0;">
           {% csrf_token %}
           <button type="submit" class="btn btn-ghost btn-sm" style="width:100%; justify-content:flex-start;">Abmelden</button>
@@ -37,15 +35,15 @@
         <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <!-- Desktop-only actions -->
-      <div class="nav-desktop-only" style="display:flex; gap:8px; align-items:center;">
+      <!-- Desktop actions: hidden on mobile via CSS (no inline style) -->
+      <div class="nav-desktop-only">
         <a href="{% url 'neuer_antrag' %}" class="btn btn-sm">+ Neuer Antrag</a>
         <form action="{% url 'logout' %}" method="post" style="margin:0;">
           {% csrf_token %}
           <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
         </form>
       </div>
-      <!-- Hamburger: hidden on desktop, shown on mobile -->
+      <!-- Hamburger: shown on mobile only -->
       <button class="nav-hamburger" id="nav-hamburger" aria-label="Menü öffnen" aria-expanded="false">
         <svg viewBox="0 0 18 18"><line x1="1" y1="4" x2="17" y2="4"/><line x1="1" y1="9" x2="17" y2="9"/><line x1="1" y1="14" x2="17" y2="14"/></svg>
       </button>
@@ -74,7 +72,6 @@
       var open = nav.classList.toggle('is-open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
-    // Close on outside click
     document.addEventListener('click', function (e) {
       if (!nav.contains(e.target) && !btn.contains(e.target)) {
         nav.classList.remove('is-open');

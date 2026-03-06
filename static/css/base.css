@@ -771,7 +771,7 @@ footer {
 /* Mobile-only nav extras (logout link inside dropdown) */
 .nav-mobile-only { display: none; }
 /* Desktop-only nav items (hidden inside mobile dropdown) */
-.nav-desktop-only { display: block; }
+.nav-desktop-only { display: flex; align-items: center; gap: 8px; }
 
 /* ── md breakpoint: tablet (≤ 768px) ── */
 @media (max-width: 768px) {
@@ -809,8 +809,8 @@ footer {
   .nav-links a.active { border-bottom-color: transparent; border-left-color: var(--accent); background: var(--accent-light); color: var(--accent); }
 
   /* Mobile extras inside dropdown */
-  .nav-mobile-only { display: block; border-top: 1px solid var(--border); margin-top: 6px; padding: 8px 16px 0; }
-  .nav-desktop-only { display: none; }
+  .nav-mobile-only { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--border); margin-top: 8px; padding: 10px 16px 12px; }
+  .nav-desktop-only { display: none !important; }
 
   /* Page padding */
   .page-container { padding: 20px 16px; }
