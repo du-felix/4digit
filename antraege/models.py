@@ -92,6 +92,8 @@ class Lehrer(models.Model):
     name = models.CharField(max_length=100, null=True, blank=True)
     principal = models.BooleanField(default=False, blank=True)
     secretariat = models.BooleanField(default=False, blank=True)
+    is_im = models.BooleanField(default=False, blank=True)
+    is_gm = models.BooleanField(default=False, blank=True)
     def __str__(self):
         return self.name
 

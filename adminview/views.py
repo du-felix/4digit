@@ -4,14 +4,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from .forms import UserEditForm, CreateUserForm, add_lehrer_Form
+from .forms import UserEditForm, CreateUserForm, add_lehrer_Form, AddFachForm
 from users.models import CustomUser
 from django.db.models import Count, Q, Case, When, IntegerField
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 import io
-from antraege.models import Lehrer, Antrag, Anfrage
+from antraege.models import Lehrer, Antrag, Anfrage, Fach
 from antraege.validators import validate_afra_email
 from antraege.mailer import send_mail_logged
 from django.urls import reverse
@@ -306,6 +306,8 @@ def edit_lehrer(request, lehrer_id=None):
                 lehrer_instance = form.save(commit=False)
                 lehrer_instance.principal = 'is_principal' in request.POST
                 lehrer_instance.secretariat = 'is_secretariat' in request.POST
+                lehrer_instance.is_im = 'is_im' in request.POST
+                lehrer_instance.is_gm = 'is_gm' in request.POST
                 lehrer_instance.save()
                 messages.success(request, f"Lehrer {lehrer_instance.email} erfolgreich aktualisiert")
                 return redirect('lehrer')
@@ -372,6 +374,105 @@ def lehrer_csv(request):
             return redirect('lehrer')
 
     return render(request, 'adminview/lehrer_csv.html')
+
+
+# ── Fächer (subjects) ─────────────────────────────────────────────────────────
+
+@staff_required
+def faecher(request):
+    q = request.GET.get('q', '').strip()
+    qs = Fach.objects.all().order_by('name')
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(kuerzel__icontains=q))
+
+    if request.method == 'POST':
+        if 'delete_fach' in request.POST:
+            fach_id = request.POST.get('delete_fach')
+            fach = get_object_or_404(Fach, id=fach_id)
+            fach.delete()
+            messages.success(request, f'Fach "{fach.name}" gelöscht.')
+            return redirect('faecher')
+        action = request.POST.get('action')
+        if action == 'delete':
+            ids = request.POST.getlist('selected_faecher')
+            if ids:
+                Fach.objects.filter(id__in=ids).delete()
+                messages.success(request, f'{len(ids)} Fach/Fächer gelöscht.')
+            return redirect('faecher')
+
+    return render(request, 'adminview/faecher.html', {'faecher': qs, 'search_query': q})
+
+
+@staff_required
+def add_fach(request):
+    if request.method == 'POST':
+        form = AddFachForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fach erfolgreich angelegt.')
+            return redirect('faecher')
+    else:
+        form = AddFachForm()
+    return render(request, 'adminview/add_fach.html', {'form': form})
+
+
+@staff_required
+def edit_fach(request, fach_id):
+    fach_obj = get_object_or_404(Fach, id=fach_id)
+    if request.method == 'POST':
+        form = AddFachForm(request.POST, instance=fach_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Fach "{fach_obj.name}" aktualisiert.')
+            return redirect('faecher')
+    else:
+        form = AddFachForm(instance=fach_obj)
+    return render(request, 'adminview/edit_fach.html', {'form': form, 'fach': fach_obj})
+
+
+@staff_required
+def fach_csv(request):
+    if request.method == 'POST' and 'csv_file' in request.FILES:
+        csv_file = request.FILES['csv_file']
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Bitte eine CSV-Datei hochladen.')
+            return redirect('fach_csv')
+        try:
+            import csv as csv_module
+            csv_data = csv_file.read().decode('utf-8')
+            reader = csv_module.reader(io.StringIO(csv_data), delimiter=';')
+            success_count = 0
+            error_count = 0
+            errors = []
+            for row in reader:
+                try:
+                    if len(row) >= 2:
+                        name = row[0].strip()
+                        kuerzel = row[1].strip()
+                        if not name or not kuerzel:
+                            raise ValueError("Leere Felder")
+                        if Fach.objects.filter(kuerzel=kuerzel).exists():
+                            errors.append(f'Kürzel "{kuerzel}" existiert bereits.')
+                            error_count += 1
+                        else:
+                            Fach.objects.create(name=name, kuerzel=kuerzel)
+                            success_count += 1
+                    else:
+                        errors.append('Eine Zeile hat zu wenige Spalten.')
+                        error_count += 1
+                except Exception:
+                    errors.append('Eine Zeile konnte nicht verarbeitet werden.')
+                    error_count += 1
+            if success_count:
+                messages.success(request, f'{success_count} Fächer erfolgreich importiert.')
+            if error_count:
+                messages.warning(request, f'{error_count} Zeilen konnten nicht verarbeitet werden.')
+                for e in errors[:10]:
+                    messages.error(request, e)
+        except Exception:
+            messages.error(request, 'Fehler beim Verarbeiten der Datei.')
+        return redirect('faecher')
+    return render(request, 'adminview/fach_csv.html')
 
 
 @staff_required

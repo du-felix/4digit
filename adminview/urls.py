@@ -18,4 +18,8 @@ urlpatterns = [
     path('add_lehrer/', views.add_lehrer, name='add_lehrer'),
     path('lehrer/<int:lehrer_id>/', views.edit_lehrer, name='lehrer_edit'),
     path('lehrer/csv/', views.lehrer_csv, name='lehrer_csv'),
+    path('faecher/', views.faecher, name='faecher'),
+    path('add_fach/', views.add_fach, name='add_fach'),
+    path('faecher/<int:fach_id>/', views.edit_fach, name='fach_edit'),
+    path('faecher/csv/', views.fach_csv, name='fach_csv'),
 ]

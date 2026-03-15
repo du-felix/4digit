@@ -31,6 +31,8 @@
          class="{% if request.resolver_match.url_name == 'adminview-home' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'add_user' or request.resolver_match.url_name == 'adminview-csv' %}active{% endif %}">Benutzer</a>
       <a href="{% url 'lehrer' %}"
          class="{% if request.resolver_match.url_name == 'lehrer' or request.resolver_match.url_name == 'lehrer_edit' or request.resolver_match.url_name == 'add_lehrer' or request.resolver_match.url_name == 'lehrer_csv' %}active{% endif %}">Lehrer</a>
+      <a href="{% url 'faecher' %}"
+         class="{% if request.resolver_match.url_name == 'faecher' or request.resolver_match.url_name == 'fach_edit' or request.resolver_match.url_name == 'add_fach' or request.resolver_match.url_name == 'fach_csv' %}active{% endif %}">Fächer</a>
       <!-- Logout shown only inside mobile dropdown -->
       <div class="nav-mobile-only">
         <form action="{% url 'logout' %}" method="post" style="margin:0;">

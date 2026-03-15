@@ -20,7 +20,7 @@
           {% endif %}
         </div>
       {% endfor %}
-      <div class="form-group" style="display:flex; gap:20px; align-items:center;">
+      <div class="form-group" style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
         <div class="checkbox-row">
           <input type="checkbox" id="is_principal" name="is_principal"
                  {% if edit_lehrer.principal %}checked{% endif %}>
@@ -30,6 +30,16 @@
           <input type="checkbox" id="is_secretariat" name="is_secretariat"
                  {% if edit_lehrer.secretariat %}checked{% endif %}>
           <label for="is_secretariat">Sekretariat</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="is_im" name="is_im"
+                 {% if edit_lehrer.is_im %}checked{% endif %}>
+          <label for="is_im">IM</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="is_gm" name="is_gm"
+                 {% if edit_lehrer.is_gm %}checked{% endif %}>
+          <label for="is_gm">GM</label>
         </div>
       </div>
       <div class="form-actions">

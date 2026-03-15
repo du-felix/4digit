@@ -1,0 +1,41 @@
+{% extends "adminview/base.html" %}
+{% block title %}Fächer importieren{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px;">
+  <div class="mb-4">
+    <a href="{% url 'faecher' %}" class="back-link">← Zurück</a>
+  </div>
+
+  <h1>Fächer aus CSV importieren</h1>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="card" style="margin-top:20px;">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="csv_file">CSV-Datei auswählen</label>
+        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+      </div>
+      <button type="submit">Hochladen &amp; importieren</button>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3 style="margin-bottom:10px;">Dateiformat</h3>
+    <p>Semikolon-getrennte CSV mit folgenden Spalten:</p>
+    <ol style="list-style:decimal; padding-left:20px; color:var(--text-muted); font-size:13.5px; line-height:1.8;">
+      <li>Fachname</li>
+      <li>Kürzel</li>
+    </ol>
+    <pre style="margin-top:10px; background:#f9fafb; border:1px solid var(--border); border-radius:var(--radius); padding:12px; font-size:12.5px; overflow-x:auto;">Mathematik;MA
+Deutsch;DE
+Englisch;EN</pre>
+  </div>
+</div>
+{% endblock %}

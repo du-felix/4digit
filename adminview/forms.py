@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from antraege.models import Lehrer
+from antraege.models import Lehrer, Fach
 
 User = get_user_model()
 
@@ -44,15 +44,26 @@ class UserEditForm(forms.ModelForm):
 class add_lehrer_Form(forms.ModelForm):
     class Meta:
         model = Lehrer
-        fields = [
-            'email',
-            'name',
-            ]
+        fields = ['email', 'name']
         labels = {
-        'email': 'E-Mail-Adresse',
-        'name': 'Name',
-    }
+            'email': 'E-Mail-Adresse',
+            'name': 'Name',
+        }
         widgets = {
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class AddFachForm(forms.ModelForm):
+    class Meta:
+        model = Fach
+        fields = ['name', 'kuerzel']
+        labels = {
+            'name': 'Name',
+            'kuerzel': 'Kürzel',
+        }
+        widgets = {
+            'name':    forms.TextInput(attrs={'class': 'form-control'}),
+            'kuerzel': forms.TextInput(attrs={'class': 'form-control'}),
         }

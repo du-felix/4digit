@@ -48,11 +48,18 @@
           <td><input type="checkbox" name="selected_lehrers" value="{{ lehrer.id }}" form="main-form"></td>
           <td>{{ lehrer.email }}</td>
           <td class="fw-500">{{ lehrer.name }}</td>
-          <td>
+          <td style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
             {% if lehrer.principal %}
               <span class="badge badge-primary">Schulleiter</span>
-            {% elif lehrer.secretariat %}
+            {% endif %}
+            {% if lehrer.secretariat %}
               <span class="badge badge-secondary">Sekretariat</span>
+            {% endif %}
+            {% if lehrer.is_im %}
+              <span class="badge badge-warning">IM</span>
+            {% endif %}
+            {% if lehrer.is_gm %}
+              <span class="badge badge-success">GM</span>
             {% endif %}
           </td>
           <td style="display:flex; gap:8px; align-items:center;">

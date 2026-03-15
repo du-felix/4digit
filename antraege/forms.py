@@ -17,8 +17,8 @@ class AntragForm(forms.ModelForm):
     anfangszeit = forms.TimeField(required=True,widget=forms.TimeInput(attrs={'type': 'time', 'style': 'width: 500px'}))    
     enddatum = forms.DateField(required=True,widget=forms.DateInput(attrs={'type': 'date', 'style': 'width: 500px'}))
     endzeit = forms.TimeField(required=True,widget=forms.TimeInput(attrs={'type': 'time', 'style': 'width: 500px'}))
-    im = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
-    gm = forms.ModelChoiceField(required=True,queryset=Lehrer.objects.all().order_by('name'), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
+    im = forms.ModelChoiceField(required=True, queryset=Lehrer.objects.filter(is_im=True).order_by('name'), label="IM", widget=forms.Select(attrs={'style': 'width: 500px'}))
+    gm = forms.ModelChoiceField(required=True, queryset=Lehrer.objects.filter(is_gm=True).order_by('name'), label="GM", widget=forms.Select(attrs={'style': 'width: 500px'}))
 
 class Unterricht(forms.Form):
     DS_CHOICES = [

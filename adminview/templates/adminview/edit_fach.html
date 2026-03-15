@@ -1,0 +1,29 @@
+{% extends "adminview/base.html" %}
+{% block title %}Fach bearbeiten{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:480px;">
+  <div class="mb-4">
+    <a href="{% url 'faecher' %}" class="back-link">← Zurück</a>
+  </div>
+  <div class="form-card">
+    <h2>{{ fach.name }} bearbeiten</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger">{{ field.errors }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="form-actions">
+        <a href="{% url 'faecher' %}" class="btn btn-outline">Abbrechen</a>
+        <button type="submit">Änderungen speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

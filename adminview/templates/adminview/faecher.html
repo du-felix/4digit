@@ -1,0 +1,104 @@
+{% extends "adminview/base.html" %}
+{% block title %}Fächerliste{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header-row">
+    <h1>Fächerliste</h1>
+    <div class="page-header-row-actions">
+      <a href="{% url 'fach_csv' %}" class="btn btn-outline btn-sm">CSV importieren</a>
+      <a href="{% url 'add_fach' %}" class="btn btn-sm">+ Neues Fach</a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="table-toolbar">
+    <input type="text" class="search-input" id="live-search" placeholder="Fach suchen …" value="{{ search_query }}">
+    <form method="post" id="batch-form" style="margin:0; display:contents;">
+      {% csrf_token %}
+      <div class="toolbar-actions">
+        <button name="action" type="submit" value="delete" class="btn btn-danger btn-sm"
+                onclick="return confirmDeleteFach()">Ausgewählte löschen</button>
+      </div>
+    </form>
+  </div>
+
+  <form method="post" id="main-form">
+    {% csrf_token %}
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th style="width:36px;"></th>
+          <th>Name</th>
+          <th>Kürzel</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="faecher-table-body">
+        {% for fach in faecher %}
+        <tr>
+          <td><input type="checkbox" name="selected_faecher" value="{{ fach.id }}" form="main-form"></td>
+          <td class="fw-500">{{ fach.name }}</td>
+          <td>{{ fach.kuerzel }}</td>
+          <td style="display:flex; gap:8px; align-items:center;">
+            <a href="{% url 'fach_edit' fach.id %}" class="btn btn-warning btn-sm">Bearbeiten</a>
+            <button type="button" class="btn delete-btn btn-sm"
+                    data-fach-id="{{ fach.id }}"
+                    data-fach-name="{{ fach.name }}">Löschen</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" style="text-align:center; color:var(--text-muted); padding:32px;">Keine Fächer gefunden</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <form id="delete-form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="delete_fach" id="delete-fach-id">
+  </form>
+</div>
+
+<script>
+function confirmDeleteFach() {
+  const n = document.querySelectorAll('input[name="selected_faecher"]:checked').length;
+  if (n === 0) { alert('Bitte wähle mindestens ein Fach aus.'); return false; }
+  return confirm('Sicher? ' + n + ' Fach/Fächer werden unwiderruflich gelöscht.');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const searchInput = document.getElementById('live-search');
+  const tbody = document.getElementById('faecher-table-body');
+
+  function filterTable() {
+    const q = searchInput.value.trim().toLowerCase();
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+      const text = tr.textContent.toLowerCase();
+      tr.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('keyup', filterTable);
+  searchInput.addEventListener('search', filterTable);
+
+  document.querySelectorAll('.delete-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const id = this.dataset.fachId;
+      const name = this.dataset.fachName;
+      if (confirm('Fach "' + name + '" wirklich löschen?')) {
+        document.getElementById('delete-fach-id').value = id;
+        document.getElementById('delete-form').submit();
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
