@@ -289,6 +289,7 @@ def antrag_bestaetigen(request, token):
                 email=email,
                 token=raw_token,
                 trigger=trigger,
+                is_secretariat=True,
             )
             transaction.on_commit(
                 lambda recipient=email, public=public_token: send_eltern_bestaetigung(
@@ -339,7 +340,7 @@ def antrag_bestaetigen(request, token):
     # Add teacher confirmations to context if principal view
     if anfrage.is_principle:
         bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
-        filtered_bestaetigungen = [a for a in bestaetigungen if not a.email in Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)]
+        filtered_bestaetigungen = [a for a in bestaetigungen if not a.is_secretariat]
 
         bestaetigungen_with_function = []
         for bestaetigung in filtered_bestaetigungen:
@@ -395,7 +396,7 @@ def antrag_bestaetigen(request, token):
                         )
 
                         for bestaetigung in bestaetigungen:
-                            if bestaetigung.email in sekretariat_emails:
+                            if bestaetigung.is_secretariat:
                                 continue
                             stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
                             lehrer = Lehrer.objects.get(email=bestaetigung.email)
@@ -433,7 +434,7 @@ def antrag_bestaetigen(request, token):
                         ensure_pending(anfrage)
                         bestaetigungen = Anfrage.objects.filter(antrag=antrag, is_principle=False)
                         for bestaetigung in bestaetigungen:
-                            if bestaetigung.email in sekretariat_emails:
+                            if bestaetigung.is_secretariat:
                                 continue
                             stunden = bestaetigung.unterricht.strip("\n").split(";")[:-1]
                             lehrer = Lehrer.objects.get(email=bestaetigung.email)
@@ -542,7 +543,7 @@ def antrag_bestaetigen(request, token):
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
-    if anfrage.email in sekretariat_emails and not anfrage.im_boolean and not anfrage.gm_boolean and not anfrage.is_principle:
+    if anfrage.is_secretariat:
         context["sekretariat"] = True
         context["form"] = YesNoForm() if anfrage.trigger else TwoStepForm()
         context["anfangsdatum"] = convert_date(str(antrag.anfangsdatum))
@@ -674,7 +675,8 @@ def seki_anfordern(request):
                 antrag=antrag,
                 email=email,
                 token=raw_token,
-                trigger=True
+                trigger=True,
+                is_secretariat=True,
             )
             transaction.on_commit(
                 lambda recipient=email, absolute=absolute_url: send_eltern_bestaetigung(
