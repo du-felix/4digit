@@ -1,9 +1,10 @@
 services:
 
   # ── MySQL database ────────────────────────────────────────────────────────
-  mysql:
-    image: mysql:8.0
+  sql:
+    image: mysql:8.4
     restart: unless-stopped
+    env_file: .env
     environment:
       MYSQL_DATABASE:      ${DB_NAME}
       MYSQL_USER:          ${DB_USER}
@@ -12,21 +13,30 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   # ── Django application ────────────────────────────────────────────────────
-  web:
+  backend:
     build: .
     restart: unless-stopped
     env_file: .env
     ports:
       - "10200:8000"
     depends_on:
-      mysql:
+      sql:
         condition: service_healthy
+    environment:
+      DB_HOST: sql
+      DB_PORT: "3306"
+      DEBUG: "False"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)\" >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
 
 volumes:
   db_data:

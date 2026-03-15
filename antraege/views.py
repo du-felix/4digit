@@ -272,6 +272,7 @@ def antrag_bestaetigen(request, token):
     except TokenValidationError:
         return HttpResponse("Ungültiger oder abgelaufener Link.", status=404)
     antrag = anfrage.antrag
+    is_secretariat_request = anfrage.is_secretariat or anfrage.trigger
     sekretariat_emails = set(Lehrer.objects.filter(secretariat=True).values_list('email', flat=True))
 
     def _build_absolute_url(public_token):
@@ -329,7 +330,7 @@ def antrag_bestaetigen(request, token):
         "anfangszeit": convert_time(str(antrag.anfangszeit)),
         "enddatum": convert_date(str(antrag.enddatum)),
         "endzeit": convert_time(str(antrag.endzeit)),
-        "trigger": anfrage.trigger,
+        "trigger": anfrage.trigger if is_secretariat_request else False,
 
     }
     
@@ -543,7 +544,7 @@ def antrag_bestaetigen(request, token):
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
-    if anfrage.is_secretariat:
+    if is_secretariat_request:
         context["sekretariat"] = True
         context["form"] = YesNoForm() if anfrage.trigger else TwoStepForm()
         context["anfangsdatum"] = convert_date(str(antrag.anfangsdatum))
@@ -560,8 +561,7 @@ def antrag_detail(request, antrag_id):
     # Hole alle Anfragen für diesen Antrag
     anfragen = Anfrage.objects.filter(antrag=antrag)
 
-    secretariat_emails = Lehrer.objects.filter(secretariat=True).values_list('email', flat=True)
-    anfragen_non_secretariat = anfragen.exclude(email__in=secretariat_emails)
+    anfragen_non_secretariat = anfragen.filter(is_secretariat=False)
     
     # Bestimme den Gesamtstatus der Anfragen
     anfragen_status = {
@@ -581,6 +581,8 @@ def antrag_detail(request, antrag_id):
     schulleiter = schulleiter_response = schulleiter_grund = schulleiter_datum = None
 
     for anfrage in anfragen:
+        if anfrage.is_secretariat:
+            continue
         if anfrage.gm:  # Wenn es ein GM ist
             gm = Lehrer.objects.filter(email=anfrage.email).values_list('name', flat=True).first() or anfrage.email
             gm_response = anfrage.response

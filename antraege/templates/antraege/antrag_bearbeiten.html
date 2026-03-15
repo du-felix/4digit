@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-container" style="max-width: 760px;">
 
-{% if trigger %}
+{% if sekretariat and trigger %}
   <h1>Antrag von <em>{{ antragsteller }}, Klasse {{ antrag.klasse }}</em></h1>
   <h2 class="mt-2 mb-2">"{{ titel }}"</h2>
   <p><strong>Zeitraum:</strong> {{ anfangsdatum }}, {{ anfangszeit }} Uhr – {{ enddatum }}, {{ endzeit }} Uhr</p>

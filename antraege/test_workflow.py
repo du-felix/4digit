@@ -93,11 +93,12 @@ class WorkflowRegressionTests(TestCase):
             email=secretariat.email,
             token="trigger-token",
             trigger=True,
+            is_secretariat=True,
         )
 
         response = self.client.post(
             reverse("antrag_bestaetigen", kwargs={"token": sign_existing_raw_token(anfrage.token)}),
-            {"btn": "eltern2", "agree": "on"},
+            {"btn": "eltern2", "agree": "ja"},
         )
         self.assertEqual(response.status_code, 200)
 
@@ -117,6 +118,7 @@ class WorkflowRegressionTests(TestCase):
             email=second.email,
             token="seki-second-token",
             unterricht="MA,2026-03-20, 1. DS;\n",
+            is_secretariat=True,
         )
 
         response = self.client.get(
@@ -124,6 +126,54 @@ class WorkflowRegressionTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Ist eine Elternbestätigung notwendig?")
+
+    def test_antrag_detail_counts_non_secretariat_by_flag_when_emails_are_identical(self):
+        self.client.login(username=self.user.email, password=self.password)
+        antrag = self._create_antrag()
+        shared = "shared@afra.lernsax.de"
+
+        Lehrer.objects.create(
+            email=shared,
+            name="Alle Rollen",
+            secretariat=True,
+            principal=True,
+            is_im=True,
+            is_gm=True,
+        )
+
+        Anfrage.objects.create(
+            antrag=antrag,
+            email=shared,
+            token="teacher-shared-token",
+            unterricht="MA,2026-03-20, 1. DS;\n",
+        )
+        Anfrage.objects.create(
+            antrag=antrag,
+            email=shared,
+            token="gm-shared-token",
+            gm=shared,
+            gm_boolean=True,
+            unterricht="MA,2026-03-20, 1. DS;\n",
+        )
+        Anfrage.objects.create(
+            antrag=antrag,
+            email=shared,
+            token="im-shared-token",
+            im=shared,
+            im_boolean=True,
+            unterricht="MA,2026-03-20, 1. DS;\n",
+        )
+        Anfrage.objects.create(
+            antrag=antrag,
+            email=shared,
+            token="seki-shared-token",
+            unterricht="MA,2026-03-20, 1. DS;\n",
+            is_secretariat=True,
+        )
+
+        response = self.client.get(reverse("antrag_detail", kwargs={"antrag_id": antrag.id}))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["anfragen_status"]["total"], 3)
 
     @override_settings(ANFRAGE_TOKEN_MAX_AGE_SECONDS=0)
     def test_expired_signed_token_is_rejected(self):
