@@ -528,7 +528,7 @@ def antrag_bestaetigen(request, token):
             answer = form.cleaned_data.get("agree")
             with transaction.atomic():
                 antrag.eltern_notwendig = True
-                if answer:
+                if answer == "ja":
                     antrag.eltern_bestaetigung = True
                     _create_schulleiter(antrag)
                     transaction.on_commit(lambda: schueler_benachrichtigung_seki(antrag))
@@ -542,7 +542,7 @@ def antrag_bestaetigen(request, token):
         else:
             return HttpResponse("Felder wurden nicht ausgefüllt", status=400)
         # Always render the template with complete context at the end
-    if anfrage.email in sekretariat_emails:
+    if anfrage.email in sekretariat_emails and not anfrage.im_boolean and not anfrage.gm_boolean and not anfrage.is_principle:
         context["sekretariat"] = True
         context["form"] = YesNoForm() if anfrage.trigger else TwoStepForm()
         context["anfangsdatum"] = convert_date(str(antrag.anfangsdatum))

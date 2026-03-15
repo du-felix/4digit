@@ -58,11 +58,9 @@ class TwoStepForm(forms.Form):
         return cleaned
     
 class YesNoForm(forms.Form):
-    agree = forms.BooleanField(
-        label="Yes / No",
-        required=False,  # unchecked → False; checked → True
-        widget=forms.CheckboxInput(attrs={
-            "class": "form-check-input", 
-            "role": "switch"
-        })
+    agree = forms.ChoiceField(
+        label="Liegt die Bestätigung der Eltern vor?",
+        choices=YES_NO,
+        widget=forms.RadioSelect,
+        required=True,
     )
