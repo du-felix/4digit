@@ -4,8 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from .forms import UserEditForm, add_lehrer_Form
-from users.forms import Sign_Up_Form
+from .forms import UserEditForm, CreateUserForm, add_lehrer_Form
 from users.models import CustomUser
 from django.db.models import Count, Q, Case, When, IntegerField
 from django.db.models.functions import TruncMonth
@@ -17,12 +16,38 @@ from antraege.validators import validate_afra_email
 from antraege.mailer import send_mail_logged
 from django.urls import reverse
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 from datetime import timedelta
 
 
 User = get_user_model()
+
+
+def _send_activation_email(request, user):
+    """Generate a one-time activation link and email it to the user."""
+    token = default_token_generator.make_token(user)
+    url = request.build_absolute_uri(
+        reverse('activate', kwargs={'uid': user.pk, 'token': token})
+    )
+    if url.startswith('http://'):
+        url = 'https://' + url[7:]
+    send_mail_logged(
+        subject='Dein Account für Freistellungen – Aktivierung',
+        body=(
+            f'Hallo {user.first_name},\n\n'
+            f'Dein Account für das Freistellungsportal wurde angelegt. '
+            f'Klicke auf folgenden Link um dein Passwort festzulegen und deinen Account zu aktivieren:\n\n'
+            f'{url}\n\n'
+            f'Der Link ist für eine begrenzte Zeit gültig. '
+            f'Falls du keinen Account angefordert hast, kannst du diese Mail ignorieren.\n\n'
+            f'BITTE ANTWORTEN SIE NICHT AUF DIESE MAIL!'
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipients=[user.email],
+    )
+
 
 def staff_required(view_func):
     @login_required
@@ -91,13 +116,22 @@ def adminview(request, user_id=None):
 @staff_required
 def adding(request):
     if request.method == 'POST':
-        form = Sign_Up_Form(request.POST)
+        form = CreateUserForm(request.POST)
         if form.is_valid():
-            validate_afra_email(form.cleaned_data['email'])
-            form.save()
+            try:
+                validate_afra_email(form.cleaned_data['email'])
+            except ValidationError as e:
+                form.add_error('email', e)
+                return render(request, 'adminview/add_user.html', {'form': form})
+            user = form.save(commit=False)
+            user.set_unusable_password()
+            user.is_active = False
+            user.save()
+            _send_activation_email(request, user)
+            messages.success(request, f'Benutzer {user.email} wurde angelegt. Eine Aktivierungs-E-Mail wurde versendet.')
             return redirect('adminview-home')
     else:
-        form = Sign_Up_Form()
+        form = CreateUserForm()
 
     return render(request, 'adminview/add_user.html', {'form': form})
 
@@ -108,7 +142,11 @@ def edit_user(request, user_id=None):
         if request.method == 'POST':
             form = UserEditForm(request.POST, instance=edit_user)
             if form.is_valid():
-                validate_afra_email(form.cleaned_data['email'])
+                try:
+                    validate_afra_email(form.cleaned_data['email'])
+                except ValidationError as e:
+                    form.add_error('email', e)
+                    return render(request, 'adminview/edit_user.html', {'form': form, 'edit_user': edit_user})
                 form.save()
                 messages.success(request, f"User {edit_user.email} updated successfully")
                 return redirect('adminview-home')
@@ -157,27 +195,15 @@ def csv(request):
                                 continue
 
                             if not CustomUser.objects.filter(email=email).exists():
-                                password = get_random_string(10)
-
                                 user = CustomUser(
                                     email=email,
                                     first_name=first_name,
                                     last_name=last_name,
                                     is_active=False,
                                 )
-                                user.set_password(password)
+                                user.set_unusable_password()
                                 user.save()
-
-                                send_mail_logged(
-                                    subject='Dein neuer Account für Freistellungen',
-                                    body=(
-                                        f'Dein Account wurde erstellt.\n\n'
-                                        f'Dein Initialpasswort lautet: {password}\n\n'
-                                        f'Nach dem ersten Login wirst du aufgefordert, dein Passwort zu ändern.'
-                                    ),
-                                    from_email=settings.DEFAULT_FROM_EMAIL,
-                                    recipients=[email],
-                                )
+                                _send_activation_email(request, user)
                                 success_count += 1
                             else:
                                 errors.append(f"Benutzer mit E-Mail {email} existiert bereits.")
@@ -412,8 +438,8 @@ def dashboard(request):
         q_lower = q.lower()
         events = [event for event in events if q_lower in event['search_text']]
 
-    reverse = sort != 'oldest'
-    events.sort(key=lambda x: x['timestamp'], reverse=reverse)
+    reverse_order = sort != 'oldest'
+    events.sort(key=lambda x: x['timestamp'], reverse=reverse_order)
 
     paginator = Paginator(events, 50)
     page_number = request.GET.get('page', 1)
@@ -557,29 +583,54 @@ def antraege_list(request):
     })
 
 
+def _register_pdf_fonts():
+    """
+    Register DejaVu Sans (Unicode-capable) with ReportLab if the font files
+    are present (installed via fonts-dejavu-core in the container).  Falls
+    back silently to the built-in Helvetica when the font is unavailable
+    (e.g. local development without the package installed).
+    Returns the font-family name to embed in the PDF CSS.
+    """
+    import os
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        base = '/usr/share/fonts/truetype/dejavu/'
+        regular = os.path.join(base, 'DejaVuSans.ttf')
+        bold    = os.path.join(base, 'DejaVuSans-Bold.ttf')
+        if os.path.exists(regular) and os.path.exists(bold):
+            pdfmetrics.registerFont(TTFont('DejaVuSans', regular))
+            pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', bold))
+            from reportlab.pdfbase.pdfmetrics import registerFontFamily
+            registerFontFamily('DejaVuSans', normal='DejaVuSans', bold='DejaVuSans-Bold')
+            return 'DejaVuSans'
+    except Exception:
+        pass
+    return 'Helvetica'
+
+
 @staff_required
 def antrag_pdf(request, antrag_id):
     try:
         from xhtml2pdf import pisa
-    except ModuleNotFoundError:
+    except (ModuleNotFoundError, ImportError):
         return HttpResponse(
             'PDF-Export ist aktuell nicht verfügbar (fehlendes Paket: xhtml2pdf).',
             status=503,
         )
+    import io
 
     antrag = get_object_or_404(Antrag.objects.select_related('user').prefetch_related('anfrage_set'), id=antrag_id)
     anfragen = antrag.anfrage_set.all().order_by('created')
 
-    try:
-        from xhtml2pdf import pisa
-    except ImportError:
-        return HttpResponse('xhtml2pdf ist nicht installiert. Bitte "pip install xhtml2pdf" ausführen.', status=501)
-    import io
+    pdf_font = _register_pdf_fonts()
 
     html = render_to_string('adminview/antrag_pdf_template.html', {
         'antrag': antrag,
         'anfragen': anfragen,
         'generated': timezone.now(),
+        'pdf_font': pdf_font,
     })
 
     buf = io.BytesIO()

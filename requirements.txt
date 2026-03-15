@@ -20,3 +20,7 @@ python-dotenv>=1.0,<2
 # xhtml2pdf is imported lazily inside the view function, so a missing install
 # does not crash the server.  Pin within the 0.x series.
 xhtml2pdf>=0.2.17,<1
+
+# ── Production WSGI server ────────────────────────────────────────────────────
+# gunicorn replaces manage.py runserver for production deployments.
+gunicorn>=21.2,<24

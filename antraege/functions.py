@@ -104,10 +104,11 @@ def send_email_schulleiter(schueler, token_url):
 def send_email_sekretariat(schueler, klasse, titel, grund, email, antrag=None):
     # Wenn ein Antrag übergeben wurde, Information über die Unterrichte sammeln
    
+    unterrichte_text = ""
     if antrag:
         anfragen = Anfrage.objects.filter(antrag=antrag, is_principle=False, gm__isnull=True, im__isnull=True)
         unterrichte_info = []
-        
+
         for anfrage in anfragen:
             stunden = anfrage.unterricht.strip("\n").split(";")[:-1]
             for stunde in stunden:

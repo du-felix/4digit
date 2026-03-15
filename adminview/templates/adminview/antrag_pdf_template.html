@@ -1,24 +1,32 @@
-<!DOCTYPE html>
+{% load pdf_filters %}<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <style>
+    /* ── Font ── */
+    /* pdf_font is injected by the view: DejaVuSans (container) or Helvetica (dev) */
+    body {
+      font-family: {{ pdf_font }}, Helvetica, Arial, sans-serif;
+      font-size: 9pt;
+      color: #111827;
+      line-height: 1.45;
+    }
+
     /* ── Page setup ── */
     @page {
       size: A4 portrait;
       margin: 1.8cm 2cm 2cm 2cm;
     }
 
-    /* ── Base reset + word-wrap safety ── */
-    body {
-      font-family: Helvetica, Arial, sans-serif;
-      font-size: 9pt;
-      color: #111827;
-      line-height: 1.45;
-    }
+    /* ── Word-wrap safety
+         xhtml2pdf / ReportLab requires word-break: break-word to wrap
+         long unbroken strings inside table cells and divs.
+         overflow-wrap alone is ignored by the ReportLab paragraph engine.
+    ── */
     p, td, th, div {
       word-wrap: break-word;
       overflow-wrap: break-word;
+      word-break: break-word;
     }
     table {
       border-collapse: collapse;
@@ -88,6 +96,7 @@
     ══════════════════════════════════════ */
     .fields {
       width: 100%;
+      table-layout: fixed;
     }
     .fields col.lc { width: 26%; }
     .fields col.vc { width: 74%; }
@@ -111,6 +120,8 @@
 
     /* ══════════════════════════════════════
        REASON BOX
+       word-break: break-word ensures long continuous text (e.g. URLs,
+       compound German words) does not overflow the box.
     ══════════════════════════════════════ */
     .reason-box {
       border: 0.75pt solid #BFDBFE;
@@ -120,21 +131,25 @@
       color: #1E293B;
       line-height: 1.55;
       margin-top: 2pt;
+      word-break: break-word;
     }
 
     /* ══════════════════════════════════════
        ANFRAGEN TABLE
+       table-layout: fixed + explicit col widths + word-break on cells
+       are all required for xhtml2pdf to wrap long text inside cells.
     ══════════════════════════════════════ */
     .anf-table {
       width: 100%;
       margin-top: 3pt;
       font-size: 8pt;
+      table-layout: fixed;
     }
-    .anf-table col.c1 { width: 21%; }
-    .anf-table col.c2 { width: 19%; }
-    .anf-table col.c3 { width: 12%; }
-    .anf-table col.c4 { width: 34%; }
-    .anf-table col.c5 { width: 14%; }
+    .anf-table col.c1 { width: 20%; }
+    .anf-table col.c2 { width: 20%; }
+    .anf-table col.c3 { width: 10%; }
+    .anf-table col.c4 { width: 37%; }
+    .anf-table col.c5 { width: 13%; }
     .anf-table th {
       background: #1E40AF;
       color: #FFFFFF;
@@ -149,6 +164,7 @@
       font-size: 8pt;
       vertical-align: top;
       color: #111827;
+      word-break: break-word;
     }
     .anf-alt td {
       background: #EFF6FF;
@@ -160,6 +176,7 @@
     .anf-comment {
       color: #374151;
       font-size: 7.5pt;
+      word-break: break-word;
     }
     .anf-date {
       color: #6B7280;
@@ -216,21 +233,21 @@
     <tr>
       <td class="hdr-left">
         <div class="hdr-title">Freistellungsantrag</div>
-        <div class="hdr-sub">St.&nbsp;Afra&nbsp;Meißen &ndash; Freistellungsportal</div>
+        <div class="hdr-sub">St.&nbsp;Afra&nbsp;Mei&#223;en &#8211; Freistellungsportal</div>
       </td>
       <td class="hdr-right">
         <div class="hdr-meta">
-          Antrag&#8209;Nr.&nbsp;<b>{{ antrag.id }}</b><br>
+          Antrag-Nr.&nbsp;<b>{{ antrag.id }}</b><br>
           Eingereicht:&nbsp;{{ antrag.erstellt_am|date:"d.m.Y" }}<br>
           Generiert:&nbsp;{{ generated|date:"d.m.Y,&nbsp;H:i" }}&nbsp;Uhr
         </div>
         <div class="hdr-status">
           {% if antrag.status == 'accepted' %}
-            <span class="st-accepted">&#10003;&nbsp;Genehmigt</span>
+            <span class="st-accepted">Genehmigt</span>
           {% elif antrag.status == 'declined' %}
-            <span class="st-declined">&#10007;&nbsp;Abgelehnt</span>
+            <span class="st-declined">Abgelehnt</span>
           {% else %}
-            <span class="st-progress">&#9679;&nbsp;Ausstehend</span>
+            <span class="st-progress">Ausstehend</span>
           {% endif %}
         </div>
       </td>
@@ -250,7 +267,7 @@
     <td class="fv">{{ antrag.user.get_full_name|default:antrag.user.email }}</td>
   </tr>
   <tr>
-    <td class="fl">E&#8209;Mail</td>
+    <td class="fl">E-Mail</td>
     <td class="fv fv-normal">{{ antrag.user.email }}</td>
   </tr>
   <tr>
@@ -274,15 +291,15 @@
     <td class="fl">Zeitraum</td>
     <td class="fv">
       {{ antrag.anfangsdatum|date:"d.m.Y" }}{% if antrag.anfangszeit %},&nbsp;{{ antrag.anfangszeit|time:"H:i" }}&nbsp;Uhr{% endif %}
-      &nbsp;&ndash;&nbsp;
+      &nbsp;&#8211;&nbsp;
       {{ antrag.enddatum|date:"d.m.Y" }}{% if antrag.endzeit %},&nbsp;{{ antrag.endzeit|time:"H:i" }}&nbsp;Uhr{% endif %}
     </td>
   </tr>
   <tr>
-    <td class="fl">Elternbestätigung</td>
+    <td class="fl">Elternbest&#228;tigung</td>
     <td class="fv fv-normal">
       {% if antrag.eltern_notwendig %}
-        {% if antrag.eltern_bestaetigung %}Ja, Bestätigung liegt vor{% else %}Erforderlich &ndash; noch ausstehend{% endif %}
+        {% if antrag.eltern_bestaetigung %}Ja, Best&#228;tigung liegt vor{% else %}Erforderlich &#8211; noch ausstehend{% endif %}
       {% else %}
         Nicht erforderlich
       {% endif %}
@@ -291,11 +308,11 @@
 </table>
 
 <!-- ════════════════ BEGRÜNDUNG ════════════════ -->
-<div class="sec">Begründung</div>
-<div class="reason-box">{{ antrag.grund|default:"Keine Begründung angegeben." }}</div>
+<div class="sec">Begr&#252;ndung</div>
+<div class="reason-box">{{ antrag.grund|default:"Keine Begr&#252;ndung angegeben."|linebreaksbr }}</div>
 
 <!-- ════════════════ LEHRERANFRAGEN ════════════════ -->
-<div class="sec">Lehreranfragen &amp; Rückmeldungen</div>
+<div class="sec">Lehreranfragen &amp; R&#252;ckmeldungen</div>
 {% if anfragen %}
 <table class="anf-table">
   <colgroup>
@@ -321,10 +338,7 @@
         {{ a.name }}<br>
         <span class="anf-sub">{{ a.email }}</span>
       </td>
-      <td>
-        {{ a.unterricht|default:"–" }}
-        {% if a.ds_zeitraum %}<br><span class="anf-sub">{{ a.ds_zeitraum }}</span>{% endif %}
-      </td>
+      <td>{{ a.unterricht|fmt_dates|default:"-"|linebreaksbr }}</td>
       <td>
         {% if a.response == 'accepted' %}
           <span class="st-accepted">Ja</span>
@@ -334,9 +348,9 @@
           <span class="st-progress">Offen</span>
         {% endif %}
       </td>
-      <td class="anf-comment">{{ a.reason|default:"–" }}</td>
+      <td class="anf-comment">{{ a.reason|default:"-"|linebreaksbr }}</td>
       <td class="anf-date">
-        {% if a.responded_at %}{{ a.responded_at|date:"d.m.Y" }}{% else %}–{% endif %}
+        {% if a.responded_at %}{{ a.responded_at|date:"d.m.Y" }}{% else %}-{% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -354,7 +368,7 @@
       <table class="sig-space"><tr><td></td></tr></table>
       <table style="width:100%;">
         <tr class="sig-line-row">
-          <td>Schüler/in, Datum</td>
+          <td>Sch&#252;ler/in, Datum</td>
         </tr>
       </table>
     </td>
@@ -379,7 +393,7 @@
 
 <!-- ════════════════ FOOTER ════════════════ -->
 <div class="doc-footer">
-  St.&nbsp;Afra&nbsp;Meißen &middot; Freistellungsportal &middot; Antrag&nbsp;Nr.&nbsp;{{ antrag.id }} &middot; {{ generated|date:"d.m.Y" }}
+  St.&nbsp;Afra&nbsp;Mei&#223;en &middot; Freistellungsportal &middot; Antrag&nbsp;Nr.&nbsp;{{ antrag.id }} &middot; {{ generated|date:"d.m.Y" }}
 </div>
 
 </body>

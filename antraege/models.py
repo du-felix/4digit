@@ -43,7 +43,7 @@ class Antrag(models.Model):
     eltern_bestaetigung = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.user.first_name, self.titel
+        return f"{self.user.first_name} - {self.titel}"
     
 
 

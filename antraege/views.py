@@ -113,7 +113,9 @@ def neuer_antrag(request):
             def _build_absolute_url(public_token):
                 relative_url = reverse("antrag_bestaetigen", kwargs={"token": public_token})
                 absolute_url = request.build_absolute_uri(relative_url)
-                return absolute_url[:4] + "s" + absolute_url[4:]
+                if absolute_url.startswith("http://"):
+                    absolute_url = "https://" + absolute_url[7:]
+                return absolute_url
 
             with transaction.atomic():
                 # ---- Antrag speichern ----
@@ -262,7 +264,7 @@ def neuer_antrag(request):
 
 @login_required(login_url="login")
 def user_antraege(request):
-    return render(request, "antraege/user_antraege.html")
+    return redirect("home")
 
 def antrag_bestaetigen(request, token):
     try:
@@ -275,7 +277,9 @@ def antrag_bestaetigen(request, token):
     def _build_absolute_url(public_token):
         relative_url = reverse('antrag_bestaetigen', kwargs={'token': public_token})
         absolute_url = request.build_absolute_uri(relative_url)
-        return absolute_url[:4] + "s" + absolute_url[4:]
+        if absolute_url.startswith("http://"):
+            absolute_url = "https://" + absolute_url[7:]
+        return absolute_url
 
     def _create_sekretariat_requests(trigger=False):
         for email in sekretariat_emails:
@@ -664,7 +668,8 @@ def seki_anfordern(request):
             raw_token, public_token = make_token_pair()
             relative_url = reverse('antrag_bestaetigen', kwargs={'token': public_token})
             absolute_url = request.build_absolute_uri(relative_url)
-            absolute_url = absolute_url[:4] + "s" + absolute_url[4:]
+            if absolute_url.startswith("http://"):
+                absolute_url = "https://" + absolute_url[7:]
             Anfrage.objects.create(
                 antrag=antrag,
                 email=email,

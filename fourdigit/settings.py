@@ -46,13 +46,17 @@ MIDDLEWARE = [
 
 INTERNAL_IPS = ['127.0.0.1']
 
-if not DEBUG:
-    FORCE_SCRIPT_NAME = '/freistellung'
+# Default to /freistellung in production (root domain belongs to another service).
+# Override via FORCE_SCRIPT_NAME env var if the deployment path ever changes.
+_force_script_name = os.environ.get('FORCE_SCRIPT_NAME', '' if DEBUG else '/freistellung')
+if _force_script_name:
+    FORCE_SCRIPT_NAME = _force_script_name
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 465))
-EMAIL_USE_SSL = True
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'True').lower() == 'true'
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() == 'true'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
@@ -83,7 +87,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'fourdigit.wsgi.application'
 
-CSRF_TRUSTED_ORIGINS = ['https://mdm.sankt-afra.de']
+_csrf_origins_raw = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://mdm.sankt-afra.de')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins_raw.split(',') if o.strip()]
 
 # --- Clickjacking protection ---
 X_FRAME_OPTIONS = 'DENY'
@@ -133,7 +138,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = '/static/' if DEBUG else '/freistellung/static/'
+STATIC_URL = f"{_force_script_name}/static/" if _force_script_name else '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
