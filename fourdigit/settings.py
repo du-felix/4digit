@@ -10,11 +10,13 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-only-change
 
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,::1').split(',')
-    if host.strip()
-]
+ALLOWED_HOSTS = list(set(
+    ['localhost', '127.0.0.1', '::1'] + [
+        host.strip()
+        for host in os.environ.get('ALLOWED_HOSTS', '').split(',')
+        if host.strip()
+    ]
+))
 
 # --- Security: LOGIN_URL must match the app's actual login route ---
 LOGIN_URL = 'login'
