@@ -11,6 +11,7 @@ from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 import io
+import csv as csv_module
 from antraege.models import Lehrer, Antrag, Anfrage, Fach
 from antraege.validators import validate_afra_email
 from antraege.mailer import send_mail_logged
@@ -23,6 +24,68 @@ from datetime import timedelta
 
 
 User = get_user_model()
+
+
+def _decode_csv_content(raw_bytes):
+    """Decode uploaded CSV bytes using common encodings used by school exports."""
+    for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin1"):
+        try:
+            return raw_bytes.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise ValueError(
+        "Die Datei konnte nicht gelesen werden. Bitte als UTF-8 oder cp1252/latin1 speichern."
+    )
+
+
+def _parse_student_csv(csv_data):
+    """
+    Parse student CSV rows with strict 3-column format:
+    ignored;email;full name
+    """
+    reader = csv_module.reader(io.StringIO(csv_data), delimiter=';')
+    parsed_rows = []
+    errors = []
+
+    for line_number, row in enumerate(reader, start=1):
+        if not row or all(not cell.strip() for cell in row):
+            continue
+
+        if len(row) != 3:
+            errors.append(
+                f"Zeile {line_number}: Es werden genau 3 Spalten erwartet "
+                "(Loginname;E-Mail;Vollständiger Name)."
+            )
+            continue
+
+        _ignored_login, email, full_name = [cell.strip() for cell in row]
+        if not email or not full_name:
+            errors.append(
+                f"Zeile {line_number}: E-Mail und vollständiger Name müssen ausgefüllt sein "
+                "(Spalten 2 und 3)."
+            )
+            continue
+
+        try:
+            validate_afra_email(email)
+        except ValidationError as exc:
+            errors.append(f"Zeile {line_number}: Ungültige E-Mail ({email}): {str(exc)}")
+            continue
+
+        name_parts = full_name.split(None, 1)
+        first_name = name_parts[0]
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+        parsed_rows.append(
+            {
+                "line_number": line_number,
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+            }
+        )
+
+    return parsed_rows, errors
 
 
 def _send_activation_email(request, user):
@@ -168,58 +231,51 @@ def csv(request):
                 return redirect('adminview-csv')
 
             try:
-                import io
-                import csv as csv_module
+                csv_data = _decode_csv_content(csv_file.read())
+                rows, parse_errors = _parse_student_csv(csv_data)
+                if parse_errors:
+                    messages.error(
+                        request,
+                        "Die CSV ist ungültig. Erwartetes Format je Zeile: "
+                        "Loginname;E-Mail;Vollständiger Name.",
+                    )
+                    for error in parse_errors[:10]:
+                        messages.error(request, error)
+                    if len(parse_errors) > 10:
+                        messages.error(request, f"... und {len(parse_errors) - 10} weitere Fehler.")
+                    return redirect('adminview-csv')
 
-                csv_data = csv_file.read().decode('utf-8')
-                io_string = io.StringIO(csv_data)
-                reader = csv_module.reader(io_string, delimiter=';')
+                if not rows:
+                    messages.error(request, 'Die CSV enthält keine verwertbaren Datensätze.')
+                    return redirect('adminview-csv')
 
                 success_count = 0
-                error_count = 0
                 errors = []
 
-                for row in reader:
-                    try:
-                        if len(row) >= 3:
-                            email = row[1].strip()
-                            name_parts = row[2].strip().split(' ', 1)
-                            first_name = name_parts[0]
-                            last_name = name_parts[1] if len(name_parts) > 1 else ''
+                for row in rows:
+                    email = row["email"]
 
-                            try:
-                                validate_afra_email(email)
-                            except ValidationError as e:
-                                errors.append(f"Ungültige E-Mail ({email}): {str(e)}")
-                                error_count += 1
-                                continue
+                    if CustomUser.objects.filter(email=email).exists():
+                        errors.append(
+                            f"Zeile {row['line_number']}: Benutzer mit E-Mail {email} existiert bereits."
+                        )
+                        continue
 
-                            if not CustomUser.objects.filter(email=email).exists():
-                                user = CustomUser(
-                                    email=email,
-                                    first_name=first_name,
-                                    last_name=last_name,
-                                    is_active=False,
-                                )
-                                user.set_unusable_password()
-                                user.save()
-                                _send_activation_email(request, user)
-                                success_count += 1
-                            else:
-                                errors.append(f"Benutzer mit E-Mail {email} existiert bereits.")
-                                error_count += 1
-                        else:
-                            # Do NOT include raw row data in user-facing messages
-                            errors.append("Eine Zeile hat zu wenige Spalten und wurde übersprungen.")
-                            error_count += 1
-                    except Exception:
-                        errors.append("Eine Zeile konnte nicht verarbeitet werden.")
-                        error_count += 1
+                    user = CustomUser(
+                        email=email,
+                        first_name=row["first_name"],
+                        last_name=row["last_name"],
+                        is_active=False,
+                    )
+                    user.set_unusable_password()
+                    user.save()
+                    _send_activation_email(request, user)
+                    success_count += 1
 
                 if success_count > 0:
                     messages.success(request, f'{success_count} Benutzer erfolgreich erstellt.')
-                if error_count > 0:
-                    messages.warning(request, f'{error_count} Zeilen konnten nicht verarbeitet werden.')
+                if errors:
+                    messages.warning(request, f'{len(errors)} Zeilen konnten nicht verarbeitet werden.')
                     for error in errors[:10]:
                         messages.error(request, error)
                     if len(errors) > 10:
