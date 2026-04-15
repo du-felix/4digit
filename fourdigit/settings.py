@@ -198,5 +198,10 @@ LOGGING = {
     },
 }
 
-# Approval links for request processing expire after 7 days by default.
-ANFRAGE_TOKEN_MAX_AGE_SECONDS = int(os.environ.get("ANFRAGE_TOKEN_MAX_AGE_SECONDS", 7 * 24 * 60 * 60))
+# Approval links for request processing expire after 14 days by default.
+ANFRAGE_TOKEN_MAX_AGE_SECONDS = int(os.environ.get("ANFRAGE_TOKEN_MAX_AGE_SECONDS", 14 * 24 * 60 * 60))
+
+# Password-reset AND account-activation links share Django's default token
+# generator, so this governs both. Keep it short: reset links are credentials,
+# and `get_link` lets users request a fresh one at any time with no cooldown.
+PASSWORD_RESET_TIMEOUT = int(os.environ.get("PASSWORD_RESET_TIMEOUT", 60 * 60))

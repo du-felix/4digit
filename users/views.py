@@ -23,18 +23,7 @@ def login(request):
             if user.is_staff:
                 return redirect("adminview-home")
             return redirect("home")
-        else:
-            # Single generic message to prevent user enumeration
-            messages.error(request, "Ungültige Anmeldedaten.")
-
-            # Special case: inactive account (not yet activated) – show activation flow
-            try:
-                inactive_user = CustomUser.objects.get(email=email)
-                if not inactive_user.is_active:
-                    token = default_token_generator.make_token(inactive_user)
-                    return render(request, "users/activate.html", {"uid": inactive_user.pk, "token": token})
-            except CustomUser.DoesNotExist:
-                pass
+        messages.error(request, "Ungültige Anmeldedaten.")
 
     return render(request, "users/login.html")
 
@@ -126,11 +115,13 @@ def activate_account(request):
 def get_link(request):
     if request.method == "POST":
         email = request.POST.get("email")
+        # Uniform message in ALL branches (user missing / inactive / active) so
+        # the endpoint can't be used to enumerate which emails have accounts.
+        generic_message = "Wenn ein Konto mit dieser E-Mail existiert, wurde eine E-Mail verschickt."
         try:
             user = CustomUser.objects.get(email=email)
 
             if not user.is_active:
-                # Send a fresh activation link — NEVER send the stored password hash
                 token = default_token_generator.make_token(user)
                 activation_url = request.build_absolute_uri(
                     reverse('activate', kwargs={'uid': user.pk, 'token': token})
@@ -147,8 +138,6 @@ def get_link(request):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipients=[email],
                 )
-                messages.info(request, "Wir haben dir einen Aktivierungslink geschickt.")
-                return redirect('login')
             else:
                 token = default_token_generator.make_token(user)
                 reset_url = request.build_absolute_uri(
@@ -164,13 +153,11 @@ def get_link(request):
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipients=[email],
                 )
-                messages.success(request, "Wir haben dir einen Link zum Zurücksetzen des Passworts geschickt.")
-                return redirect('login')
-
         except CustomUser.DoesNotExist:
-            # Use the same message to prevent email enumeration
-            messages.success(request, "Wenn ein Konto mit dieser E-Mail existiert, wurde eine E-Mail verschickt.")
-            return redirect('login')
+            pass
+
+        messages.success(request, generic_message)
+        return redirect('login')
 
     return render(request, "users/get_link.html")
 

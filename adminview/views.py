@@ -546,44 +546,50 @@ def dashboard(request):
     events = []
 
     for a in Antrag.objects.select_related('user').order_by('-erstellt_am'):
-        text = f'{a.user.get_full_name() or a.user.email} hat einen Freistellungsantrag eingereicht'
+        actor = a.user.get_full_name() or a.user.email
+        suffix = 'hat einen Freistellungsantrag eingereicht'
         meta = f'"{a.titel}" · Klasse {a.klasse}'
         events.append({
             'type': 'antrag',
             'filter_key': 'antrag',
             'dot': 'dot-antrag',
             'timestamp': a.erstellt_am,
-            'text': f'<strong>{a.user.get_full_name() or a.user.email}</strong> hat einen Freistellungsantrag eingereicht',
+            'actor': actor,
+            'text': suffix,
             'meta': meta,
-            'search_text': f'{text.lower()} {meta.lower()}',
+            'search_text': f'{actor.lower()} {suffix.lower()} {meta.lower()}',
         })
 
     for r in Anfrage.objects.select_related('antrag').filter(responded_at__isnull=False).order_by('-responded_at'):
         label = 'genehmigt' if r.response == 'accepted' else 'abgelehnt'
         dot = 'dot-response' if r.response == 'accepted' else 'dot-decision'
         filter_key = 'response' if r.response == 'accepted' else 'decision'
-        text = f'{r.name} hat eine Anfrage {label}'
+        actor = r.name
+        suffix = f'hat eine Anfrage {label}'
         meta = f'Antrag: "{r.antrag.titel}"'
         events.append({
             'type': 'response',
             'filter_key': filter_key,
             'dot': dot,
             'timestamp': r.responded_at,
-            'text': f'<strong>{r.name}</strong> hat eine Anfrage {label}',
+            'actor': actor,
+            'text': suffix,
             'meta': meta,
-            'search_text': f'{text.lower()} {meta.lower()}',
+            'search_text': f'{actor.lower()} {suffix.lower()} {meta.lower()}',
         })
 
     for u in CustomUser.objects.order_by('-date_joined'):
-        text = f'Neuer Benutzer angelegt: {u.get_full_name() or u.email}'
+        actor = u.get_full_name() or u.email
+        suffix = 'als Benutzer angelegt'
         events.append({
             'type': 'user',
             'filter_key': 'user',
             'dot': 'dot-user',
             'timestamp': u.date_joined,
-            'text': f'Neuer Benutzer angelegt: <strong>{u.get_full_name() or u.email}</strong>',
+            'actor': actor,
+            'text': suffix,
             'meta': u.email,
-            'search_text': f'{text.lower()} {u.email.lower()}',
+            'search_text': f'{actor.lower()} {suffix.lower()} {u.email.lower()}',
         })
 
     total_events_all = len(events)

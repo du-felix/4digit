@@ -78,7 +78,7 @@
           <div class="activity-item">
             <div class="activity-dot {{ event.dot }}"></div>
             <div class="activity-body">
-              <p class="activity-text">{{ event.text|safe }}</p>
+              <p class="activity-text"><strong>{{ event.actor }}</strong>{% if event.text %} {{ event.text }}{% endif %}</p>
               {% if event.meta %}<div class="activity-meta">{{ event.meta }}</div>{% endif %}
             </div>
             <div class="activity-time">{{ event.timestamp|date:"d.m.Y, H:i" }}</div>
