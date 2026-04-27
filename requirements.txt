@@ -7,7 +7,7 @@ Django>=5.2.12,<6
 
 # ── Database ─────────────────────────────────────────────────────────────────
 # mysqlclient 2.2+ is required for Django 5.x; no known CVEs in 2.2.x.
-mysqlclient>=2.2,<3
+mysqlclient>=2.2.8,<3
 
 # ── Static files ─────────────────────────────────────────────────────────────
 # WhiteNoise 6.x; no CVEs. Range prevents surprise major-version jump.
